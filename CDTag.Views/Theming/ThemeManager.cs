@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
+using CDTag.Common.ApplicationServices;
 using CDTag.Common.Mvvm;
 using CDTag.Common.Settings;
 using CDTag.Common.Wpf;
@@ -28,7 +29,7 @@ namespace CDTag.Views.Theming
     /// replacing the palette dictionary re-colours all open windows immediately. Window frames
     /// (title bars) are switched through DWM.
     /// </remarks>
-    public sealed class ThemeManager : INotifyPropertyChanged
+    public sealed class ThemeManager : INotifyPropertyChanged, IThemeService
     {
         private const string SettingsFileName = "appearance.json";
         private const string PersonalizeKey = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
@@ -70,6 +71,18 @@ namespace CDTag.Views.Theming
         /// <summary>Command for menus; the parameter is "System", "Light" or "Dark".</summary>
         public ICommand SetThemeCommand { get; private set; }
 
+        /// <summary>IThemeService: the preference as "System", "Light" or "Dark".</summary>
+        public string ThemeName
+        {
+            get { return _preference.ToString(); }
+            set
+            {
+                ThemePreference parsed;
+                if (Enum.TryParse(value, true, out parsed))
+                    Preference = parsed;
+            }
+        }
+
         /// <summary>Gets whether the dark palette is currently active.</summary>
         public bool IsDarkActive
         {
@@ -91,6 +104,7 @@ namespace CDTag.Views.Theming
 
                 _preference = value;
                 OnPropertyChanged("Preference");
+                OnPropertyChanged("ThemeName");
                 OnPropertyChanged("IsSystem");
                 OnPropertyChanged("IsLight");
                 OnPropertyChanged("IsDark");

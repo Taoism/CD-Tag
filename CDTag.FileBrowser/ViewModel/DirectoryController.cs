@@ -1,3 +1,4 @@
+using CDTag.Common.Settings;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -59,6 +60,9 @@ namespace CDTag.FileBrowser.ViewModel
             InvertSelectionCommand = new DelegateCommand(InvertSelection);
 
             EnhancedPropertyChanged += DirectoryController_EnhancedPropertyChanged;
+
+            // Re-list the folder when "Show hidden files" changes in Options.
+            AppOptions.Changed += (s, e) => BeginInvoke(() => { if (CurrentDirectory != null) RefreshExplorer(); });
 
             History = new ObservableCollection<HistoryItem>();
         }
@@ -225,8 +229,7 @@ namespace CDTag.FileBrowser.ViewModel
         /// </summary>
         public void RefreshExplorer()
         {
-            // TODO: This may not cause a refresh
-            NavigateTo(directory: CurrentDirectory, addHistory: false);
+            NavigateTo(directory: CurrentDirectory, addHistory: false, force: true);
         }
 
         private static FileSystemInfo GetFileSystemInfo(string path)
@@ -315,12 +318,13 @@ namespace CDTag.FileBrowser.ViewModel
         /// <summary>Navigates to the specified <paramref name="directory"/>.</summary>
         /// <param name="directory">The directory.</param>
         /// <param name="addHistory">if set to <c>true</c> the previous directory will be added to the history.</param>
-        private void NavigateTo(string directory, bool addHistory)
+        private void NavigateTo(string directory, bool addHistory, bool force = false)
         {
             if (string.IsNullOrWhiteSpace(directory) || directory.Length < 3 || _isNavigating)
                 return;
 
-            if (string.Compare(directory, CurrentDirectory, true) == 0 ||
+            if (!force &&
+                string.Compare(directory, CurrentDirectory, true) == 0 ||
                 string.Compare(directory, CurrentDirectory + @"\", true) == 0 ||
                 string.Compare(directory + @"\", CurrentDirectory, true) == 0)
             {
@@ -416,13 +420,13 @@ namespace CDTag.FileBrowser.ViewModel
                 // Load child files and directories
                 foreach (DirectoryInfo di in diArray)
                 {
-                    if ((di.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)
+                    if (AppOptions.IsVisible(di))
                         fileCollection.Add(new FileView(di));
                 }
 
                 foreach (FileInfo fi in fiArray)
                 {
-                    if ((fi.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)
+                    if (AppOptions.IsVisible(fi))
                     {
                         FileView fv = new FileView(fi);
                         directorySize += fv.Size ?? 0;
@@ -552,7 +556,7 @@ namespace CDTag.FileBrowser.ViewModel
                 foreach (string dir in dirs)
                 {
                     DirectoryInfo directoryInfo = new DirectoryInfo(dir);
-                    if (!directoryInfo.Attributes.HasFlag(FileAttributes.Hidden))
+                    if (AppOptions.IsVisible(directoryInfo))
                         subDirs.Add(directoryInfo.FullName);
                 }
 

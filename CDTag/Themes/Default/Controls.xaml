@@ -347,7 +347,7 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}" />
+                    <ColumnDefinition Width="18" />
                 </Grid.ColumnDefinitions>
                 <Path x:Name="arrow" Grid.Column="1" Width="8" Height="4.5" Stretch="Fill" HorizontalAlignment="Center" VerticalAlignment="Center"
                       Stroke="{DynamicResource Theme.ScrollArrow}" StrokeThickness="1.3" Data="M 0,0 L 4,4 L 8,0" />

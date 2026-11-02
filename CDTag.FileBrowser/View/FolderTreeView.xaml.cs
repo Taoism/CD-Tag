@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CDTag.Common.Settings;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -41,6 +42,20 @@ namespace CDTag.FileBrowser.View
 
             DataContextChanged += FolderTreeView_DataContextChanged;
             treeView1.SelectedItemChanged += treeView1_SelectedItemChanged;
+            AppOptions.Changed += AppOptions_Changed;
+        }
+
+        private void AppOptions_Changed(object sender, EventArgs e)
+        {
+            // "Show hidden files" may have changed: rebuild the current folder's children.
+            // Other open branches pick the change up the next time they are expanded.
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (_viewModel == null || string.IsNullOrEmpty(_viewModel.CurrentDirectory))
+                    return;
+                _oldDirectory = null;
+                NavigateTo(_viewModel.CurrentDirectory);
+            }));
         }
 
         private void FolderTreeView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -249,7 +264,7 @@ namespace CDTag.FileBrowser.View
                     node.Items.Clear();
                     foreach (DirectoryInfo dir in dirs.OrderBy(p => p.FullName))
                     {
-                        if ((dir.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)
+                        if (AppOptions.IsVisible(dir))
                         {
                             DirectoryTreeNode childNode = new DirectoryTreeNode(node.Depth + 1);
                             childNode.Expanding += treeView1_BeforeExpand;

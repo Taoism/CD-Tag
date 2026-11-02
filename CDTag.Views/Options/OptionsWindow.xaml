@@ -1,14 +1,102 @@
-﻿<Views:WindowViewBase 
+﻿<Views:WindowViewBase
     x:Class="CDTag.Views.Options.OptionsWindow"
-    x:Name="optionsWindow"
+    x:Name="optionsDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:Views="clr-namespace:CDTag.Views" 
-    Title="Options" 
-    Height="300" 
-    Width="300"
+    xmlns:Views="clr-namespace:CDTag.Views"
+    Title="Options"
+    Width="480"
+    SizeToContent="Height"
+    ResizeMode="NoResize"
 >
-    <Grid>
-        
+    <Window.Resources>
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <Style x:Key="SectionBody" TargetType="StackPanel">
+            <Setter Property="Margin" Value="12,0,0,14" />
+        </Style>
+        <Style x:Key="Hint" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Theme.ForegroundSecondary}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="19,2,0,0" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Appearance -->
+        <TextBlock Grid.Row="0" Text="Appearance" Style="{StaticResource SectionHeader}" />
+        <StackPanel Grid.Row="1" Style="{StaticResource SectionBody}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="200" />
+                </Grid.ColumnDefinitions>
+                <Label Content="_Theme:" Target="{Binding ElementName=ThemeComboBox}" Padding="0" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <ComboBox x:Name="ThemeComboBox" Grid.Column="1" SelectedValuePath="Tag" SelectedValue="{Binding Theme, Mode=TwoWay}">
+                    <ComboBoxItem Content="Use Windows setting" Tag="System" />
+                    <ComboBoxItem Content="Light" Tag="Light" />
+                    <ComboBoxItem Content="Dark" Tag="Dark" />
+                </ComboBox>
+            </Grid>
+        </StackPanel>
+
+        <!-- Startup -->
+        <TextBlock Grid.Row="2" Text="When CD-Tag starts, open" Style="{StaticResource SectionHeader}" />
+        <StackPanel Grid.Row="3" Style="{StaticResource SectionBody}">
+            <RadioButton Content="The _last folder used" GroupName="Startup" IsChecked="{Binding IsStartupLastUsed, Mode=TwoWay}" Margin="0,0,0,6" />
+            <RadioButton x:Name="StartupSpecificRadio" Content="_This folder:" GroupName="Startup" IsChecked="{Binding IsStartupSpecific, Mode=TwoWay}" />
+            <Grid Margin="19,4,0,0" IsEnabled="{Binding IsChecked, ElementName=StartupSpecificRadio}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{Binding StartupFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="2,1" VerticalContentAlignment="Center" />
+                <Button Grid.Column="1" Content="_Browse..." Command="{Binding BrowseStartupFolderCommand}" Padding="10,2" Margin="6,0,0,0" />
+            </Grid>
+        </StackPanel>
+
+        <!-- File browser -->
+        <TextBlock Grid.Row="4" Text="File browser" Style="{StaticResource SectionHeader}" />
+        <StackPanel Grid.Row="5">
+            <StackPanel Style="{StaticResource SectionBody}">
+                <CheckBox Content="Show _hidden files and folders" IsChecked="{Binding ShowHiddenFiles, Mode=TwoWay}" />
+                <TextBlock Style="{StaticResource Hint}" Text="Protected operating system items stay hidden." />
+            </StackPanel>
+
+            <!-- Tagging -->
+            <TextBlock Text="Tagging" Style="{StaticResource SectionHeader}" />
+            <StackPanel Style="{StaticResource SectionBody}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="200" />
+                    </Grid.ColumnDefinitions>
+                    <Label Content="New ID3v2 tags use _version:" Target="{Binding ElementName=ID3v2VersionComboBox}" Padding="0" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <ComboBox x:Name="ID3v2VersionComboBox" Grid.Column="1" SelectedValuePath="Tag" SelectedValue="{Binding NewTagID3v2Version, Mode=TwoWay}">
+                        <ComboBoxItem Content="ID3v2.3 (most compatible)" Tag="ID3v23" />
+                        <ComboBoxItem Content="ID3v2.4" Tag="ID3v24" />
+                    </ComboBox>
+                </Grid>
+                <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0" Text="Used when a file has no ID3v2 tag yet. Existing tags keep their version." />
+            </StackPanel>
+
+            <Path Data="M0,0 L1,0" Stroke="{DynamicResource Theme.Divider}" Stretch="Fill" Margin="0,0,0,10" />
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="_OK" Command="{Binding OKCommand}" IsDefault="True" MinWidth="80" Padding="7,2" />
+                <Button Content="_Cancel" IsCancel="True" MinWidth="80" Padding="7,2" Margin="8,0,0,0" />
+            </StackPanel>
+        </StackPanel>
     </Grid>
 </Views:WindowViewBase>

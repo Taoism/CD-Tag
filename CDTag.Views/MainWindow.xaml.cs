@@ -92,6 +92,12 @@ namespace CDTag.Views
             InputBindings.Add(new KeyBinding(_viewModel.DirectoryViewModel.SelectAllCommand, Key.A, ModifierKeys.Control));
             InputBindings.Add(new KeyBinding(new DelegateCommand(_viewModel.DirectoryViewModel.FocusAddressTextBox), Key.D, ModifierKeys.Alt));
             
+            AppOptionsData options = AppOptions.Current;
+            bool useStartupFolder = options.StartupFolderMode == AppOptionsData.StartupSpecific &&
+                                    !string.IsNullOrWhiteSpace(options.StartupFolder) && System.IO.Directory.Exists(options.StartupFolder);
+            if (useStartupFolder)
+                tagView.FileExplorer.DirectoryController.InitialDirectory = options.StartupFolder;
+
             MainWindowSettings settings;
             if (SettingsFile.TryLoad("mainWindow.json", out settings))
             {
@@ -101,7 +107,8 @@ namespace CDTag.Views
                     tagView.FileExplorer.GridSplitterPosition = new GridLength(settings.GridSplitterPosition);
 
                     IDirectoryController directoryController = tagView.FileExplorer.DirectoryController; // TODO: Need a better way to get this.
-                    directoryController.InitialDirectory = settings.Directory;
+                    if (!useStartupFolder)
+                        directoryController.InitialDirectory = settings.Directory;
 
                     // Column settings
                     var columns = tagView.FileExplorer.GetFileViewColumns();

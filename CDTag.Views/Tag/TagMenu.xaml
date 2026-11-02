@@ -44,7 +44,7 @@
                     <MenuItem Header="_Dark" Command="{Binding SetThemeCommand, Source={x:Static theming:ThemeManager.Instance}}" CommandParameter="Dark" IsChecked="{Binding IsDark, Source={x:Static theming:ThemeManager.Instance}, Mode=OneWay}" />
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="_Refresh" Command="{Binding RefreshCommand}" />
+                <MenuItem Header="_Refresh" Command="{Binding RefreshCommand}" InputGestureText="F5" />
             </MenuItem>
             <MenuItem Header="_Tools">
                 <MenuItem Header="Tag _album" Command="{Binding TagAlbumCommand}" InputGestureText="Ctrl+T" />

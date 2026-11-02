@@ -43,6 +43,12 @@ namespace CDTag.ViewModel.Tests
             throw new NotImplementedException();
         }
 
+        public bool? ShowFolderDialog(string title, string initialFolder, Window owner, out string folder)
+        {
+            folder = null;
+            return false;
+        }
+
         public bool? ShowOpenFileDialog(string title, string filter, Window owner, out string fileName)
         {
             fileName = ShowOpenFileDialogFileName;

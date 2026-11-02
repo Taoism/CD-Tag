@@ -42,5 +42,8 @@ namespace CDTag.Common.ApplicationServices
         /// <param name="fileName">Name of the file opened.</param>
         /// <returns><c>true</c> if a file is selected.</returns>
         bool? ShowOpenFileDialog(string title, string filter, Window owner, out string fileName);
+
+        /// <summary>Shows a folder picker. <paramref name="owner"/> may be null (the active window is used).</summary>
+        bool? ShowFolderDialog(string title, string initialFolder, Window owner, out string folder);
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CDTag.Common.Settings;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -258,7 +259,7 @@ namespace CDTag.FileBrowser.View
             {
                 if (!isDrive)
                 {
-                    if (new DirectoryInfo(dir).Attributes.HasFlag(FileAttributes.Hidden))
+                    if (!AppOptions.IsVisible(new DirectoryInfo(dir)))
                         continue;
                 }
 

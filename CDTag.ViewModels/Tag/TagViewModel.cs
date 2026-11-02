@@ -36,6 +36,7 @@ namespace CDTag.ViewModels.Tag
             CreateChecksumCommand = new DelegateCommand(() => ShowWindow<IChecksumWindow>());
             VerifyChecksumCommand = new DelegateCommand(() => ShowWindow<IChecksumWindow>());
             VerifyEACLogCommand = new DelegateCommand(() => ShowWindow<IVerifyEACLogWindow>());
+            RefreshCommand = new DelegateCommand(() => { if (DirectoryViewModel != null) DirectoryViewModel.RefreshExplorer(); });
 
             EnhancedPropertyChanged += TagViewModel_EnhancedPropertyChanged;
 

@@ -5,6 +5,7 @@ using System.Reflection;
 using CDTag.Common;
 using CDTag.Common.ApplicationServices;
 using CDTag.Common.Mvvm;
+using CDTag.Common.Settings;
 using CDTag.Model.Tag;
 using IdSharp.AudioInfo;
 using IdSharp.AudioInfo.Inspection;
@@ -101,6 +102,12 @@ namespace CDTag.ViewModels.Tag.EditTag
             ShortFileName = Path.GetFileName(fileName);
 
             ID3v2 = new ID3v2Tag(fileName);
+            if (!ID3v2Tag.DoesTagExist(fileName))
+            {
+                ID3v2TagVersion newTagVersion;
+                if (System.Enum.TryParse(AppOptions.Current.NewTagID3v2Version, out newTagVersion) && newTagVersion != ID3v2TagVersion.ID3v22)
+                    ID3v2.Header.TagVersion = newTagVersion;
+            }
             AudioFile = IdSharp.AudioInfo.AudioFile.Create(fileName, true);
             
             if (ID3v2.PictureList == null || ID3v2.PictureList.Count == 0)

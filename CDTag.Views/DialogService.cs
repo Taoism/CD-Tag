@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using CDTag.Common;
@@ -78,6 +80,20 @@ namespace CDTag.Views
         public void CloseAddressTextBox()
         {
             IoC.Resolve<IEventAggregator>().Publish<CloseAddressTextBoxEvent>(null);
+        }
+
+        public bool? ShowFolderDialog(string title, string initialFolder, Window owner, out string folder)
+        {
+            if (owner == null && Application.Current != null)
+                owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
+
+            var dialog = new OpenFolderDialog { Title = title };
+            if (!string.IsNullOrWhiteSpace(initialFolder) && Directory.Exists(initialFolder))
+                dialog.InitialDirectory = initialFolder;
+
+            bool? result = owner != null ? dialog.ShowDialog(owner) : dialog.ShowDialog();
+            folder = result == true ? dialog.FolderName : null;
+            return result;
         }
 
         public bool? ShowOpenFileDialog(string title, string filter, Window owner, out string fileName)

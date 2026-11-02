@@ -53,6 +53,7 @@ namespace CDTag
             IoC.RegisterInstance<IDispatcher>(new ApplicationDispatcher());
             IoC.RegisterInstance<IDialogService>(new DialogService());
             IoC.RegisterInstance<IPathService>(new PathService());
+            IoC.RegisterInstance<IThemeService>(ThemeManager.Instance);
             IoC.RegisterInstance<ITagViewModel>(IoC.Resolve<TagViewModel>());
 
             // Views
