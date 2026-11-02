@@ -39,15 +39,106 @@ namespace CDTag.Model.Tag
         /// <summary>Audio file types Tag Album loads.</summary>
         public static readonly string[] SupportedExtensions = { ".mp3", ".flac" };
 
+        /// <summary>
+        /// Every supported audio file in <paramref name="path"/> and its subfolders (multi-disc rips keep
+        /// discs in CD1/CD2/... folders), ordered by path so discs and tracks stay in sequence.
+        /// Folders hidden by the file-browser rules (Tools > Options) are skipped.
+        /// </summary>
+        public static IEnumerable<string> GetAudioFiles(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
+                return Enumerable.Empty<string>();
+
+            var files = new List<string>();
+            var pending = new Stack<KeyValuePair<string, int>>();
+            pending.Push(new KeyValuePair<string, int>(path, 0));
+            while (pending.Count > 0)
+            {
+                KeyValuePair<string, int> item = pending.Pop();
+                string directory = item.Key;
+                try
+                {
+                    files.AddRange(GetAudioFilesInFolder(directory));
+
+                    if (item.Value >= MaxSubfolderDepth)
+                        continue;
+
+                    foreach (string subdirectory in Directory.EnumerateDirectories(directory))
+                    {
+                        if (CDTag.Common.Settings.AppOptions.IsVisible(new DirectoryInfo(subdirectory)))
+                            pending.Push(new KeyValuePair<string, int>(subdirectory, item.Value + 1));
+                    }
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
+                catch (IOException)
+                {
+                }
+            }
+
+            return files.OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>How many folder levels below the album folder are searched (Album\CD1\... = 1).</summary>
+        private const int MaxSubfolderDepth = 2;
+
+        private static readonly System.Text.RegularExpressions.Regex DiscFolderPattern = new System.Text.RegularExpressions.Regex(
+            @"^\s*((cd|disc|disk|dvd|side)\s*[-_#.]?\s*[0-9a-z]{1,2}\b.*|\d{1,2})\s*$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+        private static IEnumerable<string> GetAudioFilesInFolder(string directory)
+        {
+            return Directory.EnumerateFiles(directory)
+                .Where(f => SupportedExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase));
+        }
+
+        /// <summary>True for folder names like "CD1", "Disc 2", "Disk_1", "Side A", "02".</summary>
+        public static bool IsDiscFolderName(string name)
+        {
+            return !string.IsNullOrWhiteSpace(name) && DiscFolderPattern.IsMatch(name);
+        }
+
+        /// <summary>
+        /// True when <paramref name="path"/> looks like a folder of albums rather than one album:
+        /// no audio files of its own, and more than one non-disc subfolder that contains audio.
+        /// </summary>
+        public static bool IsCollectionFolder(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
+                return false;
+
+            try
+            {
+                if (GetAudioFilesInFolder(path).Any())
+                    return false;
+
+                int albumLikeSubfolders = 0;
+                foreach (string subdirectory in Directory.EnumerateDirectories(path))
+                {
+                    if (!CDTag.Common.Settings.AppOptions.IsVisible(new DirectoryInfo(subdirectory)))
+                        continue;
+                    if (IsDiscFolderName(Path.GetFileName(subdirectory)))
+                        continue;
+                    if (GetAudioFiles(subdirectory).Any() && ++albumLikeSubfolders > 1)
+                        return true;
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (IOException)
+            {
+            }
+            return false;
+        }
+
         private static List<AlbumTrack> GetTracksFromPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentNullException("path");
 
-            string[] files = Directory.GetFiles(path)
-                .Where(f => SupportedExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
-                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
-                .ToArray();
+            string[] files = GetAudioFiles(path).ToArray();
             if (files.Length == 0)
                 throw new Exception(string.Format("No audio files found in '{0}'", path)); // TODO: Localize
 
@@ -150,17 +241,19 @@ namespace CDTag.Model.Tag
             foreach (AlbumTrack track in Tracks)
             {
                 string ext = Path.GetExtension(track.OriginalFileName);
+                // Rename in place: tracks may live in disc subfolders (CD1, CD2, ...).
+                string trackDirectory = Path.GetDirectoryName(track.OriginalFileName);
 
                 if (!string.IsNullOrWhiteSpace(track.TrackNumber) &&
                     !string.IsNullOrWhiteSpace(track.Artist) &&
                     !string.IsNullOrWhiteSpace(track.Title))
                 {
                     string newFileName = string.Format("{0:00} - {1} - {2}{3}", int.Parse(track.TrackNumber), track.Artist, track.Title, ext);
-                    newFileName = Path.Combine(OldDirectoryName, newFileName);
+                    newFileName = Path.Combine(trackDirectory, newFileName);
                     if (string.Compare(track.OriginalFileName, newFileName, ignoreCase: false) == 0)
                     {
                         newFileName = string.Format("{0:00} - {1}{2}", int.Parse(track.TrackNumber), track.Title, ext);
-                        newFileName = Path.Combine(OldDirectoryName, newFileName);
+                        newFileName = Path.Combine(trackDirectory, newFileName);
                     }
 
                     File.Move(track.OriginalFileName, newFileName);

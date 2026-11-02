@@ -22,13 +22,14 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             _previewNFOCommand = new DelegateCommand(PreviewNFO);
             _previousCommand = new DelegateCommand(Previous);
 
-            var getDirectoryControllerEvent = new GetDirectoryControllerEvent();
-            eventAggregator.Publish(getDirectoryControllerEvent);
-            string path = getDirectoryControllerEvent.DirectoryController.CurrentDirectory;
-            Album = new Album(path);
-            Profile = ProfileSelector.ActiveProfile;
-
             EnhancedPropertyChanged += TagAlbumViewModel_EnhancedPropertyChanged;
+        }
+
+        /// <summary>Loads the album in <paramref name="path"/> to be tagged with <paramref name="profile"/>.</summary>
+        public void Load(string path, UserProfile profile)
+        {
+            Profile = profile;
+            Album = new Album(path);
         }
 
         private void TagAlbumViewModel_EnhancedPropertyChanged(object sender, EnhancedPropertyChangedEventArgs<TagAlbumViewModel> e)

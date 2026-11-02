@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using CDTag.ViewModels.Tag.TagAlbum;
+using System.Collections.Generic;
 using System.Linq;
 using CDTag.Model.Profile;
+using CDTag.Model.Tag;
 using CDTag.ViewModels.Profile.ChooseProfile;
 using CDTag.Views.Interfaces.Profile.ChooseProfile;
 using System.Reflection;
@@ -48,11 +51,31 @@ namespace CDTag.ViewModels.Tag
             eventAggregator.Subscribe<GetDirectoryControllerEvent>(OnGetDirectoryController);
         }
 
-        /// <summary>Picks the profile for the current folder's file types (asking if several fit), then opens Tag Album.</summary>
+        /// <summary>
+        /// Opens Tag Album for the folder selected in the file list (or the current folder when no folder
+        /// is selected), with every audio file inside it including subfolders (e.g. CD1/CD2). The profile
+        /// is picked by file type; if several fit, the user is asked.
+        /// </summary>
         private void TagAlbum()
         {
-            string directory = DirectoryViewModel != null ? DirectoryViewModel.CurrentDirectory : null;
+            string directory = GetTagAlbumDirectory();
+            if (directory == null)
+                return;
+
+            if (Album.IsCollectionFolder(directory))
+            {
+                MessageBox(string.Format("'{0}' contains several albums.{1}{1}Select one album folder in the file list, then choose Tag Album.", directory, Environment.NewLine),
+                           "Tag Album", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
             HashSet<string> albumTypes = ProfileSelector.GetAlbumFileTypes(directory);
+            if (albumTypes.Count == 0)
+            {
+                MessageBox(string.Format("There are no MP3 or FLAC files in '{0}' or its subfolders.{1}{1}Select an album folder in the file list (or open it), then choose Tag Album.", directory, Environment.NewLine),
+                           "Tag Album", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
             List<UserProfile> profiles = ProfileSelector.LoadAll(_pathService.ProfileDirectory);
             IList<UserProfile> candidates = ProfileSelector.FindCandidates(profiles, albumTypes);
@@ -80,7 +103,26 @@ namespace CDTag.ViewModels.Tag
             }
 
             ProfileSelector.ActiveProfile = chosen;
-            ShowWindow<ITagAlbumWindow>();
+
+            ITagAlbumWindow tagAlbumWindow = IoC.Resolve<ITagAlbumWindow>();
+            ((ITagAlbumViewModel)tagAlbumWindow.DataContext).Load(directory, chosen);
+            ShowWindow(tagAlbumWindow);
+        }
+
+        /// <summary>The first folder selected in the file list, otherwise the current folder.</summary>
+        private string GetTagAlbumDirectory()
+        {
+            if (DirectoryViewModel == null)
+                return null;
+
+            if (DirectoryViewModel.FileCollection != null)
+            {
+                var selectedFolder = DirectoryViewModel.FileCollection.FirstOrDefault(f => f.IsSelected && f.IsDirectory);
+                if (selectedFolder != null)
+                    return selectedFolder.FullName;
+            }
+
+            return DirectoryViewModel.CurrentDirectory;
         }
 
         private void OnGetDirectoryController(GetDirectoryControllerEvent e)

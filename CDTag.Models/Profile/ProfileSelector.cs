@@ -29,19 +29,12 @@ namespace CDTag.Model.Profile
             return result;
         }
 
-        /// <summary>Audio file types (extensions without the dot) present in <paramref name="directory"/>.</summary>
+        /// <summary>Audio file types (extensions without the dot) in <paramref name="directory"/> and its subfolders.</summary>
         public static HashSet<string> GetAlbumFileTypes(string directory)
         {
             var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
-                return result;
-
-            foreach (string file in Directory.EnumerateFiles(directory))
-            {
-                string extension = Path.GetExtension(file);
-                if (Album.SupportedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
-                    result.Add(extension.TrimStart('.').ToLowerInvariant());
-            }
+            foreach (string file in Album.GetAudioFiles(directory))
+                result.Add(Path.GetExtension(file).TrimStart('.').ToLowerInvariant());
             return result;
         }
 
