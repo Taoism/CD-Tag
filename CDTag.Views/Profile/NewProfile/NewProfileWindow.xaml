@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:Views="clr-namespace:CDTag.Views" 
     xmlns:MVVM="clr-namespace:CDTag.Common.Mvvm;assembly=CDTag.Common"
-    xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     Title="New Profile" 
     MinHeight="540" 
     MinWidth="600"

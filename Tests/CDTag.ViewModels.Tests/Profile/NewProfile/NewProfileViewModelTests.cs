@@ -20,7 +20,7 @@ namespace CDTag.ViewModel.Tests.Profile.NewProfile
         private string _unitTestsProfile;
         private string _unitTestsNFO;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Setup()
         {
             IoC.ClearAllRegistrations();
@@ -36,7 +36,7 @@ namespace CDTag.ViewModel.Tests.Profile.NewProfile
             DeleteUnitTestsProfile();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void Teardown()
         {
             DeleteUnitTestsProfile();
@@ -801,7 +801,7 @@ namespace CDTag.ViewModel.Tests.Profile.NewProfile
             {
                 Assert.That(newProfileViewModel.Profile.Finish.NFO, Is.EqualTo(FinishNFO.CreateNew), "newProfileViewModel.Profile.Finish.NFO");
                 Assert.That(newProfileViewModel.Profile.NFOOptions.ShowReleaseScreen, Is.True, "newProfileViewModel.Profile.NFOOptions.ShowReleaseScreen");
-                Assert.That(newProfileViewModel.Profile.NFOOptions.TemplatePath, Is.StringEnding(".nfo"), "newProfileViewModel.Profile.NFOOptions.TemplatePath");
+                Assert.That(newProfileViewModel.Profile.NFOOptions.TemplatePath, Does.EndWith(".nfo"), "newProfileViewModel.Profile.NFOOptions.TemplatePath");
                 // TODO: Verify template path exists
             }
             else

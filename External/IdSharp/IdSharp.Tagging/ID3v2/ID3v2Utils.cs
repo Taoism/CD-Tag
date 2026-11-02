@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using ComponentAce.Compression.Libs.zlib;
+using System.IO.Compression;
 using IdSharp.Common.Utils;
 
 namespace IdSharp.Tagging.ID3v2
@@ -20,19 +20,16 @@ namespace IdSharp.Tagging.ID3v2
             return returnValue;
         }
 
-        private static void CopyStream(Stream input, Stream output, int size)
-        {
-            byte[] buffer = new byte[size];
-            input.Read(buffer, 0, size);
-            output.Write(buffer, 0, size);
-            output.Flush();
-        }
-
         public static Stream DecompressFrame(Stream stream, int compressedSize)
         {
-            Stream outStream = new MemoryStream();
-            ZOutputStream outZStream = new ZOutputStream(outStream);
-            CopyStream(stream, outZStream, compressedSize);
+            byte[] compressed = new byte[compressedSize];
+            stream.ReadExactly(compressed, 0, compressedSize);
+
+            MemoryStream outStream = new MemoryStream();
+            using (var zlib = new ZLibStream(new MemoryStream(compressed), CompressionMode.Decompress))
+            {
+                zlib.CopyTo(outStream);
+            }
             outStream.Position = 0;
             return outStream;
         }

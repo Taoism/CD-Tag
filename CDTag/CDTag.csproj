@@ -1,336 +1,53 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{35BE5621-407A-4A62-82A4-C984D16AEAFD}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CDTag</RootNamespace>
     <AssemblyName>cdtag</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
-    <FileAlignment>512</FileAlignment>
-    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <WarningLevel>4</WarningLevel>
-    <Utf8Output>true</Utf8Output>
-    <ExpressionBlendVersion>4.0.20525.0</ExpressionBlendVersion>
-    <IsWebBootstrapper>true</IsWebBootstrapper>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Web</InstallFrom>
-    <UpdateEnabled>true</UpdateEnabled>
-    <UpdateMode>Background</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>true</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>false</MapFileExtensions>
-    <InstallUrl>http://cdtag.com/v3beta/</InstallUrl>
-    <UpdateUrl>http://cdtag.com/v3beta/</UpdateUrl>
-    <SupportUrl>http://www.cdtag.com</SupportUrl>
-    <ErrorReportUrl>http://www.cdtag.com</ErrorReportUrl>
-    <TargetCulture>en</TargetCulture>
-    <ProductName>CD-Tag</ProductName>
-    <PublisherName>Jud White</PublisherName>
-    <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
-    <WebPage>publish.htm</WebPage>
-    <ApplicationRevision>4</ApplicationRevision>
-    <ApplicationVersion>3.0.0.%2a</ApplicationVersion>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <CreateDesktopShortcut>true</CreateDesktopShortcut>
-    <PublishWizardCompleted>true</PublishWizardCompleted>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
-  <PropertyGroup>
     <ApplicationIcon>cdtag.ico</ApplicationIcon>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>
-    </AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-  <PropertyGroup>
-    <TargetZone>LocalIntranet</TargetZone>
-  </PropertyGroup>
-  <PropertyGroup>
-    <GenerateManifests>true</GenerateManifests>
-  </PropertyGroup>
-  <PropertyGroup>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
-  <PropertyGroup>
-    <ManifestCertificateThumbprint>25D32003045B37B06406A43944FC07B4C5DCF2A1</ManifestCertificateThumbprint>
-  </PropertyGroup>
-  <PropertyGroup>
-    <ManifestKeyFile>CDTag_TemporaryKey.pfx</ManifestKeyFile>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SignManifests>true</SignManifests>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Microsoft.Expression.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.Expression.Interactions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.Expression.Prototyping.Interactivity, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
-    <Reference Include="PresentationFramework.Aero" />
-    <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Windows.Interactivity, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Program Files (x86)\Microsoft SDKs\Expression\Blend\.NETFramework\v4.0\Libraries\System.Windows.Interactivity.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Xml" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Xaml">
-      <RequiredTargetFramework>4.0</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="WindowsBase" />
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
-    <Reference Include="zlib.net">
-      <HintPath>..\..\IdSharp\IdSharp.Tagging\Libraries\zlib.net.dll</HintPath>
-    </Reference>
+    <Compile Remove="Themes\Default\Backup\**" />
+    <Page Remove="Themes\Default\Backup\**" />
+    <None Include="Themes\Default\Backup\**" />
   </ItemGroup>
-  <ItemGroup>
-    <ApplicationDefinition Include="App.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </ApplicationDefinition>
-    <Compile Include="Bootstrapper.cs" />
-    <Page Include="Themes\Converters.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <None Include="CDTag_TemporaryKey.pfx" />
-    <None Include="Properties\app.manifest" />
-    <None Include="Themes\Default\Backup\MenuRelated.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <Page Include="Themes\Default\Brush.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Themes\Default\Button.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Themes\Default\CheckBox.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Themes\Default\DataGrid.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Themes\Default\DataGridCell.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Themes\Default\DataGridRow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Themes\Default\Grid.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Themes\Default\Menu.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Themes\Default\MenuItem.Brush.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Themes\Default\MenuItem.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Themes\Default\Theme.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Themes\Default\TreeViewItem.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Themes\Generic.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Compile Include="App.xaml.cs">
-      <DependentUpon>App.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-    </Compile>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <None Include="app.config" />
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-    <AppDesigner Include="Properties\" />
-    <Page Include="Themes\Default\MenuItem.Geometry.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\IdSharp\IdSharp.AudioInfo\IdSharp.AudioInfo.csproj">
-      <Project>{136F9938-42FC-4C63-B76E-9DAAD3A63864}</Project>
-      <Name>IdSharp.AudioInfo</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\IdSharp\IdSharp.Common\IdSharp.Common.csproj">
-      <Project>{1C83FB63-E16E-4380-9DD0-26E1799C417D}</Project>
-      <Name>IdSharp.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\IdSharp\IdSharp.Tagging\IdSharp.Tagging.csproj">
-      <Project>{A4BC39D2-FB08-4DCE-B485-0F49D21B106D}</Project>
-      <Name>IdSharp.Tagging</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\IdSharp\IdSharp.WebLookup\IdSharp.WebLookup.csproj">
-      <Project>{ECEAC3FF-2F1E-4E89-ADD5-2F048ECC5B2A}</Project>
-      <Name>IdSharp.WebLookup</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CDTag.Common\CDTag.Common.csproj">
-      <Project>{5D4DFAF4-4F2D-4713-9F96-7CAB7759E34C}</Project>
-      <Name>CDTag.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CDTag.Controls\CDTag.Controls.csproj">
-      <Project>{3FF588D9-76B6-42FC-9664-39E858A940FE}</Project>
-      <Name>CDTag.Controls</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CDTag.FileBrowser\CDTag.FileBrowser.csproj">
-      <Project>{B72F279B-331E-4F26-9927-FFADB15B7395}</Project>
-      <Name>CDTag.FileBrowser</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CDTag.Models\CDTag.Models.csproj">
-      <Project>{24732BDC-95F9-497C-93A9-89634D8C1E06}</Project>
-      <Name>CDTag.Models</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CDTag.Views.Interfaces\CDTag.Views.Interfaces.csproj">
-      <Project>{B28B82E3-F2AF-455D-A309-C2CE687FD530}</Project>
-      <Name>CDTag.Views.Interfaces</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CDTag.ViewModels\CDTag.ViewModels.csproj">
-      <Project>{5B90F658-10CD-4829-BA0F-FD8B972733C2}</Project>
-      <Name>CDTag.ViewModels</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CDTag.Views\CDTag.Views.csproj">
-      <Project>{0AFCD01F-7FCE-4396-9F3A-13B4EC1C7FBF}</Project>
-      <Name>CDTag.Views</Name>
-    </ProjectReference>
-  </ItemGroup>
+
   <ItemGroup>
     <Resource Include="cdtag.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\Images\GeneralToolbar\Help.png" />
     <Resource Include="Resources\Images\TagToolbar\Back.png" />
     <Resource Include="Resources\Images\TagToolbar\Forward.png" />
     <Resource Include="Resources\Images\TagToolbar\TagAlbum.png" />
     <Resource Include="Resources\Images\TagToolbar\Up.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4 Client Profile %28x86 and x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
-      <Visible>False</Visible>
-      <ProductName>Windows Installer 3.1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\Images\About\cdtag.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\Images\GeneralToolbar\Settings_24.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\Images\GeneralToolbar\Settings2_24.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\Images\GeneralToolbar\Tools_24.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\Images\GeneralToolbar\Settings_16.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\Images\GeneralToolbar\wrench_16.png" />
     <Resource Include="Resources\Images\GeneralToolbar\wrench_plus_2_16.png" />
   </ItemGroup>
+
   <ItemGroup>
-    <Content Include="Languages\english.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Content Include="Languages\english.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.161" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\External\IdSharp\IdSharp.AudioInfo\IdSharp.AudioInfo.csproj" />
+    <ProjectReference Include="..\External\IdSharp\IdSharp.Common\IdSharp.Common.csproj" />
+    <ProjectReference Include="..\External\IdSharp\IdSharp.Tagging\IdSharp.Tagging.csproj" />
+    <ProjectReference Include="..\CDTag.Common\CDTag.Common.csproj" />
+    <ProjectReference Include="..\CDTag.Controls\CDTag.Controls.csproj" />
+    <ProjectReference Include="..\CDTag.FileBrowser\CDTag.FileBrowser.csproj" />
+    <ProjectReference Include="..\CDTag.Models\CDTag.Models.csproj" />
+    <ProjectReference Include="..\CDTag.Views.Interfaces\CDTag.Views.Interfaces.csproj" />
+    <ProjectReference Include="..\CDTag.ViewModels\CDTag.ViewModels.csproj" />
+    <ProjectReference Include="..\CDTag.Views\CDTag.Views.csproj" />
+  </ItemGroup>
+
 </Project>

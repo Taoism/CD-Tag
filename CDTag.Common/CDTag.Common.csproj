@@ -1,128 +1,19 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{5D4DFAF4-4F2D-4713-9F96-7CAB7759E34C}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CDTag.Common</RootNamespace>
-    <AssemblyName>CDTag.Common</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DocumentationFile>bin\Debug\CDTag.Common.XML</DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DocumentationFile>bin\Release\CDTag.Common.XML</DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>
-    </AssemblyOriginatorKeyFile>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Microsoft.Expression.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Xaml" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml">
-      <EmbedInteropTypes>False</EmbedInteropTypes>
-    </Reference>
-    <Reference Include="WindowsBase" />
+    <Compile Remove="UIThreadHelper.cs" />
+    <Page Remove="UIThreadHelper.cs" />
+    <None Include="UIThreadHelper.cs" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Events\ShowOpenFileDialogEvent.cs" />
-    <Compile Include="Events\ShowWindowEvent.cs" />
-    <Compile Include="Hash\CRC32.cs" />
-    <Compile Include="Hash\MD5.cs" />
-    <Compile Include="Hash\SHA1.cs" />
-    <Compile Include="Mvvm\CommandManagerHelper.cs" />
-    <Compile Include="Wpf\DataGridUtil.cs" />
-    <Compile Include="Mvvm\DelegateCommand.cs" />
-    <Compile Include="Dispatcher\ApplicationDispatcher.cs" />
-    <Compile Include="Wpf\ErrorContainer.cs" />
-    <Compile Include="ApplicationServices\EventAggregator.cs" />
-    <Compile Include="Events\MessageBoxEvent.cs" />
-    <Compile Include="Wpf\GlassHelper.cs" />
-    <Compile Include="ApplicationServices\IDialogService.cs" />
-    <Compile Include="Dispatcher\IDispatcher.cs" />
-    <Compile Include="Wpf\IErrorContainer.cs" />
-    <Compile Include="ApplicationServices\IEventAggregator.cs" />
-    <Compile Include="Model\IModelBase.cs" />
-    <Compile Include="Events\EnhancedPropertyChangedEventArgs.cs" />
-    <Compile Include="IoC.cs" />
-    <Compile Include="ApplicationServices\IPathService.cs" />
-    <Compile Include="Mvvm\IViewModelBase.cs" />
-    <Compile Include="Json\JsonSerializer.cs" />
-    <Compile Include="Json\JsonInvalidDataException.cs" />
-    <Compile Include="Json\JsonSerializer.Serialize.cs" />
-    <Compile Include="Wpf\KeyBindingHelper.cs" />
-    <Compile Include="Model\ModelBase.cs" />
-    <Compile Include="Wpf\MouseHelper.cs" />
-    <Compile Include="Mvvm\FocusExtension.cs" />
-    <Compile Include="ApplicationServices\PathService.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Mvvm\ViewModelBase.cs" />
-    <Compile Include="Win32API\Advapi32.cs" />
-    <Compile Include="Win32API\Const.cs" />
-    <Compile Include="Win32API\IconHelper.cs" />
-    <Compile Include="Win32API\Kernel32.cs" />
-    <Compile Include="Win32API\Ole32.cs" />
-    <Compile Include="Win32API\Shell32.cs" />
-    <Compile Include="Win32API\Struct.cs" />
-    <Compile Include="Win32API\User32.cs" />
+    <ProjectReference Include="..\External\IdSharp\IdSharp.Common\IdSharp.Common.csproj" />
+    <ProjectReference Include="..\CDTag.Controls\CDTag.Controls.csproj" />
+    <ProjectReference Include="..\CDTag.Views.Interfaces\CDTag.Views.Interfaces.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\IdSharp\IdSharp.Common\IdSharp.Common.csproj">
-      <Project>{1C83FB63-E16E-4380-9DD0-26E1799C417D}</Project>
-      <Name>IdSharp.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CDTag.Controls\CDTag.Controls.csproj">
-      <Project>{3FF588D9-76B6-42FC-9664-39E858A940FE}</Project>
-      <Name>CDTag.Controls</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CDTag.Views.Interfaces\CDTag.Views.Interfaces.csproj">
-      <Project>{B28B82E3-F2AF-455D-A309-C2CE687FD530}</Project>
-      <Name>CDTag.Views.Interfaces</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

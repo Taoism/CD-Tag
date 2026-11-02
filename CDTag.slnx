@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/External/">
+    <Project Path="External/IdSharp/IdSharp.AudioInfo/IdSharp.AudioInfo.csproj" />
+    <Project Path="External/IdSharp/IdSharp.Common/IdSharp.Common.csproj" />
+    <Project Path="External/IdSharp/IdSharp.Tagging/IdSharp.Tagging.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/CDTag.Common.Tests/CDTag.Common.Tests.csproj" />
+    <Project Path="Tests/CDTag.ViewModels.Tests/CDTag.ViewModels.Tests.csproj" />
+  </Folder>
+  <Project Path="CDTag.Common/CDTag.Common.csproj" />
+  <Project Path="CDTag.Controls/CDTag.Controls.csproj" />
+  <Project Path="CDTag.FileBrowser/CDTag.FileBrowser.csproj" />
+  <Project Path="CDTag.Models/CDTag.Models.csproj" />
+  <Project Path="CDTag.ViewModels/CDTag.ViewModels.csproj" />
+  <Project Path="CDTag.Views.Interfaces/CDTag.Views.Interfaces.csproj" />
+  <Project Path="CDTag.Views/CDTag.Views.csproj" />
+  <Project Path="CDTag/CDTag.csproj" />
+</Solution>

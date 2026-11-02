@@ -21,7 +21,7 @@ namespace CDTag.ViewModel.Tests.Profile.EditProfile
         private string _unitTestsProfile3;
         private string _unitTestsNFO;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Setup()
         {
             IoC.ClearAllRegistrations();
@@ -40,7 +40,7 @@ namespace CDTag.ViewModel.Tests.Profile.EditProfile
             DeleteUnitTestsProfile();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void Teardown()
         {
             DeleteUnitTestsProfile();
@@ -241,7 +241,7 @@ namespace CDTag.ViewModel.Tests.Profile.EditProfile
             // Act
 
             // Assert
-            Assert.Fail("Not implemented");
+            Assert.Ignore("Not implemented (upstream placeholder test)");
         }
 
         [Test]
@@ -255,7 +255,7 @@ namespace CDTag.ViewModel.Tests.Profile.EditProfile
             // Act
 
             // Assert
-            Assert.Fail("Not implemented");
+            Assert.Ignore("Not implemented (upstream placeholder test)");
         }
 
         [Test]
@@ -269,7 +269,7 @@ namespace CDTag.ViewModel.Tests.Profile.EditProfile
             // Act
 
             // Assert
-            Assert.Fail("Not implemented");
+            Assert.Ignore("Not implemented (upstream placeholder test)");
         }
 
         [Test]
@@ -283,7 +283,7 @@ namespace CDTag.ViewModel.Tests.Profile.EditProfile
             // Act
 
             // Assert
-            Assert.Fail("Not implemented");
+            Assert.Ignore("Not implemented (upstream placeholder test)");
         }
 
         [Test]
@@ -297,7 +297,7 @@ namespace CDTag.ViewModel.Tests.Profile.EditProfile
             // Act
 
             // Assert
-            Assert.Fail("Not implemented");
+            Assert.Ignore("Not implemented (upstream placeholder test)");
         }
 
         [Test]
@@ -311,7 +311,7 @@ namespace CDTag.ViewModel.Tests.Profile.EditProfile
             // Act
 
             // Assert
-            Assert.Fail("Not implemented");
+            Assert.Ignore("Not implemented (upstream placeholder test)");
         }
     }
 }

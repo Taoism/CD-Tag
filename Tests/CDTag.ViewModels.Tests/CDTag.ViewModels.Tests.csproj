@@ -1,84 +1,25 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{F6829AE6-D46A-4A17-861D-AA68B0240570}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CDTag.ViewModel.Tests</RootNamespace>
     <AssemblyName>CDTag.ViewModel.Tests</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <RootNamespace>CDTag.ViewModel.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="nunit.framework, Version=2.5.10.11092, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\IdSharp\Tests\NUnit\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
-    <Reference Include="System" />
-    <Reference Include="System.Xaml" />
-    <Reference Include="WindowsBase" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="NUnit" Version="4.6.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.3.1" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Profile\EditProfile\EditProfileViewModelTests.cs" />
-    <Compile Include="Profile\NewProfile\NewProfileViewModelTests.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UnitTestDialogService.cs" />
-    <Compile Include="UnitTestDispatcher.cs" />
-    <Compile Include="UnitTestPathService.cs" />
+    <ProjectReference Include="..\..\External\IdSharp\IdSharp.Common\IdSharp.Common.csproj" />
+    <ProjectReference Include="..\..\CDTag.Common\CDTag.Common.csproj" />
+    <ProjectReference Include="..\..\CDTag.Models\CDTag.Models.csproj" />
+    <ProjectReference Include="..\..\CDTag.Views.Interfaces\CDTag.Views.Interfaces.csproj" />
+    <ProjectReference Include="..\..\CDTag.ViewModels\CDTag.ViewModels.csproj" />
   </ItemGroup>
-  <ItemGroup />
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\IdSharp\IdSharp.Common\IdSharp.Common.csproj">
-      <Project>{1C83FB63-E16E-4380-9DD0-26E1799C417D}</Project>
-      <Name>IdSharp.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\CDTag.Common\CDTag.Common.csproj">
-      <Project>{5D4DFAF4-4F2D-4713-9F96-7CAB7759E34C}</Project>
-      <Name>CDTag.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\CDTag.Models\CDTag.Models.csproj">
-      <Project>{24732BDC-95F9-497C-93A9-89634D8C1E06}</Project>
-      <Name>CDTag.Models</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\CDTag.Views.Interfaces\CDTag.Views.Interfaces.csproj">
-      <Project>{B28B82E3-F2AF-455D-A309-C2CE687FD530}</Project>
-      <Name>CDTag.Views.Interfaces</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\CDTag.ViewModels\CDTag.ViewModels.csproj">
-      <Project>{5B90F658-10CD-4829-BA0F-FD8B972733C2}</Project>
-      <Name>CDTag.ViewModels</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

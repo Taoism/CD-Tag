@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-    xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity" 
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors" 
     xmlns:Behavior="clr-namespace:CDTag.FileBrowser.Behavior" 
     xmlns:Converters="clr-namespace:CDTag.FileBrowser.Converters"
     xmlns:dg="clr-namespace:CDTag.Common.Wpf;assembly=CDTag.Common"

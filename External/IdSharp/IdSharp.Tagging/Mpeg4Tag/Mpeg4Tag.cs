@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Text;
-using System.Windows.Forms;
 using IdSharp.Common.Utils;
 using IdSharp.Tagging.ID3v1;
 
@@ -16,7 +15,7 @@ namespace IdSharp.Tagging.Mpeg4
     {
         static Mpeg4Tag()
         {
-            MessageBox.Show("WARNING: Mpeg4Tag class is KNOWN to NOT WORK.");
+            System.Diagnostics.Debug.WriteLine("WARNING: Mpeg4Tag class is KNOWN to NOT WORK.");
         }
 
         // MAJOR TODO: REMOVES ELEMENTS IT DOESN'T KNOW ABOUT. BAD.

@@ -1,0 +1,18 @@
+<Project>
+
+  <!-- Build settings for the vendored IdSharp libraries (git subtree of judwhite/IdSharp).
+       This file stops the CD-Tag root Directory.Build.props (WPF settings) from applying here. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- Keep upstream's AssemblyInfo.cs (it uses wildcard versions, which need non-deterministic builds). -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Deterministic>false</Deterministic>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;CS1572;CS1573;CS1574;CS1587;CA1416;SYSLIB0011</NoWarn>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+</Project>
