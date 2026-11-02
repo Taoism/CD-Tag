@@ -281,6 +281,9 @@ namespace CDTag.Model.Tag
             set { Set("IsVariousArtists", value); }
         }
 
+        /// <summary>Cover image bytes chosen in Tag Album (e.g. from an online lookup); null = keep the existing cover.</summary>
+        public byte[] CoverBytes { get; set; }
+
         /// <summary>The folder name the profile gives this album (preview; set by Tag Album).</summary>
         public string NewFolderName
         {

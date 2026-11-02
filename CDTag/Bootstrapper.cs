@@ -71,6 +71,7 @@ namespace CDTag
             IoC.RegisterType<INewProfileWindow, NewProfileWindow>();
             IoC.RegisterType<IChooseProfileWindow, ChooseProfileWindow>();
             IoC.RegisterType<CDTag.Views.Interfaces.Tag.TagAlbum.IPreviewNfoWindow, CDTag.Views.Tag.TagAlbum.PreviewNfoWindow>();
+            IoC.RegisterType<CDTag.Views.Interfaces.Tag.TagAlbum.ILookupWindow, CDTag.Views.Tag.TagAlbum.LookupWindow>();
             IoC.RegisterType<ISplitCueWindow, SplitCueWindow>();
             IoC.RegisterType<IEncodingInspectorWindow, EncodingInspectorWindow>();
             IoC.RegisterType<IOptionsWindow, OptionsWindow>();
@@ -87,6 +88,7 @@ namespace CDTag
             IoC.RegisterType<INewProfileViewModel, NewProfileViewModel>();
             IoC.RegisterType<IChooseProfileViewModel, ChooseProfileViewModel>();
             IoC.RegisterType<CDTag.ViewModels.Tag.TagAlbum.IPreviewNfoViewModel, CDTag.ViewModels.Tag.TagAlbum.PreviewNfoViewModel>();
+            IoC.RegisterType<CDTag.ViewModels.Tag.TagAlbum.ILookupViewModel, CDTag.ViewModels.Tag.TagAlbum.LookupViewModel>();
             IoC.RegisterType<ISplitCueViewModel, SplitCueViewModel>();
             IoC.RegisterType<IEncodingInspectorViewModel, EncodingInspectorViewModel>();
             IoC.RegisterType<IOptionsViewModel, OptionsViewModel>();

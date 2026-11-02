@@ -171,7 +171,7 @@
                 <ComboBox Grid.Row="2" Grid.Column="4" Margin="0,2" VerticalAlignment="Center" IsEditable="True" ItemsSource="{Binding Genres}" Text="{Binding Album.Genre, UpdateSourceTrigger=PropertyChanged}" />
                 <StackPanel Grid.Row="3" Grid.Column="3" Grid.ColumnSpan="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <CheckBox Content="Show all genres" IsChecked="{Binding ShowAllGenres}" Margin="0,4,16,4" />
-                    <Button Content="freedb" Padding="8,1" IsEnabled="False" ToolTip="Online lookup is not available yet" ToolTipService.ShowOnDisabled="True" />
+                    <Button Content="_Look up" Padding="10,1" Command="{Binding LookupCommand}" ToolTip="Look up this album on MusicBrainz (track titles, date, label, catalog #, cover)" />
                 </StackPanel>
 
                 <!-- Cover -->

@@ -9,6 +9,7 @@ using CDTag.Common;
 using CDTag.Common.ApplicationServices;
 using CDTag.Common.Events;
 using CDTag.Common.Mvvm;
+using CDTag.Model.Lookup;
 using CDTag.Model.Profile;
 using CDTag.Model.Tag;
 using CDTag.Views.Interfaces.Tag.TagAlbum;
@@ -46,6 +47,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             _previewNFOCommand = new DelegateCommand(PreviewNFO, () => Album != null && Profile != null);
             _previousCommand = new DelegateCommand(() => Page = ReleasePage, () => Page == AlbumPage && HasReleasePage);
             _nextCommand = new DelegateCommand(() => Page = AlbumPage, () => Page == ReleasePage);
+            LookupCommand = new DelegateCommand(Lookup, () => Album != null);
 
             RippingTools = new ObservableCollection<string>(new[] { "EAC", "XLD", "dBpoweramp", "CUERipper", "whipper", "CUETools", "foobar2000" });
             Encoders = new ObservableCollection<string>(new[] { "LAME 3.100 -V0", "LAME 3.100 -b 320", "FLAC 1.4.3", "FLAC 1.5.0" });
@@ -171,6 +173,37 @@ namespace CDTag.ViewModels.Tag.TagAlbum
                 CommandManager.InvalidateRequerySuggested();
             }
         }
+
+        /// <summary>Looks the album up on MusicBrainz and fills album, release info, track titles and cover.</summary>
+        private void Lookup()
+        {
+            ILookupWindow window = IoC.Resolve<ILookupWindow>();
+            var lookup = (ILookupViewModel)window.DataContext;
+            lookup.Artist = Album.Artist;
+            lookup.Album = Album.AlbumTitle;
+            lookup.TrackCount = Album.Tracks.Count;
+            lookup.DiscCount = new AlbumNamer(Profile ?? new UserProfile(), Album, Release).Discs;
+
+            if (ShowWindow(window) != true || lookup.SelectedDetails == null)
+                return;
+
+            int applied = LookupApplier.Apply(lookup.SelectedDetails, Album, Release, Sources);
+            if (lookup.Cover != null)
+            {
+                Album.CoverBytes = lookup.Cover;
+                Album.Picture = new Picture(lookup.Cover, IdSharp.Tagging.ID3v2.PictureType.CoverFront, "").ImageSource;
+            }
+            UpdateNames();
+
+            if (applied < Album.Tracks.Count)
+            {
+                MessageBox(string.Format("{0} of {1} tracks were matched to the release ({2} tracks). Check the disc and track numbers of the others.",
+                                         applied, Album.Tracks.Count, lookup.SelectedDetails.Tracks.Count),
+                           "Look up", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            }
+        }
+
+        public ICommand LookupCommand { get; private set; }
 
         private void PreviewNFO()
         {

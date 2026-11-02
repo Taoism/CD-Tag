@@ -14,6 +14,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         ICommand PreviewNFOCommand { get; }
         ICommand PreviousCommand { get; }
         ICommand NextCommand { get; }
+        ICommand LookupCommand { get; }
 
         /// <summary>Loads the album in <paramref name="path"/> to be tagged with <paramref name="profile"/>.</summary>
         void Load(string path, CDTag.Model.Profile.UserProfile profile);
