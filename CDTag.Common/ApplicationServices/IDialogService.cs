@@ -45,5 +45,8 @@ namespace CDTag.Common.ApplicationServices
 
         /// <summary>Shows a folder picker. <paramref name="owner"/> may be null (the active window is used).</summary>
         bool? ShowFolderDialog(string title, string initialFolder, Window owner, out string folder);
+
+        /// <summary>Open dialog allowing several files. <paramref name="owner"/> may be null (the active window is used).</summary>
+        bool? ShowOpenFilesDialog(string title, string filter, Window owner, out string[] fileNames);
     }
 }

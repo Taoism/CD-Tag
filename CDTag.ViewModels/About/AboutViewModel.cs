@@ -88,7 +88,7 @@ namespace CDTag.ViewModels.About
         {
             try
             {
-                Process.Start(uri.AbsoluteUri);
+                Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
             }
             catch (Win32Exception ex)
             {

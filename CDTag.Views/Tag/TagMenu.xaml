@@ -1,22 +1,19 @@
-﻿<view:ViewBase 
+﻿<view:ViewBase
     x:Class="CDTag.Views.Tag.TagMenu"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
     xmlns:view="clr-namespace:CDTag.Views"
     xmlns:theming="clr-namespace:CDTag.Views.Theming"
-    mc:Ignorable="d" 
-    d:DesignHeight="300" 
-    d:DesignWidth="300"
 >
-    <Grid>        
-        <!-- TODO: Localize text -->
+    <!--
+        Main menu. Like CD-Tag 2.x, the middle menus depend on the tab:
+        Rip (tab 0): Rip   |   Convert Audio (tab 1): Encode   |   Tag/Rename (tab 2): View, Favorites, Tag
+    -->
+    <Grid>
         <Menu x:Name="Menu">
             <MenuItem Header="_File">
                 <MenuItem Header="_New profile" Command="{Binding NewProfileCommand}" InputGestureText="Ctrl+N" />
                 <MenuItem Header="_Edit profile" Command="{Binding EditProfileCommand}" InputGestureText="Ctrl+P" />
-                <MenuItem Header="Active _profile" ItemsSource="{Binding ProfileCollection}" />
                 <Separator />
                 <MenuItem Header="_Options" Command="{Binding OptionsCommand}" InputGestureText="Ctrl+O" />
                 <Separator />
@@ -33,7 +30,33 @@
                 <MenuItem Header="Select _all" Command="{Binding Path=DirectoryViewModel.SelectAllCommand}" InputGestureText="Ctrl+A" />
                 <MenuItem Header="_Invert selection" Command="{Binding Path=DirectoryViewModel.InvertSelectionCommand}" />
             </MenuItem>
-            <MenuItem Header="_View">
+
+            <!-- Rip tab -->
+            <MenuItem x:Name="RipMenu" Header="_Rip" Visibility="{Binding SelectedTabIndex, Converter={StaticResource IsEqualToVisibilityConverter}, ConverterParameter=0}">
+                <MenuItem Header="_Find CD" Command="{Binding FindCDCommand}" />
+                <MenuItem Header="_Rip CD" Command="{Binding RipCDCommand}" />
+                <Separator />
+                <MenuItem Header="_Drive..." Command="{Binding DriveCommand}" />
+                <MenuItem Header="_Options..." Command="{Binding OptionsCommand}" />
+            </MenuItem>
+
+            <!-- Convert Audio tab -->
+            <MenuItem x:Name="EncodeMenu" Header="E_ncode" Visibility="{Binding SelectedTabIndex, Converter={StaticResource IsEqualToVisibilityConverter}, ConverterParameter=1}">
+                <MenuItem Header="_Add files..." Command="{Binding AddCommand}" />
+                <MenuItem Header="_Remove" Command="{Binding RemoveCommand}" />
+                <MenuItem Header="_Clear" Command="{Binding ClearCommand}" />
+                <Separator />
+                <MenuItem Header="Move _up" Command="{Binding MoveUpCommand}" />
+                <MenuItem Header="Move _down" Command="{Binding MoveDownCommand}" />
+                <Separator />
+                <MenuItem Header="_Encode" Command="{Binding EncodeCommand}" />
+                <MenuItem Header="De_code" Command="{Binding DecodeCommand}" />
+                <Separator />
+                <MenuItem Header="_Options..." Command="{Binding OptionsCommand}" />
+            </MenuItem>
+
+            <!-- Tag/Rename tab -->
+            <MenuItem Header="_View" Visibility="{Binding SelectedTabIndex, Converter={StaticResource IsEqualToVisibilityConverter}, ConverterParameter=2}">
                 <MenuItem Header="Status _bar" IsCheckable="True" IsChecked="{Binding IsShowStatusBarChecked, Mode=TwoWay}" />
                 <MenuItem Header="_Navigation pane" IsCheckable="True" IsChecked="{Binding IsShowNavigationPaneChecked, Mode=TwoWay}" />
                 <Separator />
@@ -46,24 +69,33 @@
                 <Separator />
                 <MenuItem Header="_Refresh" Command="{Binding RefreshCommand}" InputGestureText="F5" />
             </MenuItem>
-            <MenuItem Header="_Tools">
+            <MenuItem x:Name="FavoritesMenuItem" Header="F_avorites" Visibility="{Binding SelectedTabIndex, Converter={StaticResource IsEqualToVisibilityConverter}, ConverterParameter=2}">
+                <!-- Filled when opened (FavoritesMenu.Fill); the placeholder makes it a submenu. -->
+                <MenuItem Header="(empty)" IsEnabled="False" />
+            </MenuItem>
+            <MenuItem Header="_Tag" Visibility="{Binding SelectedTabIndex, Converter={StaticResource IsEqualToVisibilityConverter}, ConverterParameter=2}">
                 <MenuItem Header="Tag _album" Command="{Binding TagAlbumCommand}" InputGestureText="Ctrl+T" />
-                <MenuItem Header="_Edit tags" Command="{Binding EditTagsCommand}" InputGestureText="Alt+3" />
+                <MenuItem Header="_Show tags" Command="{Binding EditTagsCommand}" InputGestureText="Alt+3" />
                 <MenuItem Header="_Mass tag" Command="{Binding MassTagCommand}" InputGestureText="Ctrl+M" />
                 <Separator />
                 <MenuItem Header="_Split CUE sheet" Command="{Binding SplitCueSheetCommand}" InputGestureText="Ctrl+S" />
                 <MenuItem Header="Encoding _inspector" Command="{Binding EncodingInspectorCommand}" InputGestureText="Ctrl+I" />
-            </MenuItem>
-            <MenuItem Header="_Checksum">
-                <MenuItem Header="_Create checksum" Command="{Binding CreateChecksumCommand}" InputGestureText="Ctrl+K" />
+                <Separator />
+                <MenuItem Header="_Create checksum (SFV/MD5)" Command="{Binding CreateChecksumCommand}" InputGestureText="Ctrl+K" />
                 <MenuItem Header="_Verify checksum" Command="{Binding VerifyChecksumCommand}" InputGestureText="Ctrl+L" />
                 <MenuItem Header="Verify _EAC log file" Command="{Binding VerifyEACLogCommand}" InputGestureText="Ctrl+E" />
             </MenuItem>
+
+            <MenuItem Header="_Window">
+                <MenuItem Header="_Rip" Command="{Binding ShowRipCommand}" InputGestureText="Ctrl+1" />
+                <MenuItem Header="_Convert Audio" Command="{Binding ShowConvertAudioCommand}" InputGestureText="Ctrl+2" />
+                <MenuItem Header="_Tag/Rename" Command="{Binding ShowTagRenameCommand}" InputGestureText="Ctrl+3" />
+            </MenuItem>
             <MenuItem Header="_Help">
-                <MenuItem Header="_Help" Command="{Binding HelpCommand}" InputGestureText="F1" />
+                <MenuItem Header="_Help" Command="{Binding ShowHelpCommand}" InputGestureText="F1" />
                 <Separator />
                 <MenuItem Header="Home _page" Command="{Binding HomePageCommand}" />
-                <MenuItem Header="Support _forum" Command="{Binding SupportForumCommand}" />
+                <MenuItem Header="Report a _problem" Command="{Binding SupportForumCommand}" />
                 <Separator />
                 <MenuItem Header="_About CD-Tag" Command="{Binding AboutCommand}" InputGestureText="Ctrl+F1" />
             </MenuItem>

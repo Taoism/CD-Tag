@@ -58,6 +58,9 @@ namespace CDTag
             IoC.RegisterInstance<IPathService>(new PathService());
             IoC.RegisterInstance<IThemeService>(ThemeManager.Instance);
             IoC.RegisterInstance<ITagViewModel>(IoC.Resolve<TagViewModel>());
+            // One instance per tab, shared by the tab view and its menu.
+            IoC.RegisterInstance<CDTag.ViewModels.Rip.RipViewModel>(IoC.Resolve<CDTag.ViewModels.Rip.RipViewModel>());
+            IoC.RegisterInstance<CDTag.ViewModels.ConvertAudio.ConvertAudioViewModel>(IoC.Resolve<CDTag.ViewModels.ConvertAudio.ConvertAudioViewModel>());
 
             // Views
             IoC.RegisterType<IAboutWindow, AboutWindow>();

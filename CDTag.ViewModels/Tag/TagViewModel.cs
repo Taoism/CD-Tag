@@ -31,6 +31,8 @@ namespace CDTag.ViewModels.Tag
         public TagViewModel(IEventAggregator eventAggregator)
             : base(eventAggregator)
         {
+            InitializeMainWindow();
+
             AboutCommand = new DelegateCommand(() => ShowWindow<IAboutWindow>());
             ExitCommand = new DelegateCommand(() => Application.Current.MainWindow.Close());
             TagAlbumCommand = new DelegateCommand(TagAlbum);

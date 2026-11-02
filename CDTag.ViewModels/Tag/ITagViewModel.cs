@@ -35,6 +35,17 @@ namespace CDTag.ViewModels.Tag
         ICommand HomePageCommand { get; }
         ICommand SupportForumCommand { get; }
 
+        /// <summary>Main window tab: 0 = Rip, 1 = Convert Audio, 2 = Tag/Rename.</summary>
+        int SelectedTabIndex { get; set; }
+        ICommand ShowRipCommand { get; }
+        ICommand ShowConvertAudioCommand { get; }
+        ICommand ShowTagRenameCommand { get; }
+
+        System.Collections.ObjectModel.ObservableCollection<string> Favorites { get; }
+        ICommand AddFavoriteCommand { get; }
+        ICommand RemoveFavoriteCommand { get; }
+        ICommand GoToFavoriteCommand { get; }
+
         bool IsShowStatusBarChecked { get; set; }
         bool IsShowNavigationPaneChecked { get; set; }
     }

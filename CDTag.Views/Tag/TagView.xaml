@@ -7,6 +7,8 @@
     xmlns:View="clr-namespace:CDTag.Views" 
     xmlns:File="clr-namespace:CDTag.FileBrowser.View;assembly=CDTag.FileBrowser"
     xmlns:Tag="clr-namespace:CDTag.Views.Tag" 
+    xmlns:Rip="clr-namespace:CDTag.Views.Rip"
+    xmlns:Convert="clr-namespace:CDTag.Views.ConvertAudio"
     mc:Ignorable="d" 
     d:DesignHeight="300" 
     d:DesignWidth="300"
@@ -19,6 +21,18 @@
         </Grid.RowDefinitions>
 
         <Tag:TagMenu x:Name="MainMenu" Grid.Row="0" />
-        <File:FileExplorer x:Name="FileExplorer" Grid.Row="1" />
+
+        <!-- Rip / Convert Audio / Tag/Rename, as in CD-Tag 2.x -->
+        <TabControl Grid.Row="1" Style="{DynamicResource MainTabControl}" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+            <TabItem Header="Rip">
+                <Rip:RipView />
+            </TabItem>
+            <TabItem Header="Convert Audio">
+                <Convert:ConvertAudioView />
+            </TabItem>
+            <TabItem Header="Tag/Rename">
+                <File:FileExplorer x:Name="FileExplorer" />
+            </TabItem>
+        </TabControl>
     </Grid>
 </View:ViewBase>

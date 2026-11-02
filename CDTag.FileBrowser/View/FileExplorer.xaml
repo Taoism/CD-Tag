@@ -23,21 +23,22 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.ColumnSpan="3">
+        <!-- Toolbar (supplied by the host, e.g. the Tag/Rename toolbar) above the address bar, as in CD-Tag 2.x -->
+        <ContentControl x:Name="ToolbarContentControl" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" HorizontalContentAlignment="Stretch" Focusable="False" IsTabStop="False" />
+
+        <Grid Grid.Row="1" Grid.ColumnSpan="3">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="71.28125" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="33" />
-                <RowDefinition Height="4" />
+                <RowDefinition Height="30" />
             </Grid.RowDefinitions>
-            
-            <View:Navigation Grid.Row="0" Grid.Column="0" Margin="4" />
-            <View:DirectoryButtons Grid.Row="0" Grid.Column="1" Margin="0,0,4,0" VerticalAlignment="Center" />
-        </Grid>
 
-        <ContentControl x:Name="ToolbarContentControl" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" HorizontalContentAlignment="Stretch" Focusable="False" IsTabStop="False" />
+            <!-- Round back/forward buttons; hidden when the host toolbar provides Back/Forward/Up -->
+            <View:Navigation x:Name="NavigationButtons" Grid.Row="0" Grid.Column="0" Width="63" Margin="4" />
+            <View:DirectoryButtons Grid.Row="0" Grid.Column="1" Margin="4,0,4,0" VerticalAlignment="Center" />
+        </Grid>
         
         <View:FolderTreeView x:Name="FolderTreeView" Grid.Row="2" Grid.Column="0" />
         <GridSplitter x:Name="gridSplitter" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" />

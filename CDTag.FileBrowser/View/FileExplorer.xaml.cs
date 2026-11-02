@@ -52,6 +52,13 @@ namespace CDTag.FileBrowser.View
 
         /// <summary>Gets or sets the toolbar.</summary>
         /// <value>The toolbar.</value>
+        /// <summary>Shows or hides the round back/forward buttons in front of the address bar.</summary>
+        public bool ShowNavigationButtons
+        {
+            get { return NavigationButtons.Visibility == Visibility.Visible; }
+            set { NavigationButtons.Visibility = value ? Visibility.Visible : Visibility.Collapsed; }
+        }
+
         public object Toolbar
         {
             get { return ToolbarContentControl.Content; }

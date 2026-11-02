@@ -302,4 +302,64 @@
         </Setter>
     </Style>
 
+    <!-- Icon font: Segoe Fluent Icons (Windows 11), falling back to Segoe MDL2 Assets (Windows 10). -->
+    <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+    <!--
+        CD-Tag 2.x style toolbar button: icon above a short label.
+        Tag = icon glyph (a character of IconFont), Content = label.
+    -->
+    <Style x:Key="IconToolbarButton" TargetType="{x:Type ButtonBase}">
+        <Setter Property="Margin" Value="1,2" />
+        <Setter Property="Padding" Value="6,3,6,2" />
+        <Setter Property="MinWidth" Value="58" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Foreground" Value="{DynamicResource Theme.Foreground}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ButtonBase}">
+                    <Grid SnapsToDevicePixels="True" Background="Transparent">
+                        <Border x:Name="HoverLayer" Opacity="0" CornerRadius="3" BorderThickness="1"
+                                Background="{DynamicResource Theme.ToolbarButtonHoverBackground}"
+                                BorderBrush="{DynamicResource Theme.ToolbarButtonHoverBorder}" />
+                        <Border x:Name="PressedLayer" Opacity="0" CornerRadius="3" BorderThickness="1"
+                                Background="{DynamicResource Theme.ToolbarButtonPressedBackground}"
+                                BorderBrush="{DynamicResource Theme.ToolbarButtonPressedBorder}" />
+                        <StackPanel x:Name="Body" Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock x:Name="Icon" Text="{TemplateBinding Tag}" FontFamily="{StaticResource IconFont}" FontSize="20"
+                                       HorizontalAlignment="Center" Foreground="{DynamicResource Theme.Accent}" />
+                            <ContentPresenter Margin="0,3,0,0" HorizontalAlignment="Center" RecognizesAccessKey="True"
+                                              TextElement.FontFamily="Segoe UI" TextElement.FontSize="11.5" />
+                        </StackPanel>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="HoverLayer" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="HoverLayer" Property="Opacity" Value="0" />
+                            <Setter TargetName="PressedLayer" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <Trigger Property="ToggleButton.IsChecked" Value="True">
+                            <Setter TargetName="PressedLayer" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Body" Property="Opacity" Value="0.4" />
+                            <Setter TargetName="Icon" Property="Foreground" Value="{DynamicResource Theme.ForegroundDisabled}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Vertical divider between toolbar button groups -->
+    <Style x:Key="ToolbarSeparator" TargetType="{x:Type Border}">
+        <Setter Property="Width" Value="1" />
+        <Setter Property="Margin" Value="5,8" />
+        <Setter Property="Background" Value="{DynamicResource Theme.ToolbarBorder}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
 </ResourceDictionary>

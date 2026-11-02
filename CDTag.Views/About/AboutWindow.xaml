@@ -64,26 +64,24 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Home page" />
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Support forum" />
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Email" />
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Toll free" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Report a problem" />
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Original author" />
 
                 <TextBlock Grid.Row="0" Grid.Column="1">
-					<Hyperlink NavigateUri="http://www.cdtag.com" Command="{Binding NavigateCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=NavigateUri}">
-						http://www.cdtag.com
+					<Hyperlink NavigateUri="https://github.com/Taoism/CD-Tag" Command="{Binding NavigateCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=NavigateUri}">
+						github.com/Taoism/CD-Tag
 					</Hyperlink>
                 </TextBlock>
                 <TextBlock Grid.Row="1" Grid.Column="1">
-					<Hyperlink NavigateUri="https://www.cdtag.com/forum" Command="{Binding NavigateCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=NavigateUri}">
-						https://www.cdtag.com/forum
+					<Hyperlink NavigateUri="https://github.com/Taoism/CD-Tag/issues" Command="{Binding NavigateCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=NavigateUri}">
+						github.com/Taoism/CD-Tag/issues
 					</Hyperlink>
                 </TextBlock>
                 <TextBlock Grid.Row="2" Grid.Column="1">
-					<Hyperlink NavigateUri="mailto:support@cdtag.com" Command="{Binding NavigateCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=NavigateUri}">
-						support@cdtag.com
+					<Hyperlink NavigateUri="https://github.com/judwhite/CD-Tag" Command="{Binding NavigateCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=NavigateUri}">
+						Jud White (github.com/judwhite/CD-Tag)
 					</Hyperlink>
                 </TextBlock>
-                <TextBlock Grid.Row="3" Grid.Column="1" Text="(877) 316-7975 (US &amp; Canada)" />
 
             </Grid>
 

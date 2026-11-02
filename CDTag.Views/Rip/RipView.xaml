@@ -1,0 +1,75 @@
+<UserControl
+    x:Class="CDTag.Views.Rip.RipView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="{DynamicResource Theme.ToolbarBackground}" BorderBrush="{DynamicResource Theme.ToolbarBorder}" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" Margin="4,0">
+                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE721;" Content="Find CD" Command="{Binding FindCDCommand}" ToolTip="Look up the disc (not available yet)" ToolTipService.ShowOnDisabled="True" />
+                <Border Style="{DynamicResource ToolbarSeparator}" />
+                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE713;" Content="Options" Command="{Binding OptionsCommand}" ToolTip="Rip options (not available yet)" ToolTipService.ShowOnDisabled="True" />
+                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xEDA2;" Content="Drive" Command="{Binding DriveCommand}" ToolTip="Drive settings (not available yet)" ToolTipService.ShowOnDisabled="True" />
+                <Border Style="{DynamicResource ToolbarSeparator}" />
+                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE896;" Content="Rip CD" Command="{Binding RipCDCommand}" ToolTip="Rip the disc (not available yet)" ToolTipService.ShowOnDisabled="True" />
+                <Border Style="{DynamicResource ToolbarSeparator}" />
+                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE897;" Content="Help" Command="{Binding DataContext.ShowHelpCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+            </StackPanel>
+        </Border>
+
+        <!-- Disc / album -->
+        <Grid Grid.Row="1" Margin="8,8,8,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Drive" VerticalAlignment="Center" Margin="0,2,12,2" />
+            <ComboBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,2" ItemsSource="{Binding Drives}" SelectedItem="{Binding SelectedDrive, Mode=TwoWay}" />
+
+            <TextBlock Grid.Row="1" Text="Artist" VerticalAlignment="Center" Margin="0,2,12,2" />
+            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,2" Text="{Binding Artist, Mode=TwoWay}" />
+            <TextBlock Grid.Row="1" Grid.Column="2" Text="Year" VerticalAlignment="Center" Margin="16,2,12,2" />
+            <TextBox Grid.Row="1" Grid.Column="3" Margin="0,2" Text="{Binding Year, Mode=TwoWay}" />
+
+            <TextBlock Grid.Row="2" Text="Album" VerticalAlignment="Center" Margin="0,2,12,2" />
+            <TextBox Grid.Row="2" Grid.Column="1" Margin="0,2" Text="{Binding Album, Mode=TwoWay}" />
+            <TextBlock Grid.Row="2" Grid.Column="2" Text="Genre" VerticalAlignment="Center" Margin="16,2,12,2" />
+            <ComboBox Grid.Row="2" Grid.Column="3" Margin="0,2" IsEditable="True" ItemsSource="{Binding Genres}" Text="{Binding Genre, Mode=TwoWay}" />
+
+            <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Content="Various Artists" Margin="0,6,0,4" IsChecked="{Binding IsVariousArtists, Mode=TwoWay}" />
+
+            <!-- Cover -->
+            <Border Grid.Column="4" Grid.RowSpan="4" Width="100" Height="100" Margin="12,2,0,2" VerticalAlignment="Top"
+                    BorderThickness="1" BorderBrush="{DynamicResource Theme.PaneBorder}" Background="{DynamicResource Theme.PaneBackground}" />
+        </Grid>
+
+        <!-- Tracks -->
+        <DataGrid Grid.Row="2" Margin="8" ItemsSource="{Binding Tracks}" AutoGenerateColumns="False" IsReadOnly="True"
+                  HeadersVisibility="Column" GridLinesVisibility="None" CanUserAddRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Song" Binding="{Binding Song}" Width="*" />
+                <DataGridTextColumn Header="Track" Binding="{Binding Track}" Width="60" />
+                <DataGridTextColumn Header="Start" Binding="{Binding Start}" Width="70" />
+                <DataGridTextColumn Header="Length" Binding="{Binding Length}" Width="70" />
+                <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="70" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

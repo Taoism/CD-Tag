@@ -17,23 +17,34 @@ namespace CDTag.FileBrowser.Behavior
             AssociatedObject.Loaded += AssociatedObject_Loaded;
         }
 
+        /// <summary>Called when the behavior is detached.</summary>
+        protected override void OnDetaching()
+        {
+            AssociatedObject.Loaded -= AssociatedObject_Loaded;
+            base.OnDetaching();
+        }
+
         private void AssociatedObject_Loaded(object sender, RoutedEventArgs e)
         {
-            DependencyObject dep = AssociatedObject;
+            // Loaded fires again whenever the grid is re-shown (e.g. switching main-window tabs);
+            // the work only needs doing once.
+            AssociatedObject.Loaded -= AssociatedObject_Loaded;
 
-            while (!(dep is Button))
+            DependencyObject dep = AssociatedObject;
+            while (dep != null && !(dep is Button))
             {
-                dep = VisualTreeHelper.GetChild(dep, 0);
+                dep = VisualTreeHelper.GetChildrenCount(dep) > 0 ? VisualTreeHelper.GetChild(dep, 0) : null;
             }
 
-            Button button = (Button)dep;
-            
-            // Note: This clears ApplicationCommands.SelectAll, be careful reusing this code
-            RoutedUICommand routedUICommand = (RoutedUICommand)button.Command;
-            routedUICommand.InputGestures.Clear();
-            button.Command = null;
+            Button button = dep as Button;
+            if (button == null)
+                return;
 
-            base.OnAttached();
+            // Note: This clears ApplicationCommands.SelectAll, be careful reusing this code
+            RoutedUICommand routedUICommand = button.Command as RoutedUICommand;
+            if (routedUICommand != null)
+                routedUICommand.InputGestures.Clear();
+            button.Command = null;
         }
     }
 }

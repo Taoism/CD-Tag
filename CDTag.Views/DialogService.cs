@@ -82,6 +82,17 @@ namespace CDTag.Views
             IoC.Resolve<IEventAggregator>().Publish<CloseAddressTextBoxEvent>(null);
         }
 
+        public bool? ShowOpenFilesDialog(string title, string filter, Window owner, out string[] fileNames)
+        {
+            if (owner == null && Application.Current != null)
+                owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
+
+            var dialog = new OpenFileDialog { Title = title, Filter = filter, Multiselect = true };
+            bool? result = owner != null ? dialog.ShowDialog(owner) : dialog.ShowDialog();
+            fileNames = result == true ? dialog.FileNames : null;
+            return result;
+        }
+
         public bool? ShowFolderDialog(string title, string initialFolder, Window owner, out string folder)
         {
             if (owner == null && Application.Current != null)

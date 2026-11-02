@@ -29,6 +29,7 @@ namespace CDTag.Views.Tag
 
             _tagToolbar = IoC.Resolve<TagToolbar>();
             FileExplorer.Toolbar = _tagToolbar;
+            FileExplorer.ShowNavigationButtons = false; // Back/Forward/Up are on the toolbar
             FileExplorer.PreviewMouseDown += FileExplorer_PreviewMouseDown;
 
             // TODO: Move to ViewModel
