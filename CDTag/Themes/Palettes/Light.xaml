@@ -1,0 +1,224 @@
+<!--
+    Light palette. Every themed brush in CD-Tag is looked up by key with DynamicResource,
+    so swapping this dictionary for Dark.xaml re-colours the running app.
+    Keep the key set identical in both palettes.
+-->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+>
+    <!-- Window / text -->
+    <LinearGradientBrush x:Key="WindowBackground" StartPoint="0.5,0" EndPoint="0.5,1">
+        <GradientStop Color="#FFF5F9FD" Offset="0" />
+        <GradientStop Color="#FFDDE8F6" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="AboutWindowBackground" StartPoint="0.5,0" EndPoint="0.5,1">
+        <GradientStop Color="#FFD1D2DA" Offset="0" />
+        <GradientStop Color="#FFBFCDE8" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.Foreground" Color="#FF1B1B1B" />
+    <SolidColorBrush x:Key="Theme.ForegroundSecondary" Color="#FF5E5E5E" />
+    <SolidColorBrush x:Key="Theme.ForegroundDisabled" Color="#FF9A9A9A" />
+    <SolidColorBrush x:Key="Theme.Accent" Color="#FF3C7FB1" />
+    <SolidColorBrush x:Key="Theme.AccentForeground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="Theme.Link" Color="#FF0066CC" />
+    <SolidColorBrush x:Key="Theme.Divider" Color="#FFCCCCCC" />
+    <SolidColorBrush x:Key="Theme.FocusVisual" Color="#FF3C7FB1" />
+
+    <!-- Panes (file list, folder tree, content areas) -->
+    <SolidColorBrush x:Key="Theme.PaneBackground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="Theme.PaneBorder" Color="#FF8E9DAF" />
+    <SolidColorBrush x:Key="Theme.PanelBackground" Color="#FFF4F7FB" />
+
+    <!-- List / tree rows -->
+    <LinearGradientBrush x:Key="Theme.RowHoverBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Offset="0" Color="#FFFAFBFD" />
+        <GradientStop Offset="1" Color="#FFEBF3FD" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.RowHoverBorder" Color="#FFB8D6FB" />
+    <LinearGradientBrush x:Key="Theme.RowSelectedBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Offset="0" Color="#FFDCEBFC" />
+        <GradientStop Offset="1" Color="#FFC1DBFC" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.RowSelectedBorder" Color="#FF7DA2CE" />
+    <LinearGradientBrush x:Key="Theme.RowSelectedInactiveBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Offset="0" Color="#FFF8F8F8" />
+        <GradientStop Offset="1" Color="#FFE5E5E5" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.RowSelectedInactiveBorder" Color="#FFD9D9D9" />
+    <SolidColorBrush x:Key="Theme.RowSelectedForeground" Color="#FF000000" />
+
+    <!-- Column headers -->
+    <SolidColorBrush x:Key="Theme.HeaderBackground" Color="#FFFFFFFF" />
+    <LinearGradientBrush x:Key="Theme.HeaderHoverBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Offset="0" Color="#FFE3F7FF" />
+        <GradientStop Offset="1" Color="#FFBDEDFF" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.HeaderPressedBackground" Color="#FFBCE4F9" />
+    <SolidColorBrush x:Key="Theme.HeaderSeparator" Color="#FFE5E5E5" />
+    <SolidColorBrush x:Key="Theme.HeaderForeground" Color="#FF4C607A" />
+    <SolidColorBrush x:Key="Theme.HeaderGlyph" Color="#FF8E9DAF" />
+
+    <!-- Tree expander glyph -->
+    <SolidColorBrush x:Key="Theme.Glyph" Color="#FF989898" />
+    <SolidColorBrush x:Key="Theme.GlyphHover" Color="#FF1BBBFA" />
+    <SolidColorBrush x:Key="Theme.GlyphChecked" Color="#FF262626" />
+    <SolidColorBrush x:Key="Theme.GlyphCheckedFill" Color="#FF595959" />
+
+    <!-- Toolbar strip + flat toolbar buttons -->
+    <LinearGradientBrush x:Key="Theme.ToolbarBackground" StartPoint="0.5,0" EndPoint="0.5,1">
+        <GradientStop Color="#FFFDFEFF" Offset="0" />
+        <GradientStop Color="#FFE6F0FA" Offset="0.50" />
+        <GradientStop Color="#FFDCE6F4" Offset="0.51" />
+        <GradientStop Color="#FFDDE9F7" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.ToolbarBorder" Color="#FFBBCADB" />
+    <LinearGradientBrush x:Key="Theme.ToolbarButtonHoverBackground" StartPoint="0.5,0" EndPoint="0.5,1">
+        <GradientStop Color="#FFF8FBFE" Offset="0" />
+        <GradientStop Color="#FFEDF2FA" Offset="0.5" />
+        <GradientStop Color="#FFD7E4F4" Offset="0.51" />
+        <GradientStop Color="#FFC1D2E8" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.ToolbarButtonHoverBorder" Color="#4DBBCADB" />
+    <LinearGradientBrush x:Key="Theme.ToolbarButtonPressedBackground" StartPoint="0.5,0" EndPoint="0.5,1">
+        <GradientStop Color="#FFC9D4E4" Offset="0" />
+        <GradientStop Color="#FFD8E4F1" Offset="0.5" />
+        <GradientStop Color="#FFCFDBEC" Offset="0.51" />
+        <GradientStop Color="#FFCFDCED" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.ToolbarButtonPressedBorder" Color="#FFBBCADB" />
+
+    <!-- Address bar (breadcrumb) -->
+    <SolidColorBrush x:Key="Theme.AddressBackground" Color="#D9FFFFFF" />
+    <SolidColorBrush x:Key="Theme.AddressBorder" Color="#FFA9B9CC" />
+    <LinearGradientBrush x:Key="Theme.CrumbHoverBackground" StartPoint="0.5,0" EndPoint="0.5,1">
+        <GradientStop Color="#FFEAF6FD" Offset="0" />
+        <GradientStop Color="#FFD7EFFC" Offset="0.5" />
+        <GradientStop Color="#FFBDE6FD" Offset="0.51" />
+        <GradientStop Color="#FFA6D9F4" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.CrumbHoverBorder" Color="#FF3C7FB1" />
+    <LinearGradientBrush x:Key="Theme.CrumbPressedBackground" StartPoint="0.5,0" EndPoint="0.5,1">
+        <GradientStop Color="#FFC2E4F6" Offset="0" />
+        <GradientStop Color="#FFC2E4F6" Offset="0.5" />
+        <GradientStop Color="#FFA9D9F2" Offset="0.51" />
+        <GradientStop Color="#FF90CBEB" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.CrumbPressedBorder" Color="#FF2C628B" />
+    <LinearGradientBrush x:Key="Theme.CrumbMenuHoverBackground" StartPoint="0.5,0" EndPoint="0.5,1">
+        <GradientStop Color="#FFF2F2F2" Offset="0" />
+        <GradientStop Color="#FFEAEAEA" Offset="0.5" />
+        <GradientStop Color="#FFDCDCDC" Offset="0.51" />
+        <GradientStop Color="#FFCFCFCF" Offset="1" />
+    </LinearGradientBrush>
+
+    <!-- Back / forward glass buttons -->
+    <SolidColorBrush x:Key="Theme.NavButtonBackground" Color="#FF1D5BBA" />
+    <SolidColorBrush x:Key="Theme.NavButtonGlyph" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="Theme.NavHistoryArrow" Color="#FF335799" />
+
+    <!-- Menus -->
+    <SolidColorBrush x:Key="Theme.MenuBarForeground" Color="#FF1B1B1B" />
+    <SolidColorBrush x:Key="Theme.MenuBackground" Color="#FFF5F5F5" />
+    <SolidColorBrush x:Key="Theme.MenuBorder" Color="#FF979797" />
+    <SolidColorBrush x:Key="Theme.MenuForeground" Color="#FF1B1B1B" />
+    <LinearGradientBrush x:Key="Theme.MenuHighlightBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#34C5EBFF" Offset="0" />
+        <GradientStop Color="#3481D8FF" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.MenuHighlightBorder" Color="#8071CBF1" />
+    <SolidColorBrush x:Key="Theme.MenuSeparator" Color="#FFE0E0E0" />
+    <SolidColorBrush x:Key="Theme.MenuGestureForeground" Color="#FF6D6D6D" />
+    <SolidColorBrush x:Key="Theme.MenuCheckBackground" Color="#FFE6EFF4" />
+    <SolidColorBrush x:Key="Theme.MenuCheckBorder" Color="#FFCDD3E6" />
+    <SolidColorBrush x:Key="Theme.MenuCheckGlyph" Color="#FF0C12A1" />
+    <Color x:Key="Theme.ShadowColor">#71000000</Color>
+
+    <!-- Inputs -->
+    <SolidColorBrush x:Key="Theme.InputBackground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="Theme.InputBackgroundDisabled" Color="#FFF4F4F4" />
+    <SolidColorBrush x:Key="Theme.InputBorder" Color="#FFABADB3" />
+    <SolidColorBrush x:Key="Theme.InputBorderHover" Color="#FF7EB4EA" />
+    <SolidColorBrush x:Key="Theme.InputBorderFocus" Color="#FF569DE5" />
+    <SolidColorBrush x:Key="Theme.SelectionBrush" Color="#FF3399FF" />
+
+    <!-- Standard push buttons -->
+    <LinearGradientBrush x:Key="Theme.ButtonBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFF0F0F0" Offset="0" />
+        <GradientStop Color="#FFE5E5E5" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.ButtonBorder" Color="#FFACACAC" />
+    <LinearGradientBrush x:Key="Theme.ButtonHoverBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFECF4FC" Offset="0" />
+        <GradientStop Color="#FFDCECFC" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.ButtonHoverBorder" Color="#FF7EB4EA" />
+    <LinearGradientBrush x:Key="Theme.ButtonPressedBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFDAECFC" Offset="0" />
+        <GradientStop Color="#FFC4E0FC" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.ButtonPressedBorder" Color="#FF569DE5" />
+    <SolidColorBrush x:Key="Theme.ButtonDefaultBorder" Color="#FF3C7FB1" />
+    <SolidColorBrush x:Key="Theme.ButtonDisabledBackground" Color="#FFF4F4F4" />
+    <SolidColorBrush x:Key="Theme.ButtonDisabledBorder" Color="#FFADB2B5" />
+
+    <!-- Check boxes / radio buttons -->
+    <SolidColorBrush x:Key="Theme.CheckBackground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="Theme.CheckBorder" Color="#FF707070" />
+    <SolidColorBrush x:Key="Theme.CheckBorderHover" Color="#FF3C7FB1" />
+    <SolidColorBrush x:Key="Theme.CheckGlyph" Color="#FF212121" />
+
+    <!-- Scroll bars -->
+    <SolidColorBrush x:Key="Theme.ScrollTrack" Color="#FFF0F0F0" />
+    <SolidColorBrush x:Key="Theme.ScrollThumb" Color="#FFCDCDCD" />
+    <SolidColorBrush x:Key="Theme.ScrollThumbHover" Color="#FFA6A6A6" />
+    <SolidColorBrush x:Key="Theme.ScrollThumbPressed" Color="#FF606060" />
+    <SolidColorBrush x:Key="Theme.ScrollArrow" Color="#FF606060" />
+    <SolidColorBrush x:Key="Theme.ScrollArrowHover" Color="#FF000000" />
+
+    <!-- Tabs / group boxes -->
+    <SolidColorBrush x:Key="Theme.TabBackground" Color="#FFF0F0F0" />
+    <SolidColorBrush x:Key="Theme.TabHoverBackground" Color="#FFE5F1FB" />
+    <SolidColorBrush x:Key="Theme.TabSelectedBackground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="Theme.TabBorder" Color="#FFACACAC" />
+    <SolidColorBrush x:Key="Theme.TabContentBackground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="Theme.GroupBorder" Color="#FFD5DFE5" />
+
+    <!-- Status bar, tooltips, progress -->
+    <SolidColorBrush x:Key="Theme.StatusBackground" Color="#FFF1F3F6" />
+    <SolidColorBrush x:Key="Theme.StatusBorder" Color="#FFD5DCE4" />
+    <SolidColorBrush x:Key="Theme.ToolTipBackground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="Theme.ToolTipBorder" Color="#FF767676" />
+    <SolidColorBrush x:Key="Theme.ToolTipForeground" Color="#FF575757" />
+    <SolidColorBrush x:Key="Theme.ProgressTrack" Color="#FFE6E6E6" />
+    <SolidColorBrush x:Key="Theme.ProgressFill" Color="#FF06B025" />
+
+    <!-- Dialog header strip (Edit profile etc.) -->
+    <LinearGradientBrush x:Key="Theme.DialogHeaderBackground" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#FF4B557A" Offset="0" />
+        <GradientStop Color="#FF7495C8" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.DialogHeaderForeground" Color="#FFFFFFFF" />
+    <LinearGradientBrush x:Key="Theme.AboutPanelBackground" StartPoint="0.5,0" EndPoint="0.5,1">
+        <GradientStop Color="#FFFFFFFF" Offset="0" />
+        <GradientStop Color="#FFF5F9FF" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="Theme.AboutLogo" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF4B557A" Offset="0" />
+        <GradientStop Color="#FF7495C8" Offset="0.996" />
+    </LinearGradientBrush>
+
+    <!-- Error notification banner -->
+    <LinearGradientBrush x:Key="Theme.NotificationBackground" StartPoint="0.5,0" EndPoint="0.5,1">
+        <GradientStop Color="#FFFBFFBA" Offset="0" />
+        <GradientStop Color="#FFFDFFE3" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Theme.NotificationBorder" Color="#FFD9DC9E" />
+    <SolidColorBrush x:Key="Theme.NotificationForeground" Color="#FF1B1B1B" />
+    <SolidColorBrush x:Key="Theme.NotificationButton" Color="#FF888888" />
+    <SolidColorBrush x:Key="Theme.NotificationButtonHover" Color="#FF333333" />
+
+    <!-- Profile-wizard check marks -->
+    <SolidColorBrush x:Key="Theme.CheckMarkOn" Color="#FF70A16F" />
+</ResourceDictionary>

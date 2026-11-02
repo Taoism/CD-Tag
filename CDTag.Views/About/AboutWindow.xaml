@@ -22,22 +22,12 @@
 
         <Grid Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
             <Grid.Background>
-                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                    <GradientStop Color="#FFFFFFFF" Offset="0" />
-                    <GradientStop Color="#FFF5F9FF" Offset="1" />
-                </LinearGradientBrush>
+                <DynamicResource ResourceKey="Theme.AboutPanelBackground" />
             </Grid.Background>
 
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left" Margin="16,0,0,0" Orientation="Horizontal">
                 <Image Source="/Resources/Images/About/cdtag.png" Height="48" Width="48" Margin="0,0,10,0" />
-                <TextBlock Text="cd-tag 3" FontFamily="Trebuchet MS" VerticalAlignment="Center" FontSize="42" FontStyle="Italic">
-					<TextBlock.Foreground>
-						<LinearGradientBrush>
-							<GradientStop x:Name="gs1" Color="#FF7495C8" Offset="0.996" />
-							<GradientStop x:Name="gs2" Color="#FF4B557A" />
-						</LinearGradientBrush>
-					</TextBlock.Foreground>
-                </TextBlock>
+                <TextBlock Text="cd-tag 3" FontFamily="Trebuchet MS" VerticalAlignment="Center" FontSize="42" FontStyle="Italic" Foreground="{DynamicResource Theme.AboutLogo}" />
             </StackPanel>
 
         </Grid>

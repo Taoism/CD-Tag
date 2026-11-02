@@ -8,12 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Themes\Default\Backup\**" />
-    <Page Remove="Themes\Default\Backup\**" />
-    <None Include="Themes\Default\Backup\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Resource Include="cdtag.ico" />
     <Resource Include="Resources\Images\GeneralToolbar\Help.png" />
     <Resource Include="Resources\Images\TagToolbar\Back.png" />

@@ -102,7 +102,12 @@ namespace CDTag.Controls
             if (_currentState != State.Hidden)
                 return;
 
-            Show(exception.Message, exception);
+            // Commands and IoC resolution go through reflection; report the real error, not the wrapper.
+            Exception root = exception;
+            while ((root is System.Reflection.TargetInvocationException || root is AggregateException) && root.InnerException != null)
+                root = root.InnerException;
+
+            Show(root.Message, exception);
         }
 
         /// <summary>Shows the specified message.</summary>

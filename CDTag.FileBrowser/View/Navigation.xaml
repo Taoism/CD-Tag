@@ -41,14 +41,7 @@
                     </MultiBinding>
                 </MenuItem.ItemsSource>
                 <MenuItem.Icon>
-                    <Path x:Name="NormalArrow" Data="M 0,0 L 8,0 4,5 Z" Grid.Row="1" Grid.Column="6" Stroke="#FF335799" StrokeLineJoin="Round" StrokeThickness="0.5" Stretch="Uniform" Opacity="1">
-                        <Path.Fill>
-                            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                <GradientStop Color="#FF33B5DA" Offset="0" />
-                                <GradientStop Color="#FF335799" Offset="1" />
-                            </LinearGradientBrush>
-                        </Path.Fill>
-                    </Path>
+                    <Path x:Name="NormalArrow" Data="M 0,0 L 8,0 4,5 Z" Grid.Row="1" Grid.Column="6" Stroke="{DynamicResource Theme.NavHistoryArrow}" Fill="{DynamicResource Theme.NavHistoryArrow}" StrokeLineJoin="Round" StrokeThickness="0.5" Stretch="Uniform" Opacity="1" />
                 </MenuItem.Icon>
             </MenuItem>
         </Menu>
@@ -100,14 +93,14 @@
 		        </Grid.Background>
 	        </Grid>
 			
-	        <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource GlassButton}" Background="#FF1D5BBA" Focusable="False" Command="{Binding GoBackCommand}">
+	        <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource GlassButton}" Background="{DynamicResource Theme.NavButtonBackground}" Focusable="False" Command="{Binding GoBackCommand}">
 	            <Grid>
 	                <Grid.ColumnDefinitions>
 	                    <ColumnDefinition Width="*" />
 	                    <ColumnDefinition Width="3*" />
 	                    <ColumnDefinition Width="*" />
 	                </Grid.ColumnDefinitions>
-	                <Path Grid.Column="1" StrokeThickness="0.5" Fill="White" Stroke="White" Stretch="Uniform"
+	                <Path Grid.Column="1" StrokeThickness="0.5" Fill="{DynamicResource Theme.NavButtonGlyph}" Stroke="{DynamicResource Theme.NavButtonGlyph}" Stretch="Uniform"
 								Data="M 1,15 15,1 
 								      C 15,1 16,0 17,1 L 20,4 
 									  C 20,4 21,5 20,6 L 13.5,12.5 39,12.5
@@ -120,14 +113,14 @@
 	            </Grid>
 	        </Button>
 			
-			<Button Grid.Row="1" Grid.Column="3" Style="{StaticResource GlassButton}" Background="#FF1D5BBA" Focusable="False" Command="{Binding GoForwardCommand}">
+			<Button Grid.Row="1" Grid.Column="3" Style="{StaticResource GlassButton}" Background="{DynamicResource Theme.NavButtonBackground}" Focusable="False" Command="{Binding GoForwardCommand}">
 	            <Grid>
 	                <Grid.ColumnDefinitions>
 	                    <ColumnDefinition Width="*" />
 	                    <ColumnDefinition Width="3*" />
 	                    <ColumnDefinition Width="*" />
 	                </Grid.ColumnDefinitions>
-	                <Path Grid.Column="1" StrokeThickness="0.5" Fill="White" Stroke="White" Stretch="Uniform" RenderTransformOrigin="0.5,0.5"
+	                <Path Grid.Column="1" StrokeThickness="0.5" Fill="{DynamicResource Theme.NavButtonGlyph}" Stroke="{DynamicResource Theme.NavButtonGlyph}" Stretch="Uniform" RenderTransformOrigin="0.5,0.5"
 								Data="M 1,15 15,1 
 								      C 15,1 16,0 17,1 L 20,4 
 									  C 20,4 21,5 20,6 L 13.5,12.5 39,12.5

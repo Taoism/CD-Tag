@@ -54,7 +54,8 @@ namespace CDTag.Views
             FontFamily = new FontFamily("Verdana");
             FontSize = 11.0d;
             //FontFamily = new FontFamily("Dejavu Sans");
-            Background = (Brush)Application.Current.Resources["WindowBackground"];
+            SetResourceReference(BackgroundProperty, "WindowBackground");
+            SetResourceReference(ForegroundProperty, "Theme.Foreground");
 
             _viewModel.ShowMessageBox += viewModel_ShowMessageBox;
             _viewModel.ShowDialogWindow += viewModel_ShowDialogWindow;
@@ -97,6 +98,12 @@ namespace CDTag.Views
         /// Raises the <see cref="E:System.Windows.FrameworkElement.Initialized"/> event. This method is invoked whenever <see cref="P:System.Windows.FrameworkElement.IsInitialized"/> is set to true internally.
         /// </summary>
         /// <param name="e">The <see cref="T:System.Windows.RoutedEventArgs"/> that contains the event data.</param>
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            Theming.ThemeManager.Instance.ApplyToWindow(this);
+        }
+
         protected override void OnInitialized(EventArgs e)
         {
             base.OnInitialized(e);

@@ -15,20 +15,6 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <TreeView x:Name="treeView1" Grid.Row="1" Margin="0,-1,0,0" ItemContainerStyle="{DynamicResource TreeViewItemStyle}">
-            <TreeView.Resources>
-                <!-- Brushes for the selected item -->
-                <LinearGradientBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" EndPoint="0,1" StartPoint="0,0">
-                    <GradientStop Color="#FFDCEBFC" Offset="0"/>
-                    <GradientStop Color="#FFC1DBFC" Offset="1"/>
-                </LinearGradientBrush>
-                <LinearGradientBrush x:Key="{x:Static SystemColors.ControlBrushKey}" EndPoint="0,1" StartPoint="0,0">
-                    <GradientStop Color="#FFF8F8F8" Offset="0"/>
-                    <GradientStop Color="#FFE5E5E5" Offset="1"/>
-                </LinearGradientBrush>
-                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="Black" />
-                <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="Black" />
-            </TreeView.Resources>
-        </TreeView>
+        <TreeView x:Name="treeView1" Grid.Row="1" Margin="0,-1,0,0" ItemContainerStyle="{DynamicResource TreeViewItemStyle}" />
     </Grid>
 </UserControl>

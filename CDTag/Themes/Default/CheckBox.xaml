@@ -1,8 +1,9 @@
-﻿<ResourceDictionary 
+﻿<ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 >
 
+    <!-- Tick-only check box used in the New Profile wizard lists -->
     <Style x:Key="DiscreteCheckBoxStyle" TargetType="{x:Type CheckBox}">
         <Setter Property="SnapsToDevicePixels" Value="true"/>
         <Setter Property="Background" Value="Transparent"/>
@@ -11,31 +12,14 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type CheckBox}">
-                    <Border>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="18" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="14" />
-                            </Grid.RowDefinitions>
-                            
-                            <Border Grid.Column="0">
-                                <Border.Background>
-                                    <VisualBrush Opacity="1.0" Stretch="None">
-                                        <VisualBrush.Visual>
-                                            <Path Name="path" Opacity="0" Data="M 0 5 L 3 10 10 0" Stroke="#FF3838BA" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
-                                        </VisualBrush.Visual>
-                                    </VisualBrush>
-                                </Border.Background>
-                            </Border>
-                        </Grid>
-                    </Border>
+                    <Grid Width="18" Height="14" Background="Transparent">
+                        <Path Name="path" Opacity="0" Data="M 0 5 L 3 10 10 0" HorizontalAlignment="Center" VerticalAlignment="Center"
+                              Stroke="{DynamicResource Theme.CheckMarkOn}" StrokeThickness="2.5"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="path" Property="Opacity" Value="1.0" />
-                            <Setter TargetName="path" Property="Stroke" Value="#FF70A16F" />
-                            <Setter TargetName="path" Property="StrokeThickness" Value="2.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

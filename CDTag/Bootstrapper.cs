@@ -34,6 +34,7 @@ using CDTag.Views.Tag.EditTag;
 using CDTag.Views.Tag.MassTag;
 using CDTag.Views.Tag.TagAlbum;
 using CDTag.Views.Tools;
+using CDTag.Views.Theming;
 
 namespace CDTag
 {
@@ -42,6 +43,7 @@ namespace CDTag
         public void Run()
         {
             ConfigureContainer();
+            ThemeManager.Instance.Initialize(Application.Current);
             CreateShell();
         }
 

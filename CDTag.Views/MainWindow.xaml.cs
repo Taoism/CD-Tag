@@ -50,7 +50,10 @@ namespace CDTag.Views
         {
             base.OnSourceInitialized(e);
 
-            GlassHelper.ExtendGlassFrame(this, new Thickness(-1));
+            // Windows 11: let DWM draw Mica behind the transparent parts of the window (menu,
+            // address bar, splitter). Older systems keep the palette's WindowBackground.
+            if (GlassHelper.TrySetMicaBackdrop(this))
+                GlassHelper.ExtendGlassFrame(this, new Thickness(-1));
         }
 
         private void MainWindow_Closed(object sender, EventArgs e)

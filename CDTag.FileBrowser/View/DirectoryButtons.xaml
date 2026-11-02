@@ -34,7 +34,7 @@
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
 
-        <Border x:Name="ContainerBorder" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Background="White" Opacity="0.85" MouseUp="ContainerBorder_MouseUp" />
+        <Border x:Name="ContainerBorder" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Background="{DynamicResource Theme.AddressBackground}" BorderBrush="{DynamicResource Theme.AddressBorder}" BorderThickness="1" Opacity="0.85" MouseUp="ContainerBorder_MouseUp" />
 
         <Menu x:Name="DirectoryTextBoxMenu" Visibility="Hidden" Style="{DynamicResource MenuStyle}" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Background="Transparent" Padding="0" BorderThickness="0" Margin="0" HorizontalAlignment="Stretch" Focusable="False" IsTabStop="False">
             <MenuItem x:Name="DirectoryTextBoxMenuItem" Style="{DynamicResource TypingDirectoryMenuItemStyle}" Padding="0" BorderThickness="0" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Width="{Binding ElementName=ContainerBorder, Path=ActualWidth}" Height="{Binding ElementName=ContainerBorder, Path=ActualHeight}" Focusable="False" IsTabStop="False">
@@ -46,7 +46,7 @@
                 </MenuItem.ItemsSource>
 
                 <MenuItem.Header>
-                    <TextBox x:Name="DirectoryTextBox" Text="{Binding TypingDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Background="White" KeyDown="DirectoryTextBox_KeyDown" HorizontalAlignment="Stretch" BorderThickness="0" Margin="0" VerticalAlignment="Stretch" VerticalContentAlignment="Center" />
+                    <TextBox x:Name="DirectoryTextBox" Text="{Binding TypingDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Background="{DynamicResource Theme.InputBackground}" KeyDown="DirectoryTextBox_KeyDown" HorizontalAlignment="Stretch" BorderThickness="0" Margin="0" VerticalAlignment="Stretch" VerticalContentAlignment="Center" />
                 </MenuItem.Header>
             </MenuItem>
         </Menu>

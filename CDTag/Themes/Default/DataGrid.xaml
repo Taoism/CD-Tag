@@ -7,7 +7,11 @@
         <Setter Property="AutoGenerateColumns" Value="False" />
         <Setter Property="GridLinesVisibility" Value="None" />
         <Setter Property="SelectionUnit" Value="FullRow" />
-        <Setter Property="Background" Value="White" />
+        <Setter Property="Background" Value="{DynamicResource Theme.PaneBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource Theme.Foreground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Theme.PaneBorder}" />
+        <Setter Property="RowBackground" Value="Transparent" />
+        <Setter Property="AlternatingRowBackground" Value="Transparent" />
         <Setter Property="SelectionMode" Value="Extended" />
         <Setter Property="RowHeight" Value="20" />
         <Setter Property="CanUserResizeRows" Value="False" />

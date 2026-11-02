@@ -21,7 +21,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ToggleButton}">
                     <Border Background="Transparent" Height="16" Padding="5,5,5,5" Width="16">
-                        <Path x:Name="ExpandPath" Data="{StaticResource TreeArrow}" Fill="Transparent" Stroke="#FF989898">
+                        <Path x:Name="ExpandPath" Data="{StaticResource TreeArrow}" Fill="Transparent" Stroke="{DynamicResource Theme.Glyph}">
                             <Path.RenderTransform>
                                 <RotateTransform Angle="135" CenterY="3" CenterX="3"/>
                             </Path.RenderTransform>
@@ -29,7 +29,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Stroke" TargetName="ExpandPath" Value="#FF1BBBFA"/>
+                            <Setter Property="Stroke" TargetName="ExpandPath" Value="{DynamicResource Theme.GlyphHover}"/>
                             <Setter Property="Fill" TargetName="ExpandPath" Value="Transparent"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
@@ -38,8 +38,8 @@
                                     <RotateTransform Angle="180" CenterY="3" CenterX="3"/>
                                 </Setter.Value>
                             </Setter>
-                            <Setter Property="Fill" TargetName="ExpandPath" Value="#FF595959"/>
-                            <Setter Property="Stroke" TargetName="ExpandPath" Value="#FF262626"/>
+                            <Setter Property="Fill" TargetName="ExpandPath" Value="{DynamicResource Theme.GlyphCheckedFill}"/>
+                            <Setter Property="Stroke" TargetName="ExpandPath" Value="{DynamicResource Theme.GlyphChecked}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -49,7 +49,7 @@
     <Style x:Key="TreeViewItemStyle" TargetType="{x:Type TreeViewItem}">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Padding" Value="1,0,0,0"/>
-        <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Theme.Foreground}"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource TreeViewItemFocusVisual}"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -72,15 +72,8 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger SourceName="Bd" Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background">
-                                <Setter.Value>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Offset="0" Color="#FAFBFD" />
-                                        <GradientStop Offset="1" Color="#EBF3FD" />
-                                    </LinearGradientBrush>
-                                </Setter.Value>
-                            </Setter>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="#B8D6FB" />
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Theme.RowHoverBackground}" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Theme.RowHoverBorder}" />
                         </Trigger>
                         <Trigger Property="IsExpanded" Value="false">
                             <Setter Property="Visibility" TargetName="ItemsHost" Value="Collapsed"/>
@@ -89,16 +82,16 @@
                             <Setter Property="Visibility" TargetName="Expander" Value="Hidden"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="true">
-                            <Setter Property="Background" TargetName="Bd" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="#11B8D6FB" />
+                            <Setter Property="Background" TargetName="Bd" Value="{DynamicResource Theme.RowSelectedBackground}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Theme.RowSelectedForeground}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Theme.RowSelectedBorder}" />
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsSelected" Value="true"/>
                                 <Condition Property="IsMouseOver" SourceName="Bd" Value="true"/>
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="#B8D6FB" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Theme.RowHoverBorder}" />
                         </MultiTrigger>
 
                         <!--<MultiTrigger>
@@ -107,10 +100,10 @@
                                 <Condition Property="IsSelectionActive" Value="false"/>
                             </MultiTrigger.Conditions>
                             <Setter Property="Background" TargetName="Bd" Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Theme.Foreground}"/>
                         </MultiTrigger>-->
                         <Trigger Property="IsEnabled" Value="false">
-                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Theme.ForegroundDisabled}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -250,7 +250,9 @@ namespace CDTag.FileBrowser.View
             menuItem.VerticalAlignment = VerticalAlignment.Stretch;
             menuItem.VerticalContentAlignment = VerticalAlignment.Center;
             menuItem.Style = (Style)Application.Current.Resources["DirectoryMenuItemStyle"];
-            menuItem.Icon = new System.Windows.Shapes.Path { Data = (Geometry)Application.Current.Resources["RightArrow"], Height = 7, Width = 3.5, Fill = Brushes.Black, Margin = new Thickness(2, 0, 2, 0) };
+            var chevron = new System.Windows.Shapes.Path { Data = (Geometry)Application.Current.Resources["RightArrow"], Height = 7, Width = 3.5, Margin = new Thickness(2, 0, 2, 0) };
+            chevron.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "Theme.Foreground");
+            menuItem.Icon = chevron;
 
             foreach (string dir in subdirs)
             {

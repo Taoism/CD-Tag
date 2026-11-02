@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -33,7 +34,12 @@ namespace CDTag.ViewModels.About
 
             VersionText = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
 
-            ReleaseDate = new DateTime(2000, 1, 1).AddDays(version.Build);
+            // Build date stamped by Directory.Build.props (AssemblyMetadata "BuildDate", yyyy-MM-dd).
+            DateTime buildDate;
+            string buildDateText = attributes.OfType<AssemblyMetadataAttribute>().Where(a => a.Key == "BuildDate").Select(a => a.Value).FirstOrDefault();
+            ReleaseDate = DateTime.TryParseExact(buildDateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out buildDate)
+                ? buildDate
+                : File.GetLastWriteTime(assembly.Location);
 
             Thread thread = new Thread(GetAssemblies);
             thread.Start();

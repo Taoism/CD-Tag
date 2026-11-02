@@ -5,6 +5,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
     xmlns:view="clr-namespace:CDTag.Views"
+    xmlns:theming="clr-namespace:CDTag.Views.Theming"
     mc:Ignorable="d" 
     d:DesignHeight="300" 
     d:DesignWidth="300"
@@ -35,6 +36,13 @@
             <MenuItem Header="_View">
                 <MenuItem Header="Status _bar" IsCheckable="True" IsChecked="{Binding IsShowStatusBarChecked, Mode=TwoWay}" />
                 <MenuItem Header="_Navigation pane" IsCheckable="True" IsChecked="{Binding IsShowNavigationPaneChecked, Mode=TwoWay}" />
+                <Separator />
+                <MenuItem Header="_Theme">
+                    <MenuItem Header="Use _Windows setting" Command="{Binding SetThemeCommand, Source={x:Static theming:ThemeManager.Instance}}" CommandParameter="System" IsChecked="{Binding IsSystem, Source={x:Static theming:ThemeManager.Instance}, Mode=OneWay}" />
+                    <Separator />
+                    <MenuItem Header="_Light" Command="{Binding SetThemeCommand, Source={x:Static theming:ThemeManager.Instance}}" CommandParameter="Light" IsChecked="{Binding IsLight, Source={x:Static theming:ThemeManager.Instance}, Mode=OneWay}" />
+                    <MenuItem Header="_Dark" Command="{Binding SetThemeCommand, Source={x:Static theming:ThemeManager.Instance}}" CommandParameter="Dark" IsChecked="{Binding IsDark, Source={x:Static theming:ThemeManager.Instance}, Mode=OneWay}" />
+                </MenuItem>
                 <Separator />
                 <MenuItem Header="_Refresh" Command="{Binding RefreshCommand}" />
             </MenuItem>
