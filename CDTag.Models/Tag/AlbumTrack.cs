@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using CDTag.Common;
 using CDTag.Common.Model;
@@ -6,6 +7,7 @@ using IdSharp.AudioInfo;
 using IdSharp.Tagging.ID3v1;
 using IdSharp.Tagging.ID3v2;
 using IdSharp.Tagging.ID3v2.Frames;
+using IdSharp.Tagging.VorbisComment;
 
 namespace CDTag.Model.Tag
 {
@@ -24,7 +26,11 @@ namespace CDTag.Model.Tag
 
             _path = path;
 
-            if (ID3v2Tag.DoesTagExist(path))
+            if (string.Equals(Path.GetExtension(path), ".flac", StringComparison.OrdinalIgnoreCase))
+            {
+                ReadFlacTags(path);
+            }
+            else if (ID3v2Tag.DoesTagExist(path))
             {
                 ID3v2Tag id3v2 = new ID3v2Tag(path);
                 DiscNumber = id3v2.DiscNumber;
@@ -40,7 +46,7 @@ namespace CDTag.Model.Tag
                 }
             }
 
-            if (ID3v1Tag.DoesTagExist(path))
+            if (!IsFlac && ID3v1Tag.DoesTagExist(path))
             {
                 ID3v1Tag id3v1 = new ID3v1Tag(path);
                 if (string.IsNullOrWhiteSpace(TrackNumber))
@@ -90,6 +96,43 @@ namespace CDTag.Model.Tag
             {
                 DiscNumber = "1";
             }
+        }
+
+        /// <summary>Reads Vorbis comments and the embedded cover from a FLAC file.</summary>
+        private void ReadFlacTags(string path)
+        {
+            IsFlac = true;
+
+            VorbisComment vorbis = new VorbisComment(path);
+            Artist = vorbis.Artist;
+            Title = vorbis.Title;
+            Album = vorbis.Album;
+            Genre = vorbis.Genre;
+            ReleaseDate = vorbis.Year;
+            TrackNumber = vorbis.TrackNumber;
+            DiscNumber = vorbis.Items.GetValue("DISCNUMBER");
+
+            // Prefer the front cover; otherwise take the first picture.
+            foreach (byte[] block in vorbis.GetPictureBlocks())
+            {
+                Picture picture = Tag.Picture.FromFlacPictureBlock(block);
+                if (picture == null || picture.ImageSource == null)
+                    continue;
+                if (CoverPicture == null || picture.PictureType == PictureType.CoverFront)
+                    CoverPicture = picture;
+                if (picture.PictureType == PictureType.CoverFront)
+                    break;
+            }
+        }
+
+        /// <summary>True for FLAC files (tags come from Vorbis comments).</summary>
+        public bool IsFlac { get; private set; }
+
+        /// <summary>Embedded cover of a FLAC file (MP3 covers are in <see cref="Picture"/>).</summary>
+        public Picture CoverPicture
+        {
+            get { return Get<Picture>("CoverPicture"); }
+            private set { Set("CoverPicture", value); }
         }
 
         public IAttachedPicture Picture

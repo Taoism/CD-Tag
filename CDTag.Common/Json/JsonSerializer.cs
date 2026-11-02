@@ -461,8 +461,28 @@ namespace CDTag.Common.Json
                 if (json[i] == '\\')
                 {
                     i++;
-                    if (json[i] != '\"' && json[i] != '\\')
-                        throw new JsonInvalidDataException(string.Format("Unknown escape character sequence '\\{0}'.", json[i]), json, i);
+                    switch (json[i])
+                    {
+                        case '"':
+                        case '\\':
+                        case '/':
+                            value += json[i];
+                            break;
+                        case 'n': value += '\n'; break;
+                        case 'r': value += '\r'; break;
+                        case 't': value += '\t'; break;
+                        case 'b': value += '\b'; break;
+                        case 'f': value += '\f'; break;
+                        case 'u':
+                            if (i + 4 >= json.Length)
+                                throw new JsonInvalidDataException("Incomplete \\u escape sequence.", json, i);
+                            value += (char)Convert.ToInt32(json.Substring(i + 1, 4), 16);
+                            i += 4;
+                            break;
+                        default:
+                            throw new JsonInvalidDataException(string.Format("Unknown escape character sequence '\\{0}'.", json[i]), json, i);
+                    }
+                    continue;
                 }
 
                 value += json[i];

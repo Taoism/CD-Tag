@@ -52,7 +52,7 @@ namespace CDTag.Common.Json
                     string key = keys[i];
 
                     json.Append(new string(' ', indentLevel * IndentSpacing));
-                    json.Append(string.Format("\"{0}\": ", key.Replace("\\", "\\\\").Replace("\"", "\\\"")));
+                    json.Append(string.Format("\"{0}\": ", EscapeString(key)));
                     SerializeClass(dict[key], json, indentLevel + 1);
                     if (i == keys.Length - 1)
                         json.AppendLine();
@@ -65,7 +65,7 @@ namespace CDTag.Common.Json
             }
             else if (obj is string)
             {
-                json.Append(string.Format("\"{0}\"", ((string)obj).Replace("\\", "\\\\").Replace("\"", "\\\"")));
+                json.Append(string.Format("\"{0}\"", EscapeString((string)obj)));
             }
             else if (
                 obj is int || obj is int? ||
@@ -189,6 +189,32 @@ namespace CDTag.Common.Json
             }
 
             return false;
+        }
+
+        /// <summary>Escapes a string for a JSON string literal (quotes, backslashes and control characters).</summary>
+        private static string EscapeString(string value)
+        {
+            var sb = new StringBuilder(value.Length + 8);
+            foreach (char c in value)
+            {
+                switch (c)
+                {
+                    case '"': sb.Append("\\\""); break;
+                    case '\\': sb.Append("\\\\"); break;
+                    case '\n': sb.Append("\\n"); break;
+                    case '\r': sb.Append("\\r"); break;
+                    case '\t': sb.Append("\\t"); break;
+                    case '\b': sb.Append("\\b"); break;
+                    case '\f': sb.Append("\\f"); break;
+                    default:
+                        if (c < ' ')
+                            sb.AppendFormat("\\u{0:x4}", (int)c);
+                        else
+                            sb.Append(c);
+                        break;
+                }
+            }
+            return sb.ToString();
         }
     }
 }

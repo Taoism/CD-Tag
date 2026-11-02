@@ -54,6 +54,23 @@ namespace CDTag.Model.Profile
             set { Set("Revision", value); }
         }
 
+        /// <summary>
+        /// Audio file types this profile is meant for, as lower-case extensions without the dot,
+        /// comma separated ("mp3", "flac", "mp3,flac"). Null or empty means any type.
+        /// Tag Album uses it to pick the profile automatically (see <see cref="ProfileSelector"/>).
+        /// </summary>
+        public string AudioFileTypes
+        {
+            get { return Get<string>("AudioFileTypes"); }
+            set { Set("AudioFileTypes", value); }
+        }
+
+        /// <summary>The profile name (used by lists and accessibility tools).</summary>
+        public override string ToString()
+        {
+            return ProfileName ?? base.ToString();
+        }
+
         public FileNaming FileNaming
         {
             get { return Get<FileNaming>("FileNaming"); }

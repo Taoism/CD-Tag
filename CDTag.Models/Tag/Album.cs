@@ -36,13 +36,19 @@ namespace CDTag.Model.Tag
             SetAlbumPropertiesFromTracks();
         }
 
+        /// <summary>Audio file types Tag Album loads.</summary>
+        public static readonly string[] SupportedExtensions = { ".mp3", ".flac" };
+
         private static List<AlbumTrack> GetTracksFromPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentNullException("path");
 
-            string[] files = Directory.GetFiles(path, "*.mp3"); // TODO: Expand supported file types
-            if (files == null || files.Length == 0)
+            string[] files = Directory.GetFiles(path)
+                .Where(f => SupportedExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
+                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (files.Length == 0)
                 throw new Exception(string.Format("No audio files found in '{0}'", path)); // TODO: Localize
 
             var tracks = new List<AlbumTrack>();
@@ -72,6 +78,10 @@ namespace CDTag.Model.Tag
             if (first.Picture != null)
             {
                 Picture = new Picture(first.Picture).ImageSource;
+            }
+            else if (first.CoverPicture != null)
+            {
+                Picture = first.CoverPicture.ImageSource;
             }
 
             for (int i = 1; i < _tracks.Count; i++)

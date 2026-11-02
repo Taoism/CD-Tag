@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\CDTag.ViewModels\CDTag.ViewModels.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="TestData\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -19,6 +19,7 @@ namespace CDTag.ViewModels.Profile.EditProfile
         private readonly DelegateCommand _renameProfileCommand;
         private readonly DelegateCommand _copyProfileCommand;
         private readonly DelegateCommand _deleteProfileCommand;
+        private readonly DelegateCommand _importProfileCommand;
 
         private readonly ObservableCollection<UserProfile> _profiles;
 
@@ -29,8 +30,22 @@ namespace CDTag.ViewModels.Profile.EditProfile
             _renameProfileCommand = new DelegateCommand(RenameProfile);
             _copyProfileCommand = new DelegateCommand(CopyProfile);
             _deleteProfileCommand = new DelegateCommand(DeleteProfile);
+            _importProfileCommand = new DelegateCommand(ImportProfile);
 
             _profiles = new ObservableCollection<UserProfile>();
+            _profiles.CollectionChanged += (s, e) =>
+            {
+                if (e.NewItems != null)
+                {
+                    foreach (UserProfile added in e.NewItems)
+                        added.PropertyChanged += Profile_PropertyChanged;
+                }
+                if (e.OldItems != null)
+                {
+                    foreach (UserProfile removed in e.OldItems)
+                        removed.PropertyChanged -= Profile_PropertyChanged;
+                }
+            };
 
             string[] files = Directory.GetFiles(_pathService.ProfileDirectory, "*.cfg").OrderBy(p => p.ToLower()).ToArray();
             foreach (string file in files)
@@ -78,6 +93,19 @@ namespace CDTag.ViewModels.Profile.EditProfile
 
                 UpdateWindowTitle();
             }
+        }
+
+        /// <summary>The file-type choice in the list is saved straight away.</summary>
+        private void Profile_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != "AudioFileTypes")
+                return;
+
+            var profile = (UserProfile)sender;
+            if (profile.AudioFileTypes == "")
+                profile.AudioFileTypes = null;
+            else
+                profile.Save();
         }
 
         private void Profile_EnhancedPropertyChanged(object sender, EnhancedPropertyChangedEventArgs<UserProfile> e)
@@ -131,6 +159,57 @@ namespace CDTag.ViewModels.Profile.EditProfile
         public ICommand DeleteProfileCommand
         {
             get { return _deleteProfileCommand; }
+        }
+
+        public ICommand ImportProfileCommand
+        {
+            get { return _importProfileCommand; }
+        }
+
+        /// <summary>Imports a CD-Tag 2.x profile (.cfg) and its NFO template.</summary>
+        private void ImportProfile()
+        {
+            string fileName;
+            bool? result = ShowOpenFileDialog("Import CD-Tag 2.x profile",
+                "CD-Tag 2.x profiles (*.cfg;*.txt)|*.cfg;*.txt|All files (*.*)|*.*", out fileName);
+            if (result != true || string.IsNullOrEmpty(fileName))
+                return;
+
+            if (!LegacyProfile.IsLegacyFile(fileName))
+            {
+                MessageBox(string.Format("'{0}' is not a CD-Tag 2.x profile.", Path.GetFileName(fileName)),
+                           "Import profile", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            string profileName = Path.GetFileNameWithoutExtension(fileName);
+            UserProfile existing = _profiles.FirstOrDefault(p => string.Equals(p.ProfileName, profileName, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+            {
+                var answer = MessageBox(string.Format("A profile named {0} already exists. Replace it?", profileName),
+                                        "Import profile", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (answer != MessageBoxResult.Yes)
+                    return;
+            }
+
+            UserProfile imported = LegacyProfile.Import(fileName, _pathService.ProfileDirectory, profileName);
+
+            if (existing != null)
+            {
+                int index = _profiles.IndexOf(existing);
+                _profiles[index] = imported;
+            }
+            else
+            {
+                _profiles.Add(imported);
+            }
+            Profile = imported;
+
+            if (imported.NFOOptions.TemplatePath == null)
+            {
+                MessageBox(string.Format("{0} was imported, but its NFO template was not found next to the profile. Copy the template into the Profiles folder and select it in the profile.", profileName),
+                           "Import profile", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
         }
 
         private void NewProfile()

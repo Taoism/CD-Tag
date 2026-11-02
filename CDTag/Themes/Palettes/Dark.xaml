@@ -29,6 +29,7 @@
     <SolidColorBrush x:Key="Theme.RowSelectedBorder" Color="#FF3E6A92" />
     <SolidColorBrush x:Key="Theme.RowSelectedInactiveBackground" Color="#FF333333" />
     <SolidColorBrush x:Key="Theme.RowSelectedInactiveBorder" Color="#FF444444" />
+    <SolidColorBrush x:Key="Theme.RowAlternateBackground" Color="#FF22282E" />
     <SolidColorBrush x:Key="Theme.RowSelectedForeground" Color="#FFFFFFFF" />
 
     <!-- Column headers -->

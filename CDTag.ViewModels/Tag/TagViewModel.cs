@@ -1,4 +1,9 @@
-﻿using System.Reflection;
+﻿using System.Collections.Generic;
+using System.Linq;
+using CDTag.Model.Profile;
+using CDTag.ViewModels.Profile.ChooseProfile;
+using CDTag.Views.Interfaces.Profile.ChooseProfile;
+using System.Reflection;
 using System.Windows;
 using CDTag.Common;
 using CDTag.Common.ApplicationServices;
@@ -25,7 +30,7 @@ namespace CDTag.ViewModels.Tag
         {
             AboutCommand = new DelegateCommand(() => ShowWindow<IAboutWindow>());
             ExitCommand = new DelegateCommand(() => Application.Current.MainWindow.Close());
-            TagAlbumCommand = new DelegateCommand(() => ShowWindow<ITagAlbumWindow>());
+            TagAlbumCommand = new DelegateCommand(TagAlbum);
             EditTagsCommand = new DelegateCommand(() => ShowWindow<IEditTagWindow>());
             MassTagCommand = new DelegateCommand(() => ShowWindow<IMassTagWindow>());
             NewProfileCommand = new DelegateCommand(() => ShowWindow<INewProfileWindow>());
@@ -41,6 +46,41 @@ namespace CDTag.ViewModels.Tag
             EnhancedPropertyChanged += TagViewModel_EnhancedPropertyChanged;
 
             eventAggregator.Subscribe<GetDirectoryControllerEvent>(OnGetDirectoryController);
+        }
+
+        /// <summary>Picks the profile for the current folder's file types (asking if several fit), then opens Tag Album.</summary>
+        private void TagAlbum()
+        {
+            string directory = DirectoryViewModel != null ? DirectoryViewModel.CurrentDirectory : null;
+            HashSet<string> albumTypes = ProfileSelector.GetAlbumFileTypes(directory);
+
+            List<UserProfile> profiles = ProfileSelector.LoadAll(_pathService.ProfileDirectory);
+            IList<UserProfile> candidates = ProfileSelector.FindCandidates(profiles, albumTypes);
+
+            UserProfile chosen;
+            if (candidates.Count == 0)
+            {
+                chosen = null;
+            }
+            else if (candidates.Count == 1)
+            {
+                chosen = candidates[0];
+            }
+            else
+            {
+                IChooseProfileWindow window = IoC.Resolve<IChooseProfileWindow>();
+                var chooser = (IChooseProfileViewModel)window.DataContext;
+                string types = albumTypes.Count == 0 ? "these" : string.Join(" and ", albumTypes.OrderBy(t => t).Select(t => t.ToUpperInvariant()));
+                chooser.Message = string.Format("Several profiles fit {0} files. Which profile do you want to use for this album?", types);
+                chooser.SetProfiles(candidates, ProfileSelector.ActiveProfile);
+
+                if (ShowWindow(window) != true)
+                    return;
+                chosen = chooser.SelectedProfile;
+            }
+
+            ProfileSelector.ActiveProfile = chosen;
+            ShowWindow<ITagAlbumWindow>();
         }
 
         private void OnGetDirectoryController(GetDirectoryControllerEvent e)

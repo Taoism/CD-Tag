@@ -23,6 +23,20 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="File types" Width="110">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox SelectedValuePath="Tag" Margin="0" Padding="5,0,5,0" Height="19" VerticalContentAlignment="Center"
+                                      SelectedValue="{Binding AudioFileTypes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
+                                      ToolTip="Tag Album picks this profile automatically for albums of these file types">
+                                <ComboBoxItem Content="Any" Tag="" />
+                                <ComboBoxItem Content="MP3" Tag="mp3" />
+                                <ComboBoxItem Content="FLAC" Tag="flac" />
+                                <ComboBoxItem Content="MP3 + FLAC" Tag="mp3,flac" />
+                            </ComboBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Last Modified" MinWidth="150">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -39,12 +53,15 @@
                 <ColumnDefinition Width="Auto" SharedSizeGroup="BottomButtons" MinWidth="80" />
                 <ColumnDefinition Width="Auto" SharedSizeGroup="BottomButtons" MinWidth="80" />
                 <ColumnDefinition Width="Auto" SharedSizeGroup="BottomButtons" MinWidth="80" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="BottomButtons" MinWidth="80" />
             </Grid.ColumnDefinitions>
             
             <Button Grid.Column="0" Content="_New" Command="{Binding NewProfileCommand}" Margin="0,0,8,0" />
             <Button Grid.Column="1" Content="_Rename" Command="{Binding RenameProfileCommand}" Margin="0,0,8,0" />
             <Button Grid.Column="2" Content="Co_py" Command="{Binding CopyProfileCommand}" Margin="0,0,8,0" />
             <Button Grid.Column="3" Content="_Delete" Command="{Binding DeleteProfileCommand}" Margin="0,0,8,0" />
+            <Button Grid.Column="5" Content="_Import..." Command="{Binding ImportProfileCommand}" ToolTip="Import a CD-Tag 2.x profile (.cfg) and its NFO template" />
 
         </Grid>
     </Grid>

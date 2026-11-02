@@ -154,6 +154,24 @@ namespace IdSharp.Tagging.VorbisComment
         }
 
         /// <summary>
+        /// Gets the raw data of the FLAC PICTURE metadata blocks read from the file (CD-Tag addition).
+        /// Each entry is the block body as defined by the FLAC format (picture type, MIME type,
+        /// description, dimensions and image data).
+        /// </summary>
+        public IList<byte[]> GetPictureBlocks()
+        {
+            var result = new List<byte[]>();
+            if (_metaDataBlockList == null)
+                return result;
+            foreach (FlacMetaDataBlock block in _metaDataBlockList)
+            {
+                if (block.BlockType == FlacMetaDataBlockType.Picture && block.BlockData != null)
+                    result.Add(block.BlockData);
+            }
+            return result;
+        }
+
+        /// <summary>
         /// Writes the tag.
         /// </summary>
         /// <param name="path">The path.</param>

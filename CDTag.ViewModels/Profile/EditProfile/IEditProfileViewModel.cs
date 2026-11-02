@@ -14,6 +14,7 @@ namespace CDTag.ViewModels.Profile.EditProfile
         ICommand RenameProfileCommand { get; }
         ICommand CopyProfileCommand { get; }
         ICommand DeleteProfileCommand { get; }
+        ICommand ImportProfileCommand { get; }
         ObservableCollection<UserProfile> Profiles { get; }
         UserProfile Profile { get; set; }
     }

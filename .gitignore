@@ -8,3 +8,9 @@ publish/
 .vs/
 *.user
 TestResults/
+
+# Never commit user/group profiles or NFO templates (CD-Tag 2.x and converted ones)
+*.cfg
+*.nfo
+*.cdtag2.ini
+Profiles/

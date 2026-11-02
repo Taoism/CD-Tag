@@ -3,6 +3,7 @@ using CDTag.Common;
 using CDTag.Common.ApplicationServices;
 using CDTag.Common.Events;
 using CDTag.Common.Mvvm;
+using CDTag.Model.Profile;
 using CDTag.Model.Tag;
 using CDTag.ViewModels.Events;
 
@@ -25,6 +26,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             eventAggregator.Publish(getDirectoryControllerEvent);
             string path = getDirectoryControllerEvent.DirectoryController.CurrentDirectory;
             Album = new Album(path);
+            Profile = ProfileSelector.ActiveProfile;
 
             EnhancedPropertyChanged += TagAlbumViewModel_EnhancedPropertyChanged;
         }
@@ -56,6 +58,13 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         {
             get { return Get<Album>("Album"); }
             private set { Set("Album", value); }
+        }
+
+        /// <summary>The profile picked for this album (by file type, or by the user).</summary>
+        public UserProfile Profile
+        {
+            get { return Get<UserProfile>("Profile"); }
+            private set { Set("Profile", value); }
         }
 
         public AlbumTrack SelectedTrack

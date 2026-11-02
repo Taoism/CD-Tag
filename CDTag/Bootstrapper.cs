@@ -34,6 +34,9 @@ using CDTag.Views.Tag.EditTag;
 using CDTag.Views.Tag.MassTag;
 using CDTag.Views.Tag.TagAlbum;
 using CDTag.Views.Tools;
+using CDTag.ViewModels.Profile.ChooseProfile;
+using CDTag.Views.Interfaces.Profile.ChooseProfile;
+using CDTag.Views.Profile.ChooseProfile;
 using CDTag.Views.Theming;
 
 namespace CDTag
@@ -63,6 +66,7 @@ namespace CDTag
             IoC.RegisterType<IMassTagWindow, MassTagWindow>();
             IoC.RegisterType<IEditProfileWindow, EditProfileWindow>();
             IoC.RegisterType<INewProfileWindow, NewProfileWindow>();
+            IoC.RegisterType<IChooseProfileWindow, ChooseProfileWindow>();
             IoC.RegisterType<ISplitCueWindow, SplitCueWindow>();
             IoC.RegisterType<IEncodingInspectorWindow, EncodingInspectorWindow>();
             IoC.RegisterType<IOptionsWindow, OptionsWindow>();
@@ -77,6 +81,7 @@ namespace CDTag
             IoC.RegisterType<IMassTagViewModel, MassTagViewModel>();
             IoC.RegisterType<IEditProfileViewModel, EditProfileViewModel>();
             IoC.RegisterType<INewProfileViewModel, NewProfileViewModel>();
+            IoC.RegisterType<IChooseProfileViewModel, ChooseProfileViewModel>();
             IoC.RegisterType<ISplitCueViewModel, SplitCueViewModel>();
             IoC.RegisterType<IEncodingInspectorViewModel, EncodingInspectorViewModel>();
             IoC.RegisterType<IOptionsViewModel, OptionsViewModel>();

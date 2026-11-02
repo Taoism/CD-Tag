@@ -36,6 +36,77 @@ namespace CDTag.Model.Tag
             }
         }
 
+        /// <summary>Creates a picture from raw image bytes (e.g. a FLAC PICTURE block).</summary>
+        public Picture(byte[] pictureData, PictureType pictureType, string description)
+        {
+            if (pictureData == null)
+                throw new ArgumentNullException("pictureData");
+
+            PictureType = pictureType;
+            Description = description;
+            PictureBytes = pictureData;
+            try
+            {
+                BitmapImage bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.StreamSource = new MemoryStream(pictureData);
+                bitmapImage.EndInit();
+                bitmapImage.Freeze();
+
+                ImageSource = bitmapImage;
+            }
+            catch (NotSupportedException)
+            {
+            }
+        }
+
+        /// <summary>
+        /// Parses a FLAC PICTURE metadata block (all integers big-endian):
+        /// type(4) mimeLength(4) mime descriptionLength(4) description(UTF-8) width(4) height(4) depth(4) colors(4) dataLength(4) data.
+        /// Returns null if the block is malformed.
+        /// </summary>
+        public static Picture FromFlacPictureBlock(byte[] block)
+        {
+            if (block == null)
+                return null;
+            try
+            {
+                int offset = 0;
+                int type = ReadInt32BigEndian(block, ref offset);
+                int mimeLength = ReadInt32BigEndian(block, ref offset);
+                offset += mimeLength;
+                int descriptionLength = ReadInt32BigEndian(block, ref offset);
+                string description = System.Text.Encoding.UTF8.GetString(block, offset, descriptionLength);
+                offset += descriptionLength;
+                offset += 16; // width, height, colour depth, indexed colours
+                int dataLength = ReadInt32BigEndian(block, ref offset);
+                if (dataLength <= 0 || offset + dataLength > block.Length)
+                    return null;
+
+                byte[] data = new byte[dataLength];
+                Buffer.BlockCopy(block, offset, data, 0, dataLength);
+
+                PictureType pictureType = Enum.IsDefined(typeof(PictureType), (byte)type) ? (PictureType)(byte)type : PictureType.Other;
+                return new Picture(data, pictureType, description);
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return null;
+            }
+        }
+
+        private static int ReadInt32BigEndian(byte[] data, ref int offset)
+        {
+            int value = (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3];
+            offset += 4;
+            return value;
+        }
+
         public Picture(IAttachedPicture attachedPicture)
         {
             if (attachedPicture == null)

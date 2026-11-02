@@ -268,9 +268,17 @@ namespace CDTag.Common.Mvvm
         protected bool? ShowWindow<T>()
             where T : IWindow
         {
+            return ShowWindow(IoC.Resolve<T>());
+        }
+
+        /// <summary>Shows an already created window (e.g. after preparing its view model).</summary>
+        /// <param name="window">The window.</param>
+        /// <returns>The result of <see cref="IWindow.ShowDialog()" />.</returns>
+        protected bool? ShowWindow(IWindow window)
+        {
             ShowWindowEvent showWindowEvent = new ShowWindowEvent
             {
-                IWindow = IoC.Resolve<T>(),
+                IWindow = window,
             };
 
             var handler = ShowDialogWindow;
