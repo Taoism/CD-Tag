@@ -105,8 +105,12 @@ namespace CDTag.Model.Tag
             else
             {
                 DiscNumber = "1";
+                IsDiscNumberGuessed = true;
             }
         }
+
+        /// <summary>True when the disc number did not come from a tag (it may be replaced by one from the file name).</summary>
+        public bool IsDiscNumberGuessed { get; set; }
 
         /// <summary>Reads Vorbis comments and the embedded cover from a FLAC file.</summary>
         private void ReadFlacTags(string path)

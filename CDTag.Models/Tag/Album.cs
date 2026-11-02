@@ -17,8 +17,53 @@ namespace CDTag.Model.Tag
         private readonly ObservableCollection<AlbumTrack> _tracks;
 
         public Album(string path)
-            : this(path, GetTracksFromPath(path))
+            : this(path, FillFromNames(path, GetTracksFromPath(path)))
         {
+        }
+
+        /// <summary>
+        /// Untagged rips: fills empty track fields from the file names ("0101 Koko.flac" = disc 1, track 1, "Koko")
+        /// and empty artist/album/year from the folder name ("Ween-Boognish Provides-14CD-2026-FLAC").
+        /// Values from tags are never replaced.
+        /// </summary>
+        public static List<AlbumTrack> FillFromNames(string path, List<AlbumTrack> tracks)
+        {
+            FolderNameInfo folder = NameGuesser.FromFolderName(Path.GetFileName((path ?? "").TrimEnd('\\', '/')));
+            int discSubfolders = tracks.Select(t => Path.GetDirectoryName(t.OriginalFileName))
+                                       .Where(d => IsDiscFolderName(Path.GetFileName(d)))
+                                       .Distinct(StringComparer.OrdinalIgnoreCase).Count();
+            int discCount = Math.Max(folder.Discs, discSubfolders);
+
+            foreach (AlbumTrack track in tracks)
+            {
+                FileNameInfo file = NameGuesser.FromFileName(track.OriginalFileName, discCount, folder.Artist);
+
+                if (string.IsNullOrWhiteSpace(track.Title))
+                    track.Title = file.Title;
+                if (string.IsNullOrWhiteSpace(track.TrackNumber) || track.TrackNumber.Trim() == "0")
+                    track.TrackNumber = file.Track > 0 ? file.Track.ToString() : track.TrackNumber;
+                if (track.IsDiscNumberGuessed)
+                {
+                    int disc = file.Disc;
+                    if (disc == 0)
+                    {
+                        // CD1 / Disc 2 subfolders
+                        System.Text.RegularExpressions.Match number = System.Text.RegularExpressions.Regex.Match(
+                            Path.GetFileName(Path.GetDirectoryName(track.OriginalFileName)) ?? "", @"(\d+)");
+                        if (IsDiscFolderName(Path.GetFileName(Path.GetDirectoryName(track.OriginalFileName))) && number.Success)
+                            disc = int.Parse(number.Value);
+                    }
+                    if (disc > 0)
+                        track.DiscNumber = disc.ToString();
+                }
+                if (string.IsNullOrWhiteSpace(track.Artist))
+                    track.Artist = file.Artist ?? folder.Artist;
+                if (string.IsNullOrWhiteSpace(track.Album))
+                    track.Album = folder.Album;
+                if (string.IsNullOrWhiteSpace(track.ReleaseDate))
+                    track.ReleaseDate = folder.Year;
+            }
+            return tracks;
         }
 
         public Album(string path, ICollection<AlbumTrack> tracks)
