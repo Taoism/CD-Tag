@@ -44,6 +44,23 @@ namespace CDTag.Model.Profile
             profile.ProfileName = Path.GetFileNameWithoutExtension(path);
             profile.LastModified = File.GetLastWriteTime(path);
 
+            // Profiles imported from CD-Tag 2.x before naming rules/release lists were converted:
+            // convert again from the preserved original, keeping the choices made since.
+            string original = Path.Combine(Path.GetDirectoryName(path), profile.ProfileName + LegacyProfile.BackupExtension);
+            if (profile.NamingRules == null && File.Exists(original))
+            {
+                string fileTypes = profile.AudioFileTypes;
+                UserProfile upgraded = LegacyProfile.Import(original, Path.GetDirectoryName(path), profile.ProfileName);
+                if (upgraded.AudioFileTypes != fileTypes)
+                {
+                    upgraded.AudioFileTypes = fileTypes;
+                    File.WriteAllText(path, JsonSerializer.SerializeObject(upgraded));
+                }
+                upgraded.LastModified = File.GetLastWriteTime(path);
+                upgraded.UpdateModelHash();
+                return upgraded;
+            }
+
             profile.UpdateModelHash();
 
             return profile;

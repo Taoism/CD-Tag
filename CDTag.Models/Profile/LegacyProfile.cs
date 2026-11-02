@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using CDTag.Common.Json;
 
@@ -24,13 +25,23 @@ namespace CDTag.Model.Profile
         // [NAMEn] -> naming slot
         private static readonly string[] NameSections = { "NAME0", "NAME1", "NAME2", "NAME3", "NAME4", "NAME5" };
 
+        /// <summary>CD-Tag 2.x wrote its profiles in the DOS code page (437), e.g. byte F8 is the degree sign.</summary>
+        public static Encoding DosEncoding
+        {
+            get
+            {
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                return Encoding.GetEncoding(437);
+            }
+        }
+
         /// <summary>True when the file looks like a CD-Tag 2.x profile rather than a JSON profile.</summary>
         public static bool IsLegacyFile(string path)
         {
             if (!File.Exists(path))
                 return false;
 
-            using (var reader = new StreamReader(path, Encoding.Latin1, detectEncodingFromByteOrderMarks: true))
+            using (var reader = new StreamReader(path, DosEncoding, detectEncodingFromByteOrderMarks: true))
             {
                 string line;
                 while ((line = reader.ReadLine()) != null)
@@ -51,7 +62,7 @@ namespace CDTag.Model.Profile
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentNullException("path");
 
-            var ini = ReadIni(File.ReadAllLines(path, Encoding.Latin1));
+            var ini = ReadIni(File.ReadAllLines(path, DosEncoding));
             if (!ini.ContainsKey("CONFIG") && !ini.ContainsKey("NAME0"))
                 throw new InvalidDataException(string.Format("'{0}' is not a CD-Tag 2.x profile.", Path.GetFileName(path)));
 
@@ -140,6 +151,11 @@ namespace CDTag.Model.Profile
             else
                 profile.Finish.NFO = FinishNFO.None;
 
+            ConvertNamingRules(ini, profile);
+            ConvertExtInfo(ini, profile);
+            ConvertReleaseInfo(ini, profile);
+            profile.DeleteFiles = List(ini, "DELETE_LIST").Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
+
             return profile;
         }
 
@@ -175,6 +191,120 @@ namespace CDTag.Model.Profile
             profile.UpdateModelHash();
             return profile;
         }
+
+        private static void ConvertNamingRules(Dictionary<string, Dictionary<string, string>> ini, UserProfile profile)
+        {
+            List<string> find = List(ini, "ORIG_LIST", keepEmpty: true);
+            List<string> replace = List(ini, "REPLACE_LIST", keepEmpty: true);
+            var pairs = new List<ReplacePair>();
+            for (int i = 0; i < find.Count; i++)
+            {
+                if (string.IsNullOrEmpty(find[i]))
+                    continue;
+                pairs.Add(new ReplacePair { Find = find[i], Replace = i < replace.Count ? replace[i] ?? "" : "" });
+            }
+
+            profile.NamingRules = new NamingRules
+            {
+                Replacements = pairs.ToArray(),
+                RemoveStrings = List(ini, "REMOVE_LIST").Where(v => !string.IsNullOrEmpty(v)).ToArray(),
+                LowercaseWords = List(ini, "LOWERCASE_LIST").Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v.Trim()).ToArray(),
+                WordSeparators = List(ini, "WORDSEP_LIST").Where(v => !string.IsNullOrEmpty(v)).ToArray(),
+                FieldSeparators = List(ini, "FIELDSEP_LIST").Where(v => !string.IsNullOrEmpty(v)).ToArray()
+            };
+        }
+
+        private static void ConvertExtInfo(Dictionary<string, Dictionary<string, string>> ini, UserProfile profile)
+        {
+            var definitions = new List<ExtInfoDefinition>();
+            for (int n = 1; n <= 8; n++)
+            {
+                Dictionary<string, string> options;
+                if (!ini.TryGetValue(n == 1 ? "OPTIONS" : "Options" + n, out options))
+                    options = new Dictionary<string, string>();
+
+                string suffix = n == 1 ? "" : n.ToString();
+                List<string> fields = List(ini, "EXTDIRVAL_LIST" + suffix, keepEmpty: true);
+                List<string> formats = List(ini, "EXTDIRDIR_LIST" + suffix, keepEmpty: true);
+                var items = new List<ExtInfoItem>();
+                for (int i = 0; i < fields.Count; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(fields[i]))
+                        continue;
+                    items.Add(new ExtInfoItem { Field = fields[i].Trim(), Format = i < formats.Count && !string.IsNullOrEmpty(formats[i]) ? formats[i] : "<Value>" });
+                }
+
+                definitions.Add(new ExtInfoDefinition
+                {
+                    Begin = Get(options, "Begin") ?? "",
+                    FieldSeparator = Get(options, "FieldSep") ?? "",
+                    End = Get(options, "End") ?? "",
+                    Items = items.ToArray()
+                });
+            }
+            profile.ExtInfo = definitions.ToArray();
+        }
+
+        private static void ConvertReleaseInfo(Dictionary<string, Dictionary<string, string>> ini, UserProfile profile)
+        {
+            Dictionary<string, string> release = Section(ini, "RELEASE_INFO");
+            Dictionary<string, string> nfo = Section(ini, "NFO_OPTIONS");
+            profile.ReleaseInfo = new ReleaseInfoOptions
+            {
+                ReleaseTypes = Pairs(ini, "RELEASETYPENFO_LIST", "RELEASETYPEDIR_LIST"),
+                Sources = Pairs(ini, "SOURCENFO_LIST", "SOURCEDIR_LIST"),
+                Languages = Pairs(ini, "LANGRYNFO_LIST", "LANGRYDIR_LIST"),
+                LimitedEdition = Pairs(ini, "LTDEDNFO_LIST", "LTDEDDIR_LIST"),
+                WhiteLabel = Pairs(ini, "WHITELABELNFO_LIST", "WHITELABELDIR_LIST"),
+                CleanExplicit = Pairs(ini, "CLEANEXPLICITNFO_LIST", "CLEANEXPLICITDIR_LIST"),
+                GroupInitials = Get(release, "GroupInitials"),
+                Ripper = Get(release, "Ripper"),
+                Supplier = Get(release, "Supplier"),
+                Encoder = Get(release, "Encoder"),
+                RippingTool = Get(release, "Grabber"),
+                Comment = Get(release, "ID3Comment"),
+                LockRipper = GetBool(release, "LockRipper"),
+                LockSupplier = GetBool(release, "LockSupplier"),
+                LockEncoder = GetBool(release, "LockEncoder"),
+                LockComment = GetBool(release, "LockID3Comment"),
+                NfoDateFormat = Get(nfo, "DateFormat")
+            };
+        }
+
+        /// <summary>Values of a numbered list section ("1=...", "2=...") in numeric order.</summary>
+        private static List<string> List(Dictionary<string, Dictionary<string, string>> ini, string sectionName, bool keepEmpty = false)
+        {
+            Dictionary<string, string> section;
+            var result = new List<string>();
+            if (!ini.TryGetValue(sectionName, out section))
+                return result;
+
+            int number;
+            int max = section.Keys.Where(k => int.TryParse(k, out number)).Select(int.Parse).DefaultIfEmpty(0).Max();
+            for (int i = 1; i <= max; i++)
+            {
+                string value;
+                section.TryGetValue(i.ToString(), out value);
+                if (keepEmpty || !string.IsNullOrEmpty(value))
+                    result.Add(value ?? "");
+            }
+            return result;
+        }
+
+        private static ReleaseListItem[] Pairs(Dictionary<string, Dictionary<string, string>> ini, string nfoSection, string dirSection)
+        {
+            List<string> nfo = List(ini, nfoSection, keepEmpty: true);
+            List<string> dir = List(ini, dirSection, keepEmpty: true);
+            var result = new List<ReleaseListItem>();
+            for (int i = 0; i < nfo.Count; i++)
+            {
+                if (string.IsNullOrWhiteSpace(nfo[i]))
+                    continue;
+                result.Add(new ReleaseListItem { Nfo = nfo[i], Dir = i < dir.Count ? dir[i] ?? "" : "" });
+            }
+            return result.Count == 0 ? null : result.ToArray();
+        }
+
 
         private static Dictionary<string, Dictionary<string, string>> ReadIni(IEnumerable<string> lines)
         {

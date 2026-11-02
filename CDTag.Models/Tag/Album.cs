@@ -236,6 +236,13 @@ namespace CDTag.Model.Tag
             set { Set("IsVariousArtists", value); }
         }
 
+        /// <summary>The folder name the profile gives this album (preview; set by Tag Album).</summary>
+        public string NewFolderName
+        {
+            get { return Get<string>("NewFolderName"); }
+            set { Set("NewFolderName", value); }
+        }
+
         public void Finish()
         {
             foreach (AlbumTrack track in Tracks)

@@ -66,6 +66,16 @@ namespace CDTag.Model.Tag
             IAudioFile audioFile = AudioFile.Create(_path, throwExceptionIfUnknown: true);
             Bitrate = audioFile.Bitrate;
             TotalSeconds = audioFile.TotalSeconds;
+            Frequency = audioFile.Frequency;
+            Channels = audioFile.Channels;
+            ChannelMode = IsFlac ? (Channels == 1 ? "Single Channel" : "Stereo") : ReadMpegChannelMode(path) ?? (Channels == 1 ? "Single Channel" : "Stereo");
+            try
+            {
+                FileSize = new System.IO.FileInfo(path).Length;
+            }
+            catch (System.IO.IOException)
+            {
+            }
 
             // TODO: APE, Lyrics3
 
@@ -127,6 +137,82 @@ namespace CDTag.Model.Tag
 
         /// <summary>True for FLAC files (tags come from Vorbis comments).</summary>
         public bool IsFlac { get; private set; }
+
+        /// <summary>Creates a track from known values without reading a file (previews, tests).</summary>
+        public static AlbumTrack FromValues(string path, string discNumber, string trackNumber, string artist, string title,
+                                            decimal bitrate = 0, decimal totalSeconds = 0, long fileSize = 0)
+        {
+            var track = new AlbumTrack(path, readFile: false);
+            track.DiscNumber = discNumber;
+            track.TrackNumber = trackNumber;
+            track.Artist = artist;
+            track.Title = title;
+            track.Bitrate = bitrate;
+            track.TotalSeconds = totalSeconds;
+            track.IsFlac = string.Equals(System.IO.Path.GetExtension(path), ".flac", StringComparison.OrdinalIgnoreCase);
+            track.Frequency = 44100;
+            track.Channels = 2;
+            track.ChannelMode = "Stereo";
+            track.FileSize = fileSize;
+            return track;
+        }
+
+        private AlbumTrack(string path, bool readFile)
+        {
+            _path = path;
+        }
+
+        /// <summary>Sample rate in Hz (e.g. 44100).</summary>
+        public int Frequency { get; private set; }
+
+        public int Channels { get; private set; }
+
+        /// <summary>"Stereo", "Joint Stereo", "Dual Channel" or "Single Channel".</summary>
+        public string ChannelMode { get; private set; }
+
+        /// <summary>File size in bytes.</summary>
+        public long FileSize { get; private set; }
+
+        /// <summary>Channel mode from the first MPEG audio frame header (after any ID3v2 tag), or null.</summary>
+        private static string ReadMpegChannelMode(string path)
+        {
+            try
+            {
+                using (var stream = System.IO.File.OpenRead(path))
+                {
+                    long start = ID3v2Tag.DoesTagExist(path) ? ID3v2Tag.GetTagSize(path) : 0;
+                    stream.Position = start;
+                    var buffer = new byte[64 * 1024];
+                    int read = stream.Read(buffer, 0, buffer.Length);
+                    for (int i = 0; i + 3 < read; i++)
+                    {
+                        // Frame sync (11 bits), valid version/layer/bitrate/sample-rate fields
+                        if (buffer[i] != 0xFF || (buffer[i + 1] & 0xE0) != 0xE0)
+                            continue;
+                        if ((buffer[i + 1] & 0x18) == 0x08 || (buffer[i + 1] & 0x06) == 0 || (buffer[i + 2] & 0xF0) == 0xF0 || (buffer[i + 2] & 0x0C) == 0x0C)
+                            continue;
+                        switch (buffer[i + 3] >> 6)
+                        {
+                            case 0: return "Stereo";
+                            case 1: return "Joint Stereo";
+                            case 2: return "Dual Channel";
+                            default: return "Single Channel";
+                        }
+                    }
+                }
+            }
+            catch (System.IO.IOException)
+            {
+            }
+            return null;
+        }
+
+        /// <summary>The name the profile gives this file (preview; set by Tag Album).</summary>
+        public string NewFileName
+        {
+            get { return Get<string>("NewFileName"); }
+            set { Set("NewFileName", value); }
+        }
 
         /// <summary>Embedded cover of a FLAC file (MP3 covers are in <see cref="Picture"/>).</summary>
         public Picture CoverPicture

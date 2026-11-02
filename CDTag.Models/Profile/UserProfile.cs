@@ -88,5 +88,33 @@ namespace CDTag.Model.Profile
             get { return Get<Finish>("Finish"); }
             set { Set("Finish", value); }
         }
+
+        /// <summary>Find/replace, casing and separator rules for names (null = built-in defaults).</summary>
+        public NamingRules NamingRules
+        {
+            get { return Get<NamingRules>("NamingRules"); }
+            set { Set("NamingRules", value); }
+        }
+
+        /// <summary>&lt;ExtInfo&gt;, &lt;ExtInfo2&gt;, ... definitions.</summary>
+        public ExtInfoDefinition[] ExtInfo
+        {
+            get { return Get<ExtInfoDefinition[]>("ExtInfo"); }
+            set { Set("ExtInfo", value); }
+        }
+
+        /// <summary>Dropdown lists and defaults for the release information page (null = built-in defaults).</summary>
+        public ReleaseInfoOptions ReleaseInfo
+        {
+            get { return Get<ReleaseInfoOptions>("ReleaseInfo"); }
+            set { Set("ReleaseInfo", value); }
+        }
+
+        /// <summary>File patterns deleted from the album folder on Finish (e.g. "*.m3u").</summary>
+        public string[] DeleteFiles
+        {
+            get { return Get<string[]>("DeleteFiles"); }
+            set { Set("DeleteFiles", value); }
+        }
     }
 }
