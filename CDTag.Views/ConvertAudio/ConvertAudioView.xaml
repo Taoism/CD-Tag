@@ -7,22 +7,27 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Toolbar -->
         <Border Grid.Row="0" Background="{DynamicResource Theme.ToolbarBackground}" BorderBrush="{DynamicResource Theme.ToolbarBorder}" BorderThickness="0,0,0,1">
             <StackPanel Orientation="Horizontal" Margin="4,0">
-                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE710;" Content="Add" Command="{Binding AddCommand}" ToolTip="Add audio files to the list" />
+                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE710;" Content="Add" Command="{Binding AddCommand}" ToolTip="Add audio files to the list (or drop files and folders on the list)" />
                 <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE738;" Content="Remove" Command="{Binding RemoveCommand}" ToolTip="Remove the selected file" />
                 <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE894;" Content="Clear" Command="{Binding ClearCommand}" ToolTip="Clear the list" />
                 <Border Style="{DynamicResource ToolbarSeparator}" />
                 <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE74B;" Content="Down" Command="{Binding MoveDownCommand}" ToolTip="Move the selected file down" />
                 <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE74A;" Content="Up" Command="{Binding MoveUpCommand}" ToolTip="Move the selected file up" />
                 <Border Style="{DynamicResource ToolbarSeparator}" />
-                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE713;" Content="Options" Command="{Binding OptionsCommand}" ToolTip="Encoder options (not available yet)" ToolTipService.ShowOnDisabled="True" />
+                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE713;" Content="Options" Command="{Binding OptionsCommand}" ToolTip="Encoder locations (Tools > Options)" />
                 <Border Style="{DynamicResource ToolbarSeparator}" />
-                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xEC4F;" Content="Encode" Command="{Binding EncodeCommand}" ToolTip="Encode (not available yet)" ToolTipService.ShowOnDisabled="True" />
-                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE8A5;" Content="Decode" Command="{Binding DecodeCommand}" ToolTip="Decode to WAV (not available yet)" ToolTipService.ShowOnDisabled="True" />
+                <ComboBox Width="180" Margin="4,0" VerticalAlignment="Center" ItemsSource="{Binding Presets}" DisplayMemberPath="Name"
+                          SelectedItem="{Binding SelectedPreset, Mode=TwoWay}" IsEnabled="{Binding IsBusy, Converter={StaticResource NegateBoolConverter}}"
+                          ToolTip="Scene MP3 rules 10.2: LAME 3.100 -V0 for CD/vinyl/other sources, -b 320 for lossless WEB sources" />
+                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xEC4F;" Content="Encode" Command="{Binding EncodeCommand}" ToolTip="Encode WAV/FLAC to MP3 next to each file (tags are copied)" ToolTipService.ShowOnDisabled="True" />
+                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE8A5;" Content="Decode" Command="{Binding DecodeCommand}" ToolTip="Decode FLAC/MP3 to WAV next to each file" ToolTipService.ShowOnDisabled="True" />
+                <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE711;" Content="Cancel" Command="{Binding CancelCommand}" ToolTip="Stop after cancelling the current file" />
                 <Border Style="{DynamicResource ToolbarSeparator}" />
                 <Button Style="{DynamicResource IconToolbarButton}" Tag="&#xE897;" Content="Help" Command="{Binding DataContext.ShowHelpCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
             </StackPanel>
@@ -31,7 +36,8 @@
         <!-- Queue -->
         <DataGrid Grid.Row="1" Margin="0,0,0,0" ItemsSource="{Binding Files}" SelectedItem="{Binding SelectedFile, Mode=TwoWay}"
                   AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="None"
-                  CanUserAddRows="False" CanUserSortColumns="False" BorderThickness="0">
+                  CanUserAddRows="False" CanUserSortColumns="False" BorderThickness="0"
+                  AllowDrop="True" DragOver="Queue_DragOver" Drop="Queue_Drop">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" />
                 <DataGridTextColumn Header="Size" Binding="{Binding Size, StringFormat='{}{0:#,0}'}" Width="90">
@@ -42,8 +48,11 @@
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="2*" />
                 <DataGridTextColumn Header="Directory" Binding="{Binding Directory}" Width="3*" />
             </DataGrid.Columns>
         </DataGrid>
+
+        <TextBlock Grid.Row="2" Margin="6,3" Text="{Binding StatusText}" Foreground="{DynamicResource Theme.ForegroundSecondary}" />
     </Grid>
 </UserControl>

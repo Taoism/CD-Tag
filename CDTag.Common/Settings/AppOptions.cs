@@ -33,6 +33,18 @@ namespace CDTag.Common.Settings
         [DataMember]
         public string NewTagID3v2Version { get; set; }
 
+        /// <summary>lame.exe; empty = Encoders\lame\lame.exe next to cdtag.exe, then PATH.</summary>
+        [DataMember]
+        public string LamePath { get; set; }
+
+        /// <summary>flac.exe (decodes FLAC for MP3 encoding); empty = Encoders\flac\flac.exe next to cdtag.exe, then PATH.</summary>
+        [DataMember]
+        public string FlacPath { get; set; }
+
+        /// <summary>Convert Audio's last preset ("LameV0" or "Lame320").</summary>
+        [DataMember]
+        public string EncodePreset { get; set; }
+
         public AppOptionsData Clone()
         {
             return (AppOptionsData)MemberwiseClone();

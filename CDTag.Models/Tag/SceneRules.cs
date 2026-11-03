@@ -308,9 +308,46 @@ namespace CDTag.Model.Tag
                     issues.Add(string.Format("MP3 10.1 / 10.2.1: WEB music is 320 kbps CBR; {0} is {1:0} kbps.", Path.GetFileName(low.OriginalFileName), low.Bitrate));
                 if (album.Tracks.Select(t => Math.Round(t.Bitrate)).Where(b => b > 0).Distinct().Count() > 1 && web)
                     issues.Add("MP3 13: all tracks of a WEB release must have the same bitrate.");
+
+                // Encoder: LAME 3.100 -V0 (non-WEB) or -b 320 (lossless WEB). MP3CD/FLASH MP3s are released as they are.
+                if (!Regex.IsMatch(source, "MP3CD|FLASH"))
+                    CheckLame(album, web, issues);
             }
 
             return issues;
+        }
+
+        private static void CheckLame(Album album, bool web, List<string> issues)
+        {
+            // Only files on disk can be checked (not tracks built from values).
+            var headers = album.Tracks
+                .Where(t => File.Exists(t.OriginalFileName))
+                .Select(t => new { Name = Path.GetFileName(t.OriginalFileName), Header = LameHeader.Read(t.OriginalFileName) })
+                .ToList();
+            if (headers.Count == 0)
+                return;
+
+            if (web)
+            {
+                // Bought as MP3: released unmodified, any encoder. Encoded by the group (LAME 3.100): -b 320 only.
+                var wrong = headers.Where(h => h.Header != null && h.Header.IsLame3100 && !h.Header.IsScene320).ToList();
+                if (wrong.Count > 0)
+                    issues.Add(string.Format("MP3 10.2.1: lossless WEB sources are encoded with LAME 3.100 -b 320; {0} is {1}{2}.",
+                                             wrong[0].Name, wrong[0].Header.Settings, More(wrong.Count)));
+                if (headers.Select(h => h.Header == null ? "" : h.Header.Settings).Distinct().Count() > 1)
+                    issues.Add("MP3 13: all tracks of a WEB release must come from the same encoder and settings.");
+                return;
+            }
+
+            var notV0 = headers.Where(h => h.Header == null || !h.Header.IsSceneV0).ToList();
+            if (notV0.Count > 0)
+                issues.Add(string.Format("MP3 10.2.2: encode with LAME 3.100 -V0; {0} is {1}{2}.", notV0[0].Name,
+                                         notV0[0].Header == null ? "not from LAME (no LAME header)" : notV0[0].Header.Settings, More(notV0.Count)));
+        }
+
+        private static string More(int count)
+        {
+            return count > 1 ? string.Format(" ({0} tracks)", count) : "";
         }
     }
 }

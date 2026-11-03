@@ -26,8 +26,12 @@ namespace CDTag.ViewModel.Options
             StartupFolder = options.StartupFolder;
             ShowHiddenFiles = options.ShowHiddenFiles;
             NewTagID3v2Version = options.NewTagID3v2Version == "ID3v24" ? "ID3v24" : "ID3v23";
+            LamePath = options.LamePath;
+            FlacPath = options.FlacPath;
 
             BrowseStartupFolderCommand = new DelegateCommand(BrowseStartupFolder);
+            BrowseLameCommand = new DelegateCommand(() => BrowseExe("lame.exe", "LamePath"));
+            BrowseFlacCommand = new DelegateCommand(() => BrowseExe("flac.exe", "FlacPath"));
             OKCommand = new DelegateCommand(Apply);
         }
 
@@ -67,6 +71,66 @@ namespace CDTag.ViewModel.Options
             set { Set("NewTagID3v2Version", value); }
         }
 
+        /// <summary>lame.exe; empty uses Encoders\lame next to cdtag.exe.</summary>
+        public string LamePath
+        {
+            get { return Get<string>("LamePath"); }
+            set
+            {
+                Set("LamePath", value);
+                LameInfo = EncoderInfo(value, "lame", "lame.exe");
+            }
+        }
+
+        public string FlacPath
+        {
+            get { return Get<string>("FlacPath"); }
+            set
+            {
+                Set("FlacPath", value);
+                FlacInfo = EncoderInfo(value, "flac", "flac.exe");
+            }
+        }
+
+        /// <summary>"Using ...\Encoders\lame\lame.exe (LAME 3.100 (64-bit))" or "Not found".</summary>
+        public string LameInfo
+        {
+            get { return Get<string>("LameInfo"); }
+            private set { Set("LameInfo", value); }
+        }
+
+        public string FlacInfo
+        {
+            get { return Get<string>("FlacInfo"); }
+            private set { Set("FlacInfo", value); }
+        }
+
+        public ICommand BrowseLameCommand { get; private set; }
+        public ICommand BrowseFlacCommand { get; private set; }
+
+        private static string EncoderInfo(string configured, string folder, string exe)
+        {
+            string path = !string.IsNullOrWhiteSpace(configured) ? configured.Trim() : Path.Combine(AppContext.BaseDirectory, "Encoders", folder, exe);
+            if (!File.Exists(path))
+                return string.IsNullOrWhiteSpace(configured) ? string.Format("Not found in Encoders\\{0}. Choose {1}.", folder, exe) : "File not found.";
+            string version = CDTag.Model.Encoders.AudioEncoder.GetVersion(path);
+            return string.IsNullOrWhiteSpace(configured)
+                ? string.Format("Using Encoders\\{0}\\{1}{2}", folder, exe, version != null ? " (" + version + ")" : "")
+                : version ?? "Unknown version";
+        }
+
+        private void BrowseExe(string exe, string property)
+        {
+            string[] files;
+            if (_dialogService.ShowOpenFilesDialog("Choose " + exe, exe + "|" + exe + "|Programs (*.exe)|*.exe", null, out files) == true && files != null && files.Length > 0)
+            {
+                if (property == "LamePath")
+                    LamePath = files[0];
+                else
+                    FlacPath = files[0];
+            }
+        }
+
         public ICommand BrowseStartupFolderCommand { get; private set; }
 
         public ICommand OKCommand { get; private set; }
@@ -96,6 +160,8 @@ namespace CDTag.ViewModel.Options
             options.StartupFolder = string.IsNullOrWhiteSpace(StartupFolder) ? null : StartupFolder.Trim();
             options.ShowHiddenFiles = ShowHiddenFiles;
             options.NewTagID3v2Version = NewTagID3v2Version;
+            options.LamePath = string.IsNullOrWhiteSpace(LamePath) ? null : LamePath.Trim();
+            options.FlacPath = string.IsNullOrWhiteSpace(FlacPath) ? null : FlacPath.Trim();
             AppOptions.Save(options);
 
             if (!string.IsNullOrEmpty(Theme))

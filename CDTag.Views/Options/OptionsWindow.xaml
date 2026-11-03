@@ -91,6 +91,33 @@
                 <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0" Text="Used when a file has no ID3v2 tag yet. Existing tags keep their version." />
             </StackPanel>
 
+            <!-- Encoders -->
+            <TextBlock Text="Encoders (Convert Audio)" Style="{StaticResource SectionHeader}" />
+            <StackPanel Style="{StaticResource SectionBody}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Label Content="_LAME:" Target="{Binding ElementName=LamePathBox}" Padding="0" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBox x:Name="LamePathBox" Grid.Column="1" Text="{Binding LamePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="2,1" VerticalContentAlignment="Center" />
+                    <Button Grid.Column="2" Content="Browse..." Command="{Binding BrowseLameCommand}" Padding="10,2" Margin="6,0,0,0" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource Hint}" Margin="0,2,0,6" Text="{Binding LameInfo}" />
+                    <Label Grid.Row="2" Content="_FLAC:" Target="{Binding ElementName=FlacPathBox}" Padding="0" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBox x:Name="FlacPathBox" Grid.Row="2" Grid.Column="1" Text="{Binding FlacPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="2,1" VerticalContentAlignment="Center" />
+                    <Button Grid.Row="2" Grid.Column="2" Content="Browse..." Command="{Binding BrowseFlacCommand}" Padding="10,2" Margin="6,0,0,0" />
+                    <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource Hint}" Margin="0,2,0,0" Text="{Binding FlacInfo}" />
+                </Grid>
+                <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0" Text="Leave empty to use the Encoders folder next to cdtag.exe." />
+            </StackPanel>
+
             <Path Data="M0,0 L1,0" Stroke="{DynamicResource Theme.Divider}" Stretch="Fill" Margin="0,0,0,10" />
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

@@ -17,3 +17,6 @@ Profiles/
 
 # Scene release rules (local reference only, never published)
 rules/
+
+# Encoders (lame.exe, flac.exe), copied locally, not published
+/Encoders/

@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <None Include="TestData\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Encoders\**\*.exe;..\..\Encoders\**\*.dll" Condition="Exists('..\..\Encoders')" Link="Encoders\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

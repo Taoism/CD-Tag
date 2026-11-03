@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Content Include="Languages\english.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Encoders\**\*.exe;..\Encoders\**\*.dll;..\Encoders\**\*.txt" Condition="Exists('..\Encoders')" Link="Encoders\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
