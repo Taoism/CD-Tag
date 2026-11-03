@@ -14,3 +14,6 @@ TestResults/
 *.nfo
 *.cdtag2.ini
 Profiles/
+
+# Scene release rules (local reference only, never published)
+rules/

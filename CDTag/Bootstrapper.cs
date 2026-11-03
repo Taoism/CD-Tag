@@ -1,4 +1,6 @@
-﻿using System.Windows;
+using System;
+using System.Linq;
+using System.Windows;
 using CDTag.Common;
 using CDTag.Common.ApplicationServices;
 using CDTag.Common.Dispatcher;
@@ -116,8 +118,45 @@ namespace CDTag
         {
             MainWindow shell = IoC.Resolve<MainWindow>();
             shell.Show();
+            CheckSceneRules(shell);
 
             return shell;
+        }
+
+        /// <summary>
+        /// Looks for updated scene rules (scenerules.org) in the background on every start; tells the user when a
+        /// rule file is new or has changed. Offline or failing: silent.
+        /// </summary>
+        private static void CheckSceneRules(Window shell)
+        {
+            string directory = System.IO.Path.Combine(IoC.Resolve<IPathService>().LocalApplicationDirectory, "Rules");
+            var updater = new CDTag.Model.Tag.SceneRulesUpdater(directory);
+            try
+            {
+                updater.ApplyGenres(); // last downloaded rules, until the check finishes
+            }
+            catch (Exception)
+            {
+            }
+
+            System.Threading.Tasks.Task.Run(async () =>
+            {
+                try
+                {
+                    var changes = await updater.CheckAsync();
+                    if (changes.Count == 0)
+                        return;
+                    string text = "The scene rules on scenerules.org have changed:" + Environment.NewLine + Environment.NewLine +
+                                  string.Join(Environment.NewLine, changes.Select(c => "- " + c)) + Environment.NewLine + Environment.NewLine +
+                                  "The new rule files are saved in" + Environment.NewLine + directory;
+                    shell.Dispatcher.BeginInvoke(new Action(() =>
+                        System.Windows.MessageBox.Show(shell, text, "Scene rules", MessageBoxButton.OK, MessageBoxImage.Information)));
+                }
+                catch (Exception)
+                {
+                    // No connection or the site changed: try again next start.
+                }
+            });
         }
     }
 }

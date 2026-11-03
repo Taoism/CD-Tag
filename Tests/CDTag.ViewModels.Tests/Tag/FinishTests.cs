@@ -155,6 +155,9 @@ namespace CDTag.ViewModel.Tests.Tag
 
             FinishPlan plan = finisher.Plan();
             Assert.That(plan.Problems, Is.Empty);
+            Assert.That(plan.RuleSetName, Is.EqualTo("FLAC rules v3.0"));
+            Assert.That(plan.RuleIssues, Has.Some.StartsWith("FLAC 4.1"), "the test profile's folder name has no -FLAC-");
+            Assert.That(plan.Describe(), Does.Contain("Scene rules (FLAC rules v3.0)"));
             string result = finisher.Run(plan);
 
             Assert.That(Path.GetFileName(result), Is.EqualTo("Ween-Pure_Guava-1994-GRP"));
@@ -173,9 +176,11 @@ namespace CDTag.ViewModel.Tests.Tag
             Assert.That(vorbis.Album, Is.EqualTo("Pure Guava"));
             Assert.That(vorbis.Items.GetValue("DATE"), Is.EqualTo("1994"));
             Assert.That(vorbis.Items.GetValue("TRACKNUMBER"), Is.EqualTo("1"));
-            Assert.That(vorbis.Items.GetValue("TRACKTOTAL"), Is.EqualTo("2"));
-            Assert.That(vorbis.GetPictureBlocks().Count, Is.EqualTo(1));
-            Assert.That(Picture.FromFlacPictureBlock(vorbis.GetPictureBlocks()[0]).PictureType, Is.EqualTo(PictureType.CoverFront));
+            Assert.That(vorbis.Items.GetValue("TOTALTRACKS"), Is.EqualTo("2"), "FLAC rules 6.2.1 names");
+            Assert.That(vorbis.Items.GetValue("TRACKTOTAL"), Is.Null);
+            Assert.That(vorbis.Items.GetValue("DISCNUMBER"), Is.EqualTo("1"));
+            Assert.That(vorbis.Items.GetValue("TOTALDISCS"), Is.EqualTo("1"));
+            Assert.That(vorbis.GetPictureBlocks().Count, Is.EqualTo(0), "FLAC rules 6.3: picture block must be empty");
             Assert.That(FlacStreamInfo.Read(first).TotalSamples, Is.EqualTo(samples), "audio untouched");
             Assert.That(ID3v2Tag.DoesTagExist(first), Is.False);
 
@@ -237,7 +242,7 @@ namespace CDTag.ViewModel.Tests.Tag
 
             var vorbis = new VorbisComment(Path.Combine(result, "CD1", "101-ween-one-grp.flac"));
             Assert.That(vorbis.Items.GetValue("DISCNUMBER"), Is.EqualTo("1"));
-            Assert.That(vorbis.Items.GetValue("DISCTOTAL"), Is.EqualTo("2"));
+            Assert.That(vorbis.Items.GetValue("TOTALDISCS"), Is.EqualTo("2"));
             Assert.That(vorbis.Items.GetValue("DISCSUBTITLE"), Is.EqualTo("McCabe's"));
         }
 
@@ -283,6 +288,22 @@ namespace CDTag.ViewModel.Tests.Tag
             Album album = Load(folder, "Ween", "Two", "One", "Two");
 
             Assert.That(album.Tracks.Select(t => t.DiscNumber), Is.EqualTo(new[] { "1", "2" }));
+        }
+
+        [Test]
+        public void FlacCoverCanBeEmbeddedWhenTheProfileSaysSo()
+        {
+            string folder = MakeFolder("cover (src)", "untagged.flac", "01.flac");
+            Album album = Load(folder, "Ween", "Pure Guava", "Little Birdy");
+            album.CoverBytes = Cover();
+            UserProfile profile = Profile();
+            profile.Tagging.EmbedCoverInFlac = true;
+
+            string result = Finish(album, profile);
+
+            var vorbis = new VorbisComment(Directory.GetFiles(result, "*.flac").Single());
+            Assert.That(vorbis.GetPictureBlocks().Count, Is.EqualTo(1));
+            Assert.That(Picture.FromFlacPictureBlock(vorbis.GetPictureBlocks()[0]).PictureType, Is.EqualTo(PictureType.CoverFront));
         }
 
         [Test]

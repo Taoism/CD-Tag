@@ -44,6 +44,12 @@ namespace CDTag.Model.Tag
             Creates = new List<FileCreate>();
         }
 
+        /// <summary>Scene rules findings (Finish can still run).</summary>
+        public List<string> RuleIssues { get; private set; } = new List<string>();
+
+        /// <summary>"FLAC rules v3.0", or null when no rules were checked.</summary>
+        public string RuleSetName { get; set; }
+
         /// <summary>Reasons Finish cannot run.</summary>
         public List<string> Problems { get; private set; }
         public List<string> Warnings { get; private set; }
@@ -83,6 +89,22 @@ namespace CDTag.Model.Tag
                 sb.AppendFormat("Rename the folder to {0}", System.IO.Path.GetFileName(NewDirectory)).AppendLine();
             foreach (string warning in Warnings)
                 sb.AppendLine().Append("Note: ").Append(warning);
+            if (RuleSetName != null)
+            {
+                sb.AppendLine().AppendLine();
+                if (RuleIssues.Count == 0)
+                {
+                    sb.AppendFormat("Scene rules ({0}): no problems found.", RuleSetName);
+                }
+                else
+                {
+                    sb.AppendFormat("Scene rules ({0}), {1} problem{2}:", RuleSetName, RuleIssues.Count, RuleIssues.Count == 1 ? "" : "s").AppendLine();
+                    foreach (string issue in RuleIssues.Take(15))
+                        sb.Append("    ").AppendLine(issue);
+                    if (RuleIssues.Count > 15)
+                        sb.AppendFormat("    ... and {0} more", RuleIssues.Count - 15).AppendLine();
+                }
+            }
             return sb.ToString().TrimEnd();
         }
 
@@ -254,7 +276,34 @@ namespace CDTag.Model.Tag
             }
 
             CheckTargets(plan, deleted);
+            CheckSceneRules(plan, deleted);
             return plan;
+        }
+
+        private void CheckSceneRules(FinishPlan plan, HashSet<string> deleted)
+        {
+            SceneRuleSet rules = _tagging.SkipSceneRules ? SceneRuleSet.None : SceneRules.RuleSetFor(_album);
+            if (rules == SceneRuleSet.None)
+                return;
+
+            // The files as they will be after Finish, relative to the release folder.
+            var moves = plan.Moves.ToDictionary(m => m.Source, m => m.Target, StringComparer.OrdinalIgnoreCase);
+            var files = AlbumFiles().Where(f => !deleted.Contains(f)).Select(f => { string target; return moves.TryGetValue(f, out target) ? target : f; })
+                                    .Concat(plan.Creates.Select(c => c.Path))
+                                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                                    .Select(f => RelativeTo(Folder, f))
+                                    .ToList();
+            var release = new SceneRelease
+            {
+                Name = Path.GetFileName(plan.NewDirectory),
+                Files = files,
+                Album = _album,
+                Source = _release.Source != null ? (_release.Source.Dir ?? _release.Source.Nfo) : null,
+                Discs = _namer.Discs,
+                Year = _namer.Year
+            };
+            plan.RuleSetName = SceneRules.Describe(rules);
+            plan.RuleIssues.AddRange(SceneRules.Check(rules, release));
         }
 
         private void PlanPerDisc(FinishPlan plan, List<string> remaining, string extension, NameKind kind, Dictionary<string, int> discByFolder)
@@ -477,6 +526,12 @@ namespace CDTag.Model.Tag
             {
                 var vorbis = new VorbisComment(path);
                 NameValueList items = vorbis.Items;
+                // FLAC rules 6.1: every field name once.
+                foreach (var duplicate in items.GroupBy(i => i.Name, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1).ToList())
+                {
+                    foreach (NameValueItem extra in duplicate.Skip(1).ToList())
+                        items.Remove(extra);
+                }
                 Set(items, "ARTIST", artist);
                 Set(items, "TITLE", track.Title);
                 Set(items, "ALBUM", _album.AlbumTitle);
@@ -484,23 +539,32 @@ namespace CDTag.Model.Tag
                 Remove(items, "YEAR");
                 Set(items, "GENRE", _album.Genre);
                 Set(items, "TRACKNUMBER", Number(track.TrackNumber).ToString(CultureInfo.InvariantCulture));
-                Set(items, "TRACKTOTAL", tracksOnDisc.ToString(CultureInfo.InvariantCulture));
-                Remove(items, "TOTALTRACKS");
-                Set(items, "DISCNUMBER", discs > 1 ? disc.ToString(CultureInfo.InvariantCulture) : null);
-                Set(items, "DISCTOTAL", discs > 1 ? discs.ToString(CultureInfo.InvariantCulture) : null);
-                Remove(items, "TOTALDISCS");
+                // FLAC rules 6.2.1 field names: TOTALTRACKS, DISCNUMBER, TOTALDISCS (also for one disc).
+                Set(items, "TOTALTRACKS", tracksOnDisc.ToString(CultureInfo.InvariantCulture));
+                Remove(items, "TRACKTOTAL");
+                Set(items, "DISCNUMBER", disc.ToString(CultureInfo.InvariantCulture));
+                Set(items, "TOTALDISCS", discs.ToString(CultureInfo.InvariantCulture));
+                Remove(items, "DISCTOTAL");
                 Set(items, "DISCSUBTITLE", _album.GetDiscName(disc));
                 Set(items, "ALBUMARTIST", _album.IsVariousArtists ? "Various Artists" : null);
                 Set(items, "COMPILATION", _album.IsVariousArtists ? "1" : null);
                 if (!string.IsNullOrWhiteSpace(comment))
                     Set(items, "COMMENT", comment);
 
-                if (_album.CoverBytes != null)
+                if (_tagging.EmbedCoverInFlac)
                 {
-                    // Replace the front cover, keep other pictures.
-                    var blocks = vorbis.GetPictureBlocks().Where(b => b.Length < 4 || ReadInt32BigEndian(b, 0) != (int)PictureType.CoverFront).ToList();
-                    blocks.Insert(0, FlacPictureBlock(_album.CoverBytes));
-                    vorbis.SetPictureBlocks(blocks);
+                    if (_album.CoverBytes != null)
+                    {
+                        // Replace the front cover, keep other pictures.
+                        var blocks = vorbis.GetPictureBlocks().Where(b => b.Length < 4 || ReadInt32BigEndian(b, 0) != (int)PictureType.CoverFront).ToList();
+                        blocks.Insert(0, FlacPictureBlock(_album.CoverBytes));
+                        vorbis.SetPictureBlocks(blocks);
+                    }
+                }
+                else
+                {
+                    // FLAC rules 6.3: the picture block MUST be empty.
+                    vorbis.SetPictureBlocks(new byte[0][]);
                 }
                 vorbis.Save(path);
 
@@ -544,7 +608,8 @@ namespace CDTag.Model.Tag
                     frame.Description = "";
                     frame.Value = comment;
                 }
-                if (_album.CoverBytes != null)
+                // MP3 rules 15.2: at most 2 MB of pictures per file.
+                if (_album.CoverBytes != null && _album.CoverBytes.Length <= SceneRules.MaxMp3PictureBytes)
                 {
                     foreach (IAttachedPicture old in id3v2.PictureList.Where(p => p.PictureType == PictureType.CoverFront).ToList())
                         id3v2.PictureList.Remove(old);

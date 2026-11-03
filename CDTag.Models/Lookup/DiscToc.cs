@@ -361,6 +361,7 @@ namespace CDTag.Model.Lookup
     {
         public int SampleRate { get; private set; }
         public int Channels { get; private set; }
+        public int BitsPerSample { get; private set; }
         public long TotalSamples { get; private set; }
 
         public static FlacStreamInfo Read(string path)
@@ -397,6 +398,7 @@ namespace CDTag.Model.Lookup
                     {
                         SampleRate = (s[10] << 12) | (s[11] << 4) | (s[12] >> 4),
                         Channels = ((s[12] >> 1) & 0x07) + 1,
+                        BitsPerSample = (((s[12] & 0x01) << 4) | (s[13] >> 4)) + 1,
                         TotalSamples = ((long)(s[13] & 0x0F) << 32) | ((long)s[14] << 24) | ((long)s[15] << 16) | ((long)s[16] << 8) | s[17]
                     };
                 }
