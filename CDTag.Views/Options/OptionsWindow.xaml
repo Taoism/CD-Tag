@@ -1,4 +1,4 @@
-﻿<Views:WindowViewBase
+<Views:WindowViewBase
     x:Class="CDTag.Views.Options.OptionsWindow"
     x:Name="optionsDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -92,7 +92,7 @@
             </StackPanel>
 
             <!-- Encoders -->
-            <TextBlock Text="Encoders (Convert Audio)" Style="{StaticResource SectionHeader}" />
+            <TextBlock Text="Encoders" Style="{StaticResource SectionHeader}" />
             <StackPanel Style="{StaticResource SectionBody}">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -115,7 +115,7 @@
                     <Button Grid.Row="2" Grid.Column="2" Content="Browse..." Command="{Binding BrowseFlacCommand}" Padding="10,2" Margin="6,0,0,0" />
                     <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource Hint}" Margin="0,2,0,0" Text="{Binding FlacInfo}" />
                 </Grid>
-                <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0" Text="Leave empty to use the Encoders folder next to cdtag.exe." />
+                <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0" Text="Leave empty to use the built-in LAME 3.100 and FLAC 1.5.0. To use another version, put lame.exe in Encoders\mp3 or flac.exe in Encoders\flac next to cdtag.exe." />
             </StackPanel>
 
             <Path Data="M0,0 L1,0" Stroke="{DynamicResource Theme.Divider}" Stretch="Fill" Margin="0,0,0,10" />

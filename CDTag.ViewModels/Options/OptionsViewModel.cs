@@ -71,14 +71,14 @@ namespace CDTag.ViewModel.Options
             set { Set("NewTagID3v2Version", value); }
         }
 
-        /// <summary>lame.exe; empty uses Encoders\lame next to cdtag.exe.</summary>
+        /// <summary>lame.exe; empty uses Encoders\mp3\lame.exe next to cdtag.exe when it is there, otherwise the built-in LAME.</summary>
         public string LamePath
         {
             get { return Get<string>("LamePath"); }
             set
             {
                 Set("LamePath", value);
-                LameInfo = EncoderInfo(value, "lame", "lame.exe");
+                LameInfo = EncoderInfo(value, CDTag.Model.Encoders.AudioEncoder.UserLameFolder, "lame", "lame.exe");
             }
         }
 
@@ -88,11 +88,11 @@ namespace CDTag.ViewModel.Options
             set
             {
                 Set("FlacPath", value);
-                FlacInfo = EncoderInfo(value, "flac", "flac.exe");
+                FlacInfo = EncoderInfo(value, CDTag.Model.Encoders.AudioEncoder.UserFlacFolder, "flac", "flac.exe");
             }
         }
 
-        /// <summary>"Using ...\Encoders\lame\lame.exe (LAME 3.100 (64-bit))" or "Not found".</summary>
+        /// <summary>Which lame.exe is used (chosen, yours in Encoders\mp3, or built-in) and its version.</summary>
         public string LameInfo
         {
             get { return Get<string>("LameInfo"); }
@@ -108,15 +108,37 @@ namespace CDTag.ViewModel.Options
         public ICommand BrowseLameCommand { get; private set; }
         public ICommand BrowseFlacCommand { get; private set; }
 
-        private static string EncoderInfo(string configured, string folder, string exe)
+        /// <summary>"Using yours: Encoders\mp3\lame.exe (LAME 3.100)", "Using the built-in flac 1.5.0", or why none is found.</summary>
+        private static string EncoderInfo(string configured, string userFolder, string folder, string exe)
         {
-            string path = !string.IsNullOrWhiteSpace(configured) ? configured.Trim() : CDTag.Model.Encoders.AudioEncoder.BundledPath(folder, exe) ?? Path.Combine(AppContext.BaseDirectory, "Encoders", folder, exe);
-            if (!File.Exists(path))
-                return string.IsNullOrWhiteSpace(configured) ? string.Format("Not found in Encoders\\{0}. Choose {1}.", folder, exe) : "File not found.";
+            string path;
+            string where;
+            if (!string.IsNullOrWhiteSpace(configured))
+            {
+                path = configured.Trim();
+                if (!File.Exists(path))
+                    return "File not found.";
+                where = null;
+            }
+            else if ((path = CDTag.Model.Encoders.AudioEncoder.UserPath(userFolder, exe)) != null)
+            {
+                where = string.Format(@"yours: Encoders\{0}\{1}", userFolder, exe);
+            }
+            else if ((path = CDTag.Model.Encoders.AudioEncoder.BundledPath(folder, exe)) != null)
+            {
+                where = "the built-in";
+            }
+            else
+            {
+                return string.Format(@"Not found. Put {0} in Encoders\{1} next to cdtag.exe, or choose it.", exe, userFolder);
+            }
+
             string version = CDTag.Model.Encoders.AudioEncoder.GetVersion(path);
-            return string.IsNullOrWhiteSpace(configured)
-                ? string.Format("Using Encoders\\{0}\\{1}{2}", folder, exe, version != null ? " (" + version + ")" : "")
-                : version ?? "Unknown version";
+            if (where == null)
+                return version ?? "Unknown version";
+            return where == "the built-in"
+                ? "Using the built-in " + (version ?? exe)
+                : string.Format("Using {0}{1}", where, version != null ? " (" + version + ")" : "");
         }
 
         private void BrowseExe(string exe, string property)

@@ -174,7 +174,7 @@ namespace CDTag.ViewModels.ConvertAudio
             bool needFlac = queue.Any(f => f.FullPath.EndsWith(".flac", StringComparison.OrdinalIgnoreCase));
             var missing = new List<string>();
             if (needLame && AudioEncoder.LamePath == null)
-                missing.Add("lame.exe (Encoders\\lame)");
+                missing.Add("lame.exe (Encoders\\mp3)");
             if (needFlac && AudioEncoder.FlacPath == null)
                 missing.Add("flac.exe (Encoders\\flac)");
             if (missing.Count > 0)

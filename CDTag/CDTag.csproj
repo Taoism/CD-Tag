@@ -26,7 +26,16 @@
   <ItemGroup>
     <Content Include="Languages\english.txt" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Defaults\blank.nfo" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\Encoders\**\*.exe;..\Encoders\**\*.dll;..\Encoders\**\*.txt" Condition="Exists('..\Encoders') And '$(Configuration)' != 'Release'" Link="Encoders\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Built-in encoders (LAME 3.100, FLAC 1.5.0, with their licenses) from the repository's Encoders folder (not in git) to
+       bin\Encoders\lame and bin\Encoders\flac, in Debug and Release. Users override them with Encoders\mp3 and Encoders\flac
+       next to cdtag.exe. -->
+  <ItemGroup Condition="Exists('..\Encoders')">
+    <None Include="..\Encoders\lame\*.exe;..\Encoders\lame\*.dll;..\Encoders\lame\COPYING*" Link="bin\Encoders\lame\%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <None Include="..\Encoders\flac\*.exe;..\Encoders\flac\*.dll;..\Encoders\flac\COPYING*;..\Encoders\flac\AUTHORS" Link="bin\Encoders\flac\%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 
   <!-- Release (GitHub) build: one cdtag.exe (all DLLs inside), everything else in bin\. Needs the .NET 10 Desktop Runtime. -->
@@ -52,6 +61,8 @@
     <Copy SourceFiles="..\Launcher\bin\Release\net48\cdtag.exe" DestinationFolder="$(PublishDir)" />
     <!-- options.json next to cdtag.exe: CD-Tag reads and saves its options there ("enabled": "false" = no scene-style tagging). -->
     <Copy SourceFiles="Defaults\options.json" DestinationFolder="$(PublishDir)" />
+    <!-- Encoders\mp3 and Encoders\flac next to cdtag.exe: the user's own lame.exe/flac.exe, used instead of the built-in ones. -->
+    <Copy SourceFiles="Defaults\Encoders-README.txt" DestinationFiles="$(PublishDir)Encoders\README.txt" />
   </Target>
 
   <ItemGroup>

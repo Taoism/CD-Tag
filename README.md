@@ -14,6 +14,9 @@ an unfinished project. The fork brings it up to date:
   NFO/M3U/SFV creation, renaming and FLAC/MP3 tagging on *Finish*.
 - **Convert Audio**: WAV/FLAC to MP3 with LAME (`-V0` or `-b 320`), FLAC/MP3 to WAV.
 - **Profiles**: edit, import from and export to CD-Tag 2.x (`.cfg` + NFO template).
+- **Tools**: Split CUE (WAV/FLAC image to WAV or tagged FLAC tracks), Encoding Inspector (LAME tag with CRC checks,
+  FLAC/WAV details), Create/Verify Checksum (SFV, MD5, SHA-1), Verify EAC Log (log checksum and rip checks) and Mass Tag.
+- **LAME 3.100 and FLAC 1.5.0 built in**; drop in another version to use it instead.
 
 ## Screenshots
 
@@ -55,28 +58,33 @@ Unzip and run `cdtag.exe`. The release folder looks like this:
 ```
 cdtag.exe       starter: installs the .NET 10 Desktop Runtime on first run if it is missing, then starts CD-Tag
 options.json    options (see below)
-bin\            CD-Tag itself and its files
+Encoders\       your own lame.exe / flac.exe, if you want another version (see Encoders)
+bin\            CD-Tag itself and its files, with the built-in LAME and FLAC
 ```
+
+`cdtag.exe "D:\Rips\Album"` opens CD-Tag in that folder.
 
 If the .NET 10 Desktop Runtime is missing, `cdtag.exe` downloads Microsoft's installer and runs it (Windows asks
 for permission). If that is declined, a private copy is unpacked to `%LOCALAPPDATA%\CD-Tag\dotnet` instead.
 
 ## Encoders
 
-**LAME and FLAC are not included.** Convert Audio and the FLAC-to-MP3 encoding need them:
+CD-Tag comes with the newest **LAME 3.100** (64-bit) and **FLAC 1.5.0** (64-bit, from xiph.org), with their licenses
+(LGPL; FLAC tools GPL, libFLAC BSD). They are used for Convert Audio, Split CUE and FLAC decoding.
 
-- **LAME 3.100** (`lame.exe`, 64-bit), for MP3 encoding and MP3 decoding.
-- **FLAC** (`flac.exe`), for decoding FLAC before MP3 encoding.
-
-Put them in an `Encoders` folder, or choose them in *Tools → Options → Encoders*:
+To use another version, put it in the `Encoders` folder next to `cdtag.exe`; it is then used instead of the built-in one:
 
 ```
-bin\Encoders\lame\lame.exe        (release build)
-bin\Encoders\flac\flac.exe
+Encoders\mp3\lame.exe      your LAME (with lame_enc.dll if your build has one)
+Encoders\flac\flac.exe     your FLAC (with libFLAC.dll if your build needs it)
+bin\Encoders\lame\         built-in LAME 3.100
+bin\Encoders\flac\         built-in FLAC 1.5.0
 ```
 
-When building from source, put them in `Encoders\lame\` and `Encoders\flac\` at the root of the repository;
-the Debug build copies them next to `cdtag.exe`. That folder is in `.gitignore`.
+A path chosen in *Tools → Options → Encoders* wins over both. Options shows which one is in use.
+
+When building from source, put the built-in encoders in `Encoders\lame\` and `Encoders\flac\` at the root of the
+repository; the build copies them to `bin\Encoders` (Debug and Release). That folder is in `.gitignore`.
 
 ## options.json
 

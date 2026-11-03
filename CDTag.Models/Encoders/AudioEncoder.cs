@@ -29,22 +29,49 @@ namespace CDTag.Model.Encoders
     {
         private static readonly Regex Percent = new Regex(@"\(\s*(\d{1,3})%\)", RegexOptions.CultureInvariant);
 
-        /// <summary>lame.exe: the Options path, then Encoders\lame next to cdtag.exe, then PATH. Null when not found.</summary>
+        /// <summary>Folder (under Encoders next to cdtag.exe) for your own lame.exe.</summary>
+        public const string UserLameFolder = "mp3";
+        /// <summary>Folder (under Encoders next to cdtag.exe) for your own flac.exe.</summary>
+        public const string UserFlacFolder = "flac";
+
+        /// <summary>lame.exe: the Options path, then Encoders\mp3 next to cdtag.exe (yours), then the built-in LAME, then PATH. Null when not found.</summary>
         public static string LamePath
         {
-            get { return Find(AppOptions.Current.LamePath, "lame", "lame.exe"); }
+            get { return Find(AppOptions.Current.LamePath, UserLameFolder, "lame", "lame.exe"); }
         }
 
-        /// <summary>flac.exe: the Options path, then Encoders\flac next to cdtag.exe, then PATH. Null when not found.</summary>
+        /// <summary>flac.exe: the Options path, then Encoders\flac next to cdtag.exe (yours), then the built-in FLAC, then PATH. Null when not found.</summary>
         public static string FlacPath
         {
-            get { return Find(AppOptions.Current.FlacPath, "flac", "flac.exe"); }
+            get { return Find(AppOptions.Current.FlacPath, UserFlacFolder, "flac", "flac.exe"); }
         }
 
-        private static string Find(string configured, string folder, string exe)
+        /// <summary>The folder with cdtag.exe (the starter, for a release build: the folder above bin\).</summary>
+        public static string ProgramDirectory
+        {
+            get
+            {
+                string baseDirectory = AppContext.BaseDirectory.TrimEnd('\\', '/');
+                return string.Equals(Path.GetFileName(baseDirectory), "bin", StringComparison.OrdinalIgnoreCase)
+                    ? Path.GetDirectoryName(baseDirectory)
+                    : baseDirectory;
+            }
+        }
+
+        /// <summary>Your own encoder: Encoders\mp3\lame.exe or Encoders\flac\flac.exe next to cdtag.exe. Null when not there.</summary>
+        public static string UserPath(string userFolder, string exe)
+        {
+            string path = Path.Combine(ProgramDirectory, "Encoders", userFolder, exe);
+            return File.Exists(path) ? path : null;
+        }
+
+        private static string Find(string configured, string userFolder, string folder, string exe)
         {
             if (!string.IsNullOrWhiteSpace(configured) && File.Exists(configured))
                 return configured;
+            string user = UserPath(userFolder, exe);
+            if (user != null)
+                return user;
             string bundled = BundledPath(folder, exe);
             if (bundled != null)
                 return bundled;
@@ -64,18 +91,13 @@ namespace CDTag.Model.Encoders
         }
 
         /// <summary>
-        /// An encoder shipped with CD-Tag: bin\Encoders\&lt;folder&gt;\&lt;exe&gt; (release layout) or Encoders\&lt;folder&gt;\&lt;exe&gt;
-        /// next to cdtag.exe. Null when neither exists.
+        /// The encoder shipped with CD-Tag (LAME 3.100, FLAC 1.5.0): bin\Encoders\&lt;folder&gt;\&lt;exe&gt; under the folder with cdtag.exe.
+        /// Null when it is not there.
         /// </summary>
         public static string BundledPath(string folder, string exe)
         {
-            foreach (string root in new[] { Path.Combine(AppContext.BaseDirectory, "bin"), AppContext.BaseDirectory })
-            {
-                string path = Path.Combine(root, "Encoders", folder, exe);
-                if (File.Exists(path))
-                    return path;
-            }
-            return null;
+            string path = Path.Combine(ProgramDirectory, "bin", "Encoders", folder, exe);
+            return File.Exists(path) ? path : null;
         }
 
         /// <summary>"LAME 3.100" / "flac 1.3.1" from the exe's --version output; null when it can't be run.</summary>
