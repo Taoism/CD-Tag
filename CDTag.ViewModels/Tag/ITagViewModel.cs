@@ -30,7 +30,6 @@ namespace CDTag.ViewModels.Tag
         ICommand CopyToFolderCommand { get; }
         ICommand MoveToFolderCommand { get; }
         ICommand RefreshCommand { get; }
-        ICommand VerifyEacLogCommand { get; }
         ICommand ShowHelpCommand { get; }
         ICommand HomePageCommand { get; }
         ICommand SupportForumCommand { get; }

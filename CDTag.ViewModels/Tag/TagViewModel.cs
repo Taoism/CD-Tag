@@ -46,7 +46,7 @@ namespace CDTag.ViewModels.Tag
             OptionsCommand = new DelegateCommand(() => ShowWindow<IOptionsWindow>());
             CreateChecksumCommand = new DelegateCommand(() => ShowChecksum(verify: false));
             VerifyChecksumCommand = new DelegateCommand(() => ShowChecksum(verify: true));
-            VerifyEACLogCommand = new DelegateCommand(() => ShowWindow<IVerifyEACLogWindow>());
+            VerifyEACLogCommand = new DelegateCommand(ShowVerifyEacLog);
             RefreshCommand = new DelegateCommand(() => { if (DirectoryViewModel != null) DirectoryViewModel.RefreshExplorer(); });
 
             EnhancedPropertyChanged += TagViewModel_EnhancedPropertyChanged;
@@ -136,6 +136,18 @@ namespace CDTag.ViewModels.Tag
             ShowWindow(window);
             if (DirectoryViewModel != null)
                 DirectoryViewModel.RefreshExplorer();
+        }
+
+        /// <summary>Verify EAC Log for the selected .log file, otherwise the logs in the selected or current folder.</summary>
+        private void ShowVerifyEacLog()
+        {
+            string logFile = GetSelectedFile(f => f.EndsWith(".log", StringComparison.OrdinalIgnoreCase));
+            string folder = logFile != null ? Path.GetDirectoryName(logFile) : GetTagAlbumDirectory();
+
+            IVerifyEACLogWindow window = IoC.Resolve<IVerifyEACLogWindow>();
+            var verify = (CDTag.ViewModels.Checksum.IVerifyEACLogViewModel)window.DataContext;
+            verify.Load(folder, logFile);
+            ShowWindow(window);
         }
 
         /// <summary>The first selected file in the file list that matches <paramref name="match"/>, or null.</summary>

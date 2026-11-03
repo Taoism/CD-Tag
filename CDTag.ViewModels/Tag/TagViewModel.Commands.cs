@@ -96,12 +96,6 @@ namespace CDTag.ViewModels.Tag
             private set { Set("VerifyChecksumCommand", value); }
         }
 
-        public ICommand VerifyEacLogCommand
-        {
-            get { return Get<ICommand>("VerifyEacLogCommand"); }
-            private set { Set("VerifyEacLogCommand", value); }
-        }
-
         public ICommand SplitCueSheetCommand
         {
             get { return Get<ICommand>("SplitCueSheetCommand"); }
