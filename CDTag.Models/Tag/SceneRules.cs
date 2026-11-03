@@ -177,15 +177,14 @@ namespace CDTag.Model.Tag
             if (bits != null)
             {
                 tags.Add(bits);
-                if (rate != null)
+                if (rate != null && bits != "16BIT")
                     tags.Add(bits + "-" + rate);
             }
-            foreach (string b in new[] { "16BIT", "24BIT" })
-            {
-                tags.Add(b);
-                foreach (string k in new[] { "44KHZ", "48KHZ", "88KHZ", "96KHZ", "176KHZ", "192KHZ" })
-                    tags.Add(b + "-" + k);
-            }
+            // 16 bit is only 16BIT (no kHz); 24 bit can carry the sample rate.
+            tags.Add("16BIT");
+            tags.Add("24BIT");
+            foreach (string k in new[] { "44KHZ", "48KHZ", "88KHZ", "96KHZ", "176KHZ", "192KHZ" })
+                tags.Add("24BIT-" + k);
             return tags.Distinct().ToList();
         }
 
@@ -269,6 +268,8 @@ namespace CDTag.Model.Tag
             }
             // ##BIT / ##KHZ in a FLAC release name must match the files (WEB FLAC 4.10; Blu-ray keeps the disc's bits and rate, FLAC 3.4.2).
             Match quality = flac ? Regex.Match(name, @"-(\d{2})BIT(-(\d{2,3})KHZ)?-") : Match.Empty;
+            if (quality.Success && quality.Groups[1].Value == "16" && quality.Groups[3].Success)
+                issues.Add(string.Format("{0}: 16BIT has no kHz tag; use -16BIT- instead of -16BIT-{1}KHZ-.", rule("3.4.2", "4.10.2", ""), quality.Groups[3].Value));
             if (quality.Success && album != null)
             {
                 string actual = BitDepthTag(album);

@@ -84,7 +84,8 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         /// <summary>"Auto (files: 24BIT-96KHZ)".</summary>
         private static string AutoQualityName(Album album)
         {
-            string files = string.Join("-", new[] { SceneRules.BitDepthTag(album), SceneRules.SampleRateTag(album) }.Where(t => t != null));
+            string bits = SceneRules.BitDepthTag(album);
+            string files = string.Join("-", new[] { bits, bits == "16BIT" ? null : SceneRules.SampleRateTag(album) }.Where(t => t != null));
             return files.Length > 0 ? "Auto (files: " + files + ")" : "Auto";
         }
 

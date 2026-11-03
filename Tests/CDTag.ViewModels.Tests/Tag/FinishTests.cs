@@ -345,11 +345,12 @@ namespace CDTag.ViewModel.Tests.Tag
             release.Url = "https://example.bandcamp.com/album/pure-guava";
             string rate = SceneRules.SampleRateTag(album);
             Assert.That(rate, Is.EqualTo("44KHZ"));
-            release.Quality = "16BIT-" + rate;
+            release.Quality = "16BIT";
 
             var finisher = new AlbumFinisher(profile, album, release, "#Artist\r\n");
             FinishPlan plan = finisher.Plan();
-            Assert.That(plan.NewDirectory, Does.EndWith("Ween-Pure_Guava-16BIT-44KHZ-WEB-FLAC-1994-GRP"));
+            Assert.That(plan.NewDirectory, Does.EndWith("Ween-Pure_Guava-16BIT-WEB-FLAC-1994-GRP"));
+            Assert.That(SceneRules.QualityTags(album), Has.None.StartsWith("16BIT-"), "16 bit has no kHz choices");
             Assert.That(plan.RuleIssues, Has.None.Contains("4.10"));
 
             release.Quality = "24BIT-96KHZ";
@@ -375,16 +376,20 @@ namespace CDTag.ViewModel.Tests.Tag
             release.Quality = "";
             Assert.That(new AlbumFinisher(profile, album, release, "#Artist\r\n").Plan().NewDirectory, Does.EndWith("Ween-Pure_Guava-BLURAY-FLAC-1994-GRP"));
 
-            // 16 bit at any rate is fine for Blu-ray; the name must match the files
-            release.Quality = "16BIT-44KHZ";
+            // 16 bit is only 16BIT (no kHz); the name must match the files
+            release.Quality = "16BIT";
             FinishPlan plan = new AlbumFinisher(profile, album, release, "#Artist\r\n").Plan();
-            Assert.That(plan.NewDirectory, Does.EndWith("Ween-Pure_Guava-16BIT-44KHZ-BLURAY-FLAC-1994-GRP"));
+            Assert.That(plan.NewDirectory, Does.EndWith("Ween-Pure_Guava-16BIT-BLURAY-FLAC-1994-GRP"));
             Assert.That(plan.RuleIssues, Has.None.Contains("says"));
 
             release.Quality = "24BIT-96KHZ";
             plan = new AlbumFinisher(profile, album, release, "#Artist\r\n").Plan();
             Assert.That(plan.RuleIssues, Has.Some.EqualTo("FLAC 3.4.2: the release name says 24BIT but the files are 16BIT."));
             Assert.That(plan.RuleIssues, Has.Some.EqualTo("FLAC 3.4.2: the release name says 96KHZ but the files are 44KHZ."));
+
+            release.Quality = "16BIT-44KHZ";
+            plan = new AlbumFinisher(profile, album, release, "#Artist\r\n").Plan();
+            Assert.That(plan.RuleIssues, Has.Some.EqualTo("FLAC 3.4.2: 16BIT has no kHz tag; use -16BIT- instead of -16BIT-44KHZ-."));
         }
 
         [Test]
