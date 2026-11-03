@@ -10,6 +10,7 @@ using CDTag.Common.Dispatcher;
 using CDTag.Model.Lookup;
 using CDTag.Model.Profile;
 using CDTag.Model.Tag;
+using CDTag.ViewModels.Tag.TagAlbum;
 using IdSharp.Tagging.ID3v1;
 using IdSharp.Tagging.ID3v2;
 using IdSharp.Tagging.VorbisComment;
@@ -330,6 +331,73 @@ namespace CDTag.ViewModel.Tests.Tag
             Assert.That(Path.GetFileName(result), Is.EqualTo("Ween-Pure_Guava-16BIT-WEB-FLAC-1994-GRP"));
             var vorbis = new VorbisComment(Directory.GetFiles(result, "*.flac").Single());
             Assert.That(vorbis.GetPictureBlocks().Count, Is.EqualTo(1), "WEB FLAC rules do not require an empty picture block");
+        }
+
+        [Test]
+        public void WebFlacUsesTheChosenBitAndKhz()
+        {
+            string folder = MakeFolder("web khz (src)", "untagged.flac", "01.flac");
+            Album album = Load(folder, "Ween", "Pure Guava", "Little Birdy");
+            UserProfile profile = Profile();
+            profile.FileNaming.SingleCD.SingleArtist.Directory = "<Artist>-<Album>-<Source>-FLAC-<Year>-GRP";
+            ReleaseInfo release = Release();
+            release.Source = new ReleaseListItem { Nfo = "WEB-FLAC", Dir = "WEB-FLAC" };
+            release.Url = "https://example.bandcamp.com/album/pure-guava";
+            string rate = SceneRules.SampleRateTag(album);
+            Assert.That(rate, Is.EqualTo("44KHZ"));
+            release.Quality = "16BIT-" + rate;
+
+            var finisher = new AlbumFinisher(profile, album, release, "#Artist\r\n");
+            FinishPlan plan = finisher.Plan();
+            Assert.That(plan.NewDirectory, Does.EndWith("Ween-Pure_Guava-16BIT-44KHZ-WEB-FLAC-1994-GRP"));
+            Assert.That(plan.RuleIssues, Has.None.Contains("4.10"));
+
+            release.Quality = "24BIT-96KHZ";
+            plan = new AlbumFinisher(profile, album, release, "#Artist\r\n").Plan();
+            Assert.That(plan.NewDirectory, Does.EndWith("-24BIT-96KHZ-WEB-FLAC-1994-GRP"));
+            Assert.That(plan.RuleIssues, Has.Some.Contains("says 24BIT but the files are 16BIT"));
+            Assert.That(plan.RuleIssues, Has.Some.Contains("says 96KHZ but the files are 44KHZ"));
+        }
+
+        [Test]
+        public void BlurayGetsTheChosenBitAndKhzCheckedAgainstTheFiles()
+        {
+            string folder = MakeFolder("bluray (src)", "untagged.flac", "01.flac");
+            Album album = Load(folder, "Ween", "Pure Guava", "Little Birdy");
+            UserProfile profile = Profile();
+            profile.FileNaming.SingleCD.SingleArtist.Directory = "<Artist>-<Album>-<Source>-FLAC-<Year>-GRP";
+            ReleaseInfo release = Release();
+            release.Source = new ReleaseListItem { Nfo = "BLURAY", Dir = "BLURAY" };
+            Assert.That(SceneRules.HasBitKhzChoice(album, "BLURAY"), Is.True);
+            Assert.That(SceneRules.HasBitKhzChoice(album, "CD"), Is.False);
+
+            // Auto: nothing added to the name
+            release.Quality = "";
+            Assert.That(new AlbumFinisher(profile, album, release, "#Artist\r\n").Plan().NewDirectory, Does.EndWith("Ween-Pure_Guava-BLURAY-FLAC-1994-GRP"));
+
+            // 16 bit at any rate is fine for Blu-ray; the name must match the files
+            release.Quality = "16BIT-44KHZ";
+            FinishPlan plan = new AlbumFinisher(profile, album, release, "#Artist\r\n").Plan();
+            Assert.That(plan.NewDirectory, Does.EndWith("Ween-Pure_Guava-16BIT-44KHZ-BLURAY-FLAC-1994-GRP"));
+            Assert.That(plan.RuleIssues, Has.None.Contains("says"));
+
+            release.Quality = "24BIT-96KHZ";
+            plan = new AlbumFinisher(profile, album, release, "#Artist\r\n").Plan();
+            Assert.That(plan.RuleIssues, Has.Some.EqualTo("FLAC 3.4.2: the release name says 24BIT but the files are 16BIT."));
+            Assert.That(plan.RuleIssues, Has.Some.EqualTo("FLAC 3.4.2: the release name says 96KHZ but the files are 44KHZ."));
+        }
+
+        [Test]
+        public void WebFlacAlbumsOfferOnlyWebFlacAsTheWebSource()
+        {
+            string folder = MakeFolder("sources (src)", "untagged.flac", "01.flac");
+            Album flac = Load(folder, "Ween", "Pure Guava", "Little Birdy");
+            ReleaseListItem[] sources = new[] { "CD", "VINYL", "WEB", "WEB-FLAC" }.Select(s => new ReleaseListItem { Nfo = s, Dir = s }).ToArray();
+
+            Assert.That(TagAlbumViewModel.SourcesFor(sources, flac).Select(s => s.Dir), Is.EqualTo(new[] { "CD", "VINYL", "WEB-FLAC" }));
+
+            var mp3 = new Album(@"C:\in", new[] { AlbumTrack.FromValues(@"C:\in\01.mp3", "1", "1", "A", "T") });
+            Assert.That(TagAlbumViewModel.SourcesFor(sources, mp3).Select(s => s.Dir), Is.EqualTo(new[] { "CD", "VINYL", "WEB" }));
         }
 
         [Test]

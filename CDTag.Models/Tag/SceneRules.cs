@@ -156,6 +156,51 @@ namespace CDTag.Model.Tag
             return bits > 0 ? bits.ToString(CultureInfo.InvariantCulture) + "BIT" : null;
         }
 
+        /// <summary>The sample rate tag of the files as WEB FLAC rules 4.10.2 write it (44.1 kHz = "44KHZ"); null when unknown.</summary>
+        public static string SampleRateTag(Album album)
+        {
+            if (album == null)
+                return null;
+            int rate = album.Tracks.Where(t => t.IsFlac).Select(t => t.Frequency).DefaultIfEmpty(0).Max();
+            return rate > 0 ? (rate / 1000).ToString(CultureInfo.InvariantCulture) + "KHZ" : null;
+        }
+
+        /// <summary>
+        /// The bit depth / sample rate tags a WEB FLAC release name can have (rules 4.10): ##BIT is required, ##KHZ optional.
+        /// The files' own values come first.
+        /// </summary>
+        public static List<string> QualityTags(Album album)
+        {
+            string bits = BitDepthTag(album);
+            string rate = SampleRateTag(album);
+            var tags = new List<string>();
+            if (bits != null)
+            {
+                tags.Add(bits);
+                if (rate != null)
+                    tags.Add(bits + "-" + rate);
+            }
+            foreach (string b in new[] { "16BIT", "24BIT" })
+            {
+                tags.Add(b);
+                foreach (string k in new[] { "44KHZ", "48KHZ", "88KHZ", "96KHZ", "176KHZ", "192KHZ" })
+                    tags.Add(b + "-" + k);
+            }
+            return tags.Distinct().ToList();
+        }
+
+        /// <summary>BLURAY / HDDVD sources (2BLURAY...): bits and sample rate are kept from the disc (FLAC rules 3.4.2).</summary>
+        public static bool IsBluray(string source)
+        {
+            return Regex.IsMatch((source ?? "").Trim(), @"^\d*(BLURAY|HDDVD)", RegexOptions.IgnoreCase);
+        }
+
+        /// <summary>FLAC files from a WEB or Blu-ray source: the Bit/kHz choice applies.</summary>
+        public static bool HasBitKhzChoice(Album album, string source)
+        {
+            return album != null && album.Tracks.Count > 0 && album.Tracks.All(t => t.IsFlac) && (IsWeb(source) || IsBluray(source));
+        }
+
         public static List<string> Check(SceneRuleSet rules, SceneRelease release)
         {
             var issues = new List<string>();
@@ -196,12 +241,7 @@ namespace CDTag.Model.Tag
                 {
                     issues.Add("WEB FLAC 4.10.1: the release name needs the bit depth before the source (-16BIT-WEB-FLAC-).");
                 }
-                else if (album != null)
-                {
-                    string actual = BitDepthTag(album);
-                    if (actual != null && actual != bit.Groups[1].Value + "BIT")
-                        issues.Add(string.Format("WEB FLAC 4.10.1: the release name says {0}BIT but the files are {1}.", bit.Groups[1].Value, actual));
-                }
+
                 if (name.Contains("_-_"))
                     issues.Add("WEB FLAC 4.12.2: _-_ is not allowed in the release name.");
                 if (album != null && album.Tracks.Count == 1 && !Regex.IsMatch(name, @"-(Single|SINGLE|EP)-") && !Regex.IsMatch(name, @"_(Single|EP)-"))
@@ -226,6 +266,17 @@ namespace CDTag.Model.Tag
                     issues.Add(string.Format("MP3 13: the release name says WEB but the source is {0} (one source tag only).", source));
                 if (web && album != null && album.Tracks.Count == 1 && album.Tracks[0].TotalSeconds <= 25 * 60 && !Regex.IsMatch(name, @"-SINGLE-"))
                     issues.Add("MP3 3.9: a one-track WEB release needs the -SINGLE- tag after the title (unless it is longer than 25 minutes).");
+            }
+            // ##BIT / ##KHZ in a FLAC release name must match the files (WEB FLAC 4.10; Blu-ray keeps the disc's bits and rate, FLAC 3.4.2).
+            Match quality = flac ? Regex.Match(name, @"-(\d{2})BIT(-(\d{2,3})KHZ)?-") : Match.Empty;
+            if (quality.Success && album != null)
+            {
+                string actual = BitDepthTag(album);
+                if (actual != null && actual != quality.Groups[1].Value + "BIT")
+                    issues.Add(string.Format("{0}: the release name says {1}BIT but the files are {2}.", rule("3.4.2", "4.10.1", ""), quality.Groups[1].Value, actual));
+                string rate = SampleRateTag(album);
+                if (quality.Groups[3].Success && rate != null && rate != quality.Groups[3].Value + "KHZ")
+                    issues.Add(string.Format("{0}: the release name says {1}KHZ but the files are {2}.", rule("3.4.2", "4.10.2", ""), quality.Groups[3].Value, rate));
             }
             if (album != null && album.IsVariousArtists && !name.StartsWith("VA-", StringComparison.Ordinal))
                 issues.Add(rule("4.2.1", "4.2.1", "3.7") + ": a various artists release name must start with VA-.");

@@ -59,6 +59,49 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             return values.Select(v => new ReleaseListItem { Nfo = v, Dir = v }).ToArray();
         }
 
+        private static string SourceName(ReleaseListItem item)
+        {
+            return ((item.Dir ?? "").Trim().Length > 0 ? item.Dir : item.Nfo ?? "").Trim();
+        }
+
+        /// <summary>
+        /// FLAC albums from the web are WEB-FLAC, so plain WEB is dropped from the list when the profile has WEB-FLAC;
+        /// MP3 albums from the web are WEB, so WEB-FLAC is dropped for them.
+        /// </summary>
+        public static ReleaseListItem[] SourcesFor(ReleaseListItem[] sources, Album album)
+        {
+            if (sources == null || album == null || album.Tracks.Count == 0)
+                return sources;
+            bool flac = album.Tracks.All(t => t.IsFlac);
+            bool hasWebFlac = sources.Any(s => string.Equals(SourceName(s), "WEB-FLAC", StringComparison.OrdinalIgnoreCase));
+            if (flac && hasWebFlac)
+                return sources.Where(s => !string.Equals(SourceName(s), "WEB", StringComparison.OrdinalIgnoreCase)).ToArray();
+            if (!flac)
+                return sources.Where(s => !string.Equals(SourceName(s), "WEB-FLAC", StringComparison.OrdinalIgnoreCase)).ToArray();
+            return sources;
+        }
+
+        /// <summary>"Auto (files: 24BIT-96KHZ)".</summary>
+        private static string AutoQualityName(Album album)
+        {
+            string files = string.Join("-", new[] { SceneRules.BitDepthTag(album), SceneRules.SampleRateTag(album) }.Where(t => t != null));
+            return files.Length > 0 ? "Auto (files: " + files + ")" : "Auto";
+        }
+
+        private void UpdateHasBitKhz()
+        {
+            string source = Release != null && Release.Source != null ? SourceName(Release.Source) : null;
+            HasBitKhz = SceneRules.HasBitKhzChoice(Album, source);
+            if (!HasBitKhz && Release != null && !string.IsNullOrEmpty(Release.Quality))
+                Release.Quality = "";
+        }
+
+        /// <summary>FLAC files from a WEB or Blu-ray source: the Bit/kHz choice applies.</summary>
+        public bool HasBitKhz { get { return Get<bool>("HasBitKhz"); } private set { Set("HasBitKhz", value); } }
+
+        /// <summary>Bit/kHz choices (WEB FLAC rules 4.10, Blu-ray): Auto (from the files), 16BIT, 24BIT-96KHZ...</summary>
+        public QualityChoice[] QualityChoices { get { return Get<QualityChoice[]>("QualityChoices"); } private set { Set("QualityChoices", value); } }
+
         /// <summary>Loads the album in <paramref name="path"/> to be tagged with <paramref name="profile"/>.</summary>
         public void Load(string path, UserProfile profile)
         {
@@ -78,7 +121,11 @@ namespace CDTag.ViewModels.Tag.TagAlbum
 
             Album album = new Album(path);
             DiscToc.ApplyLogLengths(album, DiscToc.ForAlbum(album));
+            Sources = SourcesFor(Sources, album);
+            QualityChoices = new[] { new QualityChoice { Value = "", Name = AutoQualityName(album) } }
+                .Concat(SceneRules.QualityTags(album).Select(t => new QualityChoice { Value = t, Name = t })).ToArray();
             ReleaseInfo release = ReleaseInfo.FromProfile(profile);
+            release.Quality = "";
             release.ReleaseType = release.ReleaseType ?? ReleaseTypes.FirstOrDefault();
             release.Source = release.Source ?? Sources.FirstOrDefault();
             release.Language = release.Language ?? Languages.FirstOrDefault();
@@ -97,7 +144,13 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             HasReleasePage = profile != null && profile.NFOOptions != null && profile.NFOOptions.ShowReleaseScreen;
             Page = HasReleasePage ? ReleasePage : AlbumPage;
 
-            Release.PropertyChanged += (s, e) => UpdateNames();
+            Release.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == "Source")
+                    UpdateHasBitKhz();
+                UpdateNames();
+            };
+            UpdateHasBitKhz();
             Album.PropertyChanged += Album_PropertyChanged;
             foreach (AlbumTrack track in Album.Tracks)
                 track.PropertyChanged += Track_PropertyChanged;

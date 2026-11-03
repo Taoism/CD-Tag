@@ -104,20 +104,35 @@ namespace CDTag.Model.Tag
             if (format == null)
                 return null;
             string pattern = format.Directory;
-            // WEB FLAC rules 4.10.1: the release name needs the bit depth (-16BIT-WEB-FLAC-); 2.x profiles have no token for it.
-            if (pattern != null && IsWebFlac && pattern.IndexOf("<BitDepth>", StringComparison.OrdinalIgnoreCase) < 0)
+            if (pattern != null && IsWebFlac)
             {
                 string name = Build(pattern, null, null, _profile.FileNaming.DirectoryCharacterLimit, null);
-                if (name != null && name.Contains("-WEB-FLAC-") && !Regex.IsMatch(name, @"\d{2}BIT(-\d{2,3}KHZ)?-WEB-FLAC-"))
+                // Source WEB-FLAC in a FLAC profile pattern ("<Source>-FLAC-") would give -WEB-FLAC-FLAC-.
+                if (name != null)
+                    name = Regex.Replace(name, "-WEB-FLAC-FLAC-", "-WEB-FLAC-", RegexOptions.IgnoreCase);
+                // WEB FLAC rules 4.10.1: the release name needs the bit depth (-16BIT-WEB-FLAC-); 2.x profiles have no token for it.
+                if (name != null && pattern.IndexOf("<BitDepth>", StringComparison.OrdinalIgnoreCase) < 0
+                    && name.Contains("-WEB-FLAC-") && !Regex.IsMatch(name, @"\d{2}BIT(-\d{2,3}KHZ)?-WEB-FLAC-"))
                 {
-                    string bits = SceneRules.BitDepthTag(_album);
+                    string bits = QualityTag;
                     if (bits != null)
                         name = name.Replace("-WEB-FLAC-", "-" + bits + "-WEB-FLAC-");
                 }
                 return name;
             }
-            return Build(pattern, null, null, _profile.FileNaming.DirectoryCharacterLimit, null);
+            string folder = Build(pattern, null, null, _profile.FileNaming.DirectoryCharacterLimit, null);
+            // Blu-ray/HDDVD: a Bit/kHz picked on the release page goes before the source tag (-24BIT-96KHZ-BLURAY-FLAC-).
+            string chosen = _release.Quality != null ? _release.Quality.Trim() : "";
+            if (folder != null && chosen.Length > 0 && SceneRules.HasBitKhzChoice(_album, Dir(_release.Source) ?? (_release.Source != null ? _release.Source.Nfo : null))
+                && pattern.IndexOf("<BitDepth>", StringComparison.OrdinalIgnoreCase) < 0 && !Regex.IsMatch(folder, @"\d{2}BIT(-\d{2,3}KHZ)?-"))
+            {
+                folder = Regex.Replace(folder, @"-(\d*(BLURAY|HDDVD))-", "-" + chosen + "-$1-", RegexOptions.IgnoreCase);
+            }
+            return folder;
         }
+
+        /// <summary>The Bit/kHz chosen on the release page ("24BIT-96KHZ"), or the bit depth of the files.</summary>
+        private string QualityTag { get { return !string.IsNullOrWhiteSpace(_release.Quality) ? _release.Quality.Trim() : SceneRules.BitDepthTag(_album); } }
 
         /// <summary>All FLAC files from a WEB source.</summary>
         private bool IsWebFlac
@@ -261,7 +276,8 @@ namespace CDTag.Model.Tag
                 case "DISC": return track != null ? FormatDisc(track.DiscNumber) : _disc > 0 ? FormatDisc(_disc.ToString(CultureInfo.InvariantCulture)) : null;
                 case "DISCS": return Discs.ToString(CultureInfo.InvariantCulture);
                 case "PROFILE": return _profile.ProfileName;
-                case "BITDEPTH": return SceneRules.BitDepthTag(_album);
+                case "BITDEPTH": return QualityTag;
+                case "SOURCE": return Dir(_release.Source);
                 case "IMAGETEXT": return imageText;
                 case "BITRATE":
                     decimal bitrate = track != null ? track.Bitrate : AverageBitrate(_album);
