@@ -27,6 +27,8 @@ namespace CDTag.Model.Lookup
         public string CatalogNumber { get; set; }
         public string Disambiguation { get; set; }
         public bool MatchesTrackCount { get; set; }
+        /// <summary>Where the data comes from: "MusicBrainz", "Discogs", "freedb".</summary>
+        public string Source { get; set; }
     }
 
     public class ReleaseTrack
@@ -59,6 +61,26 @@ namespace CDTag.Model.Lookup
         public int Discs { get; set; }
         public bool IsVariousArtists { get; set; }
         public List<ReleaseTrack> Tracks { get; set; }
+        public string Country { get; set; }
+        /// <summary>"MusicBrainz", "Discogs", "freedb".</summary>
+        public string Source { get; set; }
+        /// <summary>MusicBrainz release ID (for the Cover Art Archive); null for other sources.</summary>
+        public string MusicBrainzId { get; set; }
+        /// <summary>Cover image to download instead of the Cover Art Archive front cover.</summary>
+        public string CoverUrl { get; set; }
+        /// <summary>When the data covers one disc of the album only (disc-ID lookups): that disc; otherwise 0.</summary>
+        public int OnlyDisc { get; set; }
+
+        public ReleaseSearchResult ToSearchResult(int trackCount)
+        {
+            return new ReleaseSearchResult
+            {
+                Id = Id, Artist = Artist, Title = Title, Date = Date, Country = Country, Label = Label, CatalogNumber = CatalogNumber,
+                TrackCount = Tracks.Count, Score = 100, Source = Source,
+                Format = Discs > 1 ? Discs + "×" + Format : Format,
+                MatchesTrackCount = Tracks.Count == trackCount
+            };
+        }
     }
 
     /// <summary>
@@ -105,6 +127,43 @@ namespace CDTag.Model.Lookup
             string url = BaseUrl + "release/" + Uri.EscapeDataString(id) + "?fmt=json&inc=recordings+artist-credits+labels+genres+release-groups+media";
             string json = await GetStringAsync(url, cancellation).ConfigureAwait(false);
             return ParseRelease(json);
+        }
+
+        /// <summary>
+        /// Releases containing the disc <paramref name="toc"/> (exact disc ID, otherwise MusicBrainz' fuzzy TOC match),
+        /// with full track lists.
+        /// </summary>
+        public async Task<List<ReleaseDetails>> LookupDiscAsync(DiscToc toc, CancellationToken cancellation = default(CancellationToken))
+        {
+            string url = BaseUrl + "discid/" + Uri.EscapeDataString(toc.MusicBrainzDiscId) + "?toc=" + toc.MusicBrainzToc +
+                         "&cdstubs=no&fmt=json&inc=recordings+artist-credits+labels+genres+release-groups";
+            string json;
+            try
+            {
+                json = await GetStringAsync(url, cancellation).ConfigureAwait(false);
+            }
+            catch (HttpRequestException ex)
+            {
+                if (ex.StatusCode == HttpStatusCode.NotFound)
+                    return new List<ReleaseDetails>();
+                throw;
+            }
+            return ParseDiscLookup(json);
+        }
+
+        public static List<ReleaseDetails> ParseDiscLookup(string json)
+        {
+            var results = new List<ReleaseDetails>();
+            using (JsonDocument document = JsonDocument.Parse(json))
+            {
+                JsonElement releases;
+                if (document.RootElement.TryGetProperty("releases", out releases) && releases.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (JsonElement release in releases.EnumerateArray())
+                        results.Add(ParseRelease(release));
+                }
+            }
+            return results;
         }
 
         /// <summary>Front cover (500 px) from the Cover Art Archive, or null when there is none.</summary>
@@ -200,7 +259,8 @@ namespace CDTag.Model.Lookup
                         Date = Str(release, "date"),
                         Country = Str(release, "country"),
                         TrackCount = Int(release, "track-count"),
-                        Disambiguation = Str(release, "disambiguation")
+                        Disambiguation = Str(release, "disambiguation"),
+                        Source = "MusicBrainz"
                     };
 
                     JsonElement media;
@@ -231,16 +291,23 @@ namespace CDTag.Model.Lookup
         public static ReleaseDetails ParseRelease(string json)
         {
             using (JsonDocument document = JsonDocument.Parse(json))
+                return ParseRelease(document.RootElement);
+        }
+
+        private static ReleaseDetails ParseRelease(JsonElement release)
+        {
             {
-                JsonElement release = document.RootElement;
                 var details = new ReleaseDetails
                 {
                     Id = Str(release, "id"),
                     Title = Str(release, "title"),
                     Artist = ArtistCredit(release),
                     Date = Str(release, "date"),
+                    Country = Str(release, "country"),
+                    Source = "MusicBrainz",
                     Tracks = new List<ReleaseTrack>()
                 };
+                details.MusicBrainzId = details.Id;
 
                 JsonElement labels;
                 if (release.TryGetProperty("label-info", out labels) && labels.ValueKind == JsonValueKind.Array)

@@ -183,11 +183,16 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             lookup.Album = Album.AlbumTitle;
             lookup.TrackCount = Album.Tracks.Count;
             lookup.DiscCount = new AlbumNamer(Profile ?? new UserProfile(), Album, Release).Discs;
+            lookup.Tocs = DiscToc.ForAlbum(Album);
 
             if (ShowWindow(window) != true || lookup.SelectedDetails == null)
                 return;
 
-            int applied = LookupApplier.Apply(lookup.SelectedDetails, Album, Release, Sources);
+            ReleaseDetails details = lookup.SelectedDetails;
+            int applied = LookupApplier.Apply(details, Album, Release, Sources);
+            int expected = details.OnlyDisc > 0
+                ? Album.Tracks.Count(t => t.DiscNumber != null && t.DiscNumber.Trim().TrimStart('0') == details.OnlyDisc.ToString())
+                : Album.Tracks.Count;
             if (lookup.Cover != null)
             {
                 Album.CoverBytes = lookup.Cover;
@@ -195,10 +200,10 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             }
             UpdateNames();
 
-            if (applied < Album.Tracks.Count)
+            if (applied < expected)
             {
-                MessageBox(string.Format("{0} of {1} tracks were matched to the release ({2} tracks). Check the disc and track numbers of the others.",
-                                         applied, Album.Tracks.Count, lookup.SelectedDetails.Tracks.Count),
+                MessageBox(string.Format("{0} of {1} tracks{3} were matched to the release ({2} tracks). Check the disc and track numbers of the others.",
+                                         applied, expected, details.Tracks.Count, details.OnlyDisc > 0 ? " of disc " + details.OnlyDisc : ""),
                            "Look up", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
             }
         }

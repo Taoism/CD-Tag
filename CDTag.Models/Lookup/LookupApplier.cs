@@ -13,6 +13,7 @@ namespace CDTag.Model.Lookup
         /// <summary>
         /// Applies <paramref name="details"/>. Tracks are matched by disc and track number; if that fails for any
         /// track but the track counts are equal, they are matched in order (and renumbered).
+        /// When the release covers one disc only (<see cref="ReleaseDetails.OnlyDisc"/>), just that disc's tracks are changed.
         /// Returns how many tracks got a title.
         /// </summary>
         public static int Apply(ReleaseDetails details, Album album, ReleaseInfo release, ReleaseListItem[] sources)
@@ -45,6 +46,7 @@ namespace CDTag.Model.Lookup
             }
 
             List<AlbumTrack> tracks = album.Tracks
+                .Where(t => details.OnlyDisc <= 0 || Number(t.DiscNumber, 1) == details.OnlyDisc)
                 .OrderBy(t => Number(t.DiscNumber, 1)).ThenBy(t => Number(t.TrackNumber, 0)).ThenBy(t => t.OriginalFileName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
             var byPosition = details.Tracks.GroupBy(t => Tuple.Create(t.Disc, t.Position)).ToDictionary(g => g.Key, g => g.First());
