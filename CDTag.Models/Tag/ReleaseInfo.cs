@@ -61,6 +61,8 @@ namespace CDTag.Model.Tag
         public ReleaseListItem Source { get { return Get<ReleaseListItem>("Source"); } set { Set("Source", value); } }
         /// <summary>WEB FLAC bit depth / sample rate tag ("16BIT", "24BIT-96KHZ"); null = from the files (bit depth only).</summary>
         public string Quality { get { return Get<string>("Quality"); } set { Set("Quality", value); } }
+        /// <summary>Fix tag for the release name: "" (none), "RERIP", "REPACK", "DIRFIX" or "NFOFIX".</summary>
+        public string Fix { get { return Get<string>("Fix"); } set { Set("Fix", value); } }
         public ReleaseListItem Language { get { return Get<ReleaseListItem>("Language"); } set { Set("Language", value); } }
         public ReleaseListItem LimitedEdition { get { return Get<ReleaseListItem>("LimitedEdition"); } set { Set("LimitedEdition", value); } }
         public ReleaseListItem WhiteLabel { get { return Get<ReleaseListItem>("WhiteLabel"); } set { Set("WhiteLabel", value); } }

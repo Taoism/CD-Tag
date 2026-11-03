@@ -21,7 +21,7 @@ namespace CDTag.Model.Tag
         private static readonly string[] Tokens = new[]
         {
             "#HH:MM:SS", "#H:MM:SS", "#MM:SS", "#M:SS", "#CleanExplicit", "#RippingTool", "#WhiteLabel", "#ReleaseNC", "#Release",
-            "#Language", "#Supplier", "#Internal", "#Encoder", "#Catnum", "#Rnotes", "#Ripper", "#Folder", "#Source", "#Artist",
+            "#Language", "#Supplier", "#Fix", "#Internal", "#Encoder", "#Catnum", "#Rnotes", "#Ripper", "#Folder", "#Source", "#Artist",
             "#MBmegs", "#MBMBR", "#MBMB", "#SizeMB", "#Discs", "#Album", "#Genre", "#Rdate", "#Sdate", "#Label", "#LDate", "#Comment",
             "#LtdEd", "#Size", "#Mode", "#Song", "#Time", "#Type", "#Year", "#Disc", "#KHz", "#OST", "#url", "#Hh", "#Hz", "#Br",
             "#MB", "#TT", "#N.", "#N)", "#N-", "#N", "#0", "#H", "#M", "#S"
@@ -392,6 +392,7 @@ namespace CDTag.Model.Tag
                 case "#RIPPINGTOOL": return _release.RippingTool;
                 case "#TYPE": return Nfo(_release.ReleaseType);
                 case "#SOURCE": return Nfo(_release.Source);
+                case "#FIX": return _release.Fix;
                 case "#LANGUAGE": return Nfo(_release.Language);
                 case "#CLEANEXPLICIT": return Nfo(_release.CleanExplicit);
                 case "#WHITELABEL": return Nfo(_release.WhiteLabel) ?? "No";

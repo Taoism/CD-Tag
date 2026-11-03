@@ -395,19 +395,54 @@ namespace CDTag.ViewModel.Tests.Tag
         }
 
         [Test]
-        public void TypesLoseTheirBitKhzPartsWhenBitKhzHasItsOwnBox()
+        public void TypesDropBitKhzAndFixEntries()
         {
             ReleaseListItem[] types = new[] { "Normal release", "Remastered", "Remastered-24BiT/44KhZ", "Remastered-24BiT/96KhZ",
-                                              "Deluxe Edition-24BIT/48KHZ", "16BIT", "24BIT/96KHZ", "Limited Edition-16BIT", "Promo" }
+                                              "Deluxe Edition-24BIT/48KHZ", "16BIT", "24BIT/96KHZ", "Limited Edition-16BIT", "Promo",
+                                              "REPACK", "DIRFIX", "NFOFIX", "DIRFIX Reissue OST", "Reissue OST", "Proper", "Deluxe Edition" }
                 .Select(t => new ReleaseListItem { Nfo = t, Dir = t == "Normal release" ? "" : t }).ToArray();
 
-            ReleaseListItem[] result = TagAlbumViewModel.WithoutBitKhz(types);
-
-            Assert.That(result.Select(t => t.Nfo), Is.EqualTo(new[] { "Normal release", "Remastered", "Deluxe Edition", "Limited Edition", "Promo" }));
-            Assert.That(result[1], Is.SameAs(types[1]), "existing entries are reused");
-            Assert.That(result.Single(t => t.Nfo == "Deluxe Edition").Dir, Is.EqualTo("Deluxe Edition"));
+            Assert.That(TagAlbumViewModel.TypesFor(types).Select(t => t.Nfo), Is.EqualTo(new[] { "Normal release", "Remastered", "Promo", "Reissue OST", "Proper", "Deluxe Edition" }));
         }
 
+        [TestCase("<Artist>-<Album>-<Source>-FLAC-<Year>-GRP", "WEB-FLAC", "REPACK", "Ween-Pure_Guava-REPACK-16BIT-WEB-FLAC-1994-GRP", "01-ween-little_birdy-grp-repack.flac")]
+        [TestCase("<Artist>-<Album>-<Source>-FLAC-<Year>-GRP", "CD", "DIRFIX", "Ween-Pure_Guava-DIRFIX-CD-FLAC-1994-GRP", "01-ween-little_birdy-grp.flac")]
+        [TestCase("<Artist>-<Album>-<Source>-FLAC-<Year>-GRP", "VINYL", "RERIP", "Ween-Pure_Guava-RERIP-VINYL-FLAC-1994-GRP", "01-ween-little_birdy-grp.flac")]
+        [TestCase("<Artist>-<Album>-<Fix>-<Source>-FLAC-<Year>-GRP", "CD", "NFOFIX", "Ween-Pure_Guava-NFOFIX-CD-FLAC-1994-GRP", "01-ween-little_birdy-grp.flac")]
+        [TestCase("<Artist>-<Album>-<Source>-FLAC-<Year>-GRP", "CD", "", "Ween-Pure_Guava-CD-FLAC-1994-GRP", "01-ween-little_birdy-grp.flac")]
+        public void FixGoesBeforeTheSource(string pattern, string source, string fix, string folder, string file)
+        {
+            string dir = MakeFolder("fix " + source + fix + " (src)", "untagged.flac", "01.flac");
+            Album album = Load(dir, "Ween", "Pure Guava", "Little Birdy");
+            UserProfile profile = Profile();
+            profile.FileNaming.SingleCD.SingleArtist.Directory = pattern;
+            if (profile.FileNaming.Vinyl == null)
+                profile.FileNaming.Vinyl = new NamingFormatGroup();
+            profile.FileNaming.Vinyl.SingleArtist = profile.FileNaming.SingleCD.SingleArtist;
+            ReleaseInfo release = Release();
+            release.Source = new ReleaseListItem { Nfo = source, Dir = source };
+            release.Fix = fix;
+            var namer = new AlbumNamer(profile, album, release);
+            Assert.That(namer.GetFolderName(), Is.EqualTo(folder));
+            Assert.That(namer.GetTrackFileName(album.Tracks[0]), Is.EqualTo(file));
+
+            var release2 = new SceneRelease { Name = folder, Source = source, Album = album, Files = new System.Collections.Generic.List<string> { Path.Combine(folder, "01-ween-little_birdy-grp.flac") } };
+            bool flagged = SceneRules.Check(SceneRuleSet.Flac2016, release2).Any(i => i.StartsWith("FLAC 5.6"));
+            Assert.That(flagged, Is.EqualTo(fix == "REPACK"));
+        }
+
+        [Test]
+        public void Mp3FixGoesBeforeTheSourceOrYear()
+        {
+            var album = new Album(@"C:\in", new[] { AlbumTrack.FromValues(@"C:\in\01.mp3", "1", "1", "Ween", "Little Birdy") }) { Artist = "Ween", AlbumTitle = "Pure Guava", ReleaseDate = "1994" };
+            UserProfile profile = Profile();
+            profile.FileNaming.SingleCD.SingleArtist.Directory = "<Artist>-<Album>-<Source>-<Year>-GRP";
+            ReleaseInfo release = Release();
+            release.Source = new ReleaseListItem { Nfo = "WEB", Dir = "WEB" };
+            release.Fix = "REPACK";
+            Assert.That(new AlbumNamer(profile, album, release).GetFolderName(), Is.EqualTo("Ween-Pure_Guava-REPACK-WEB-1994-GRP"));
+            Assert.That(new AlbumNamer(profile, album, release).GetTrackFileName(album.Tracks[0]), Does.Not.Contain("repack"));
+        }
         [Test]
         public void WebFlacAlbumsOfferOnlyWebFlacAsTheWebSource()
         {

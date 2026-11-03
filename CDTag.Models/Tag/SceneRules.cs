@@ -311,6 +311,14 @@ namespace CDTag.Model.Tag
                 if (extension == audioExtension && !Regex.IsMatch(fileName, @"^([0-9]+|[a-zA-Z][0-9]+)-"))
                     issues.Add(string.Format("{0}: {1} must start with the track number.", rule("5.1", "5.1", "4.2"), fileName));
             }
+            if (rules == SceneRuleSet.Flac2016 && Regex.IsMatch(name, @"-(REAL_)?REPACK-"))
+            {
+                string[] missing = release.Files.Where(f => f.EndsWith(".flac", StringComparison.OrdinalIgnoreCase)
+                                                            && !f.EndsWith("-repack.flac", StringComparison.OrdinalIgnoreCase)).ToArray();
+                if (missing.Length > 0)
+                    issues.Add(string.Format("{0}: REPACKed releases need -repack at the end of each .flac file ({1}{2}).", "FLAC 5.6",
+                                             Path.GetFileName(missing[0]), missing.Length > 1 ? " and " + (missing.Length - 1) + " more" : ""));
+            }
             if (!release.Files.Any(f => f.EndsWith(".sfv", StringComparison.OrdinalIgnoreCase)))
                 issues.Add(rule("1.1", "1.2", "2.1") + ": the release needs an SFV.");
             if (!release.Files.Any(f => f.EndsWith(".nfo", StringComparison.OrdinalIgnoreCase)))

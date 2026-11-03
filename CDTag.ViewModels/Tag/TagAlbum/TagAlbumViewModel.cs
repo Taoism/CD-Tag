@@ -38,7 +38,6 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         private readonly DelegateCommand _nextCommand;
         private readonly DelegateCommand _previewNFOCommand;
         private bool _updatingNames;
-        private ReleaseListItem[] _allReleaseTypes;
 
         public TagAlbumViewModel(IEventAggregator eventAggregator)
             : base(eventAggregator)
@@ -91,60 +90,31 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             // Read from the files: 16BIT, or 24BIT-96KHZ.
             if (HasBitKhz && Release != null && string.IsNullOrEmpty(Release.Quality))
                 Release.Quality = SceneRules.FilesQualityTag(Album) ?? "";
-
-            // Bit/kHz has its own box, so Type entries like "24BIT/96KHZ" or "Remastered-24BiT/96KhZ" lose that part.
-            if (_allReleaseTypes != null)
-            {
-                ReleaseListItem[] types = HasBitKhz ? WithoutBitKhz(_allReleaseTypes) : _allReleaseTypes;
-                if (!ReferenceEquals(types, ReleaseTypes))
-                {
-                    ReleaseListItem selected = Release != null ? Release.ReleaseType : null;
-                    ReleaseTypes = types;
-                    if (Release != null && selected != null && !types.Contains(selected))
-                    {
-                        string wanted = HasBitKhz ? StripBitKhz(selected.Nfo) : selected.Nfo;
-                        Release.ReleaseType = types.FirstOrDefault(t => string.Equals(t.Nfo, wanted, StringComparison.OrdinalIgnoreCase))
-                                              ?? types.FirstOrDefault(t => string.Equals(StripBitKhz(t.Nfo), wanted, StringComparison.OrdinalIgnoreCase))
-                                              ?? types.FirstOrDefault();
-                    }
-                }
-            }
         }
 
         private static readonly System.Text.RegularExpressions.Regex BitKhzPart = new System.Text.RegularExpressions.Regex(
-            @"[-_ ]*\b\d{2}BIT(\s*[/_-]\s*\d{2,3}(\.\d)?\s*KHZ)?\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            @"\b\d{2}BIT\b|\d\s*KHZ\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
-        private static string StripBitKhz(string text)
-        {
-            return text == null ? null : BitKhzPart.Replace(text, "").Trim(' ', '-', '_');
-        }
+        /// <summary>Fix tags have their own box (Fix), so they are not types.</summary>
+        public static readonly string[] FixTags = { "RERIP", "REPACK", "DIRFIX", "NFOFIX" };
 
         /// <summary>
-        /// The Type list without bit depth / sample rate parts ("Remastered-24BiT/96KhZ" = "Remastered"); entries that are only
-        /// bit/kHz ("16BIT", "24BIT/96KHZ") are dropped, and duplicates are merged.
+        /// The Type list without entries that carry a bit depth / sample rate ("16BIT", "24BIT/96KHZ", "Remastered-24BiT/96KhZ")
+        /// or a fix tag (REPACK, DIRFIX...): Bit/kHz and Fix have their own boxes.
         /// </summary>
-        public static ReleaseListItem[] WithoutBitKhz(ReleaseListItem[] types)
+        public static ReleaseListItem[] TypesFor(ReleaseListItem[] types)
         {
             if (types == null)
                 return null;
-            var result = new List<ReleaseListItem>();
-            foreach (ReleaseListItem type in types)
-            {
-                bool hasBits = BitKhzPart.IsMatch(type.Nfo ?? "") || BitKhzPart.IsMatch(type.Dir ?? "");
-                if (!hasBits)
-                {
-                    if (!result.Any(r => string.Equals(r.Nfo, type.Nfo, StringComparison.OrdinalIgnoreCase)))
-                        result.Add(type);
-                    continue;
-                }
-                string nfo = StripBitKhz(type.Nfo);
-                if (string.IsNullOrEmpty(nfo) || result.Any(r => string.Equals(r.Nfo, nfo, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-                result.Add(types.FirstOrDefault(t => string.Equals(t.Nfo, nfo, StringComparison.OrdinalIgnoreCase))
-                           ?? new ReleaseListItem { Nfo = nfo, Dir = StripBitKhz(type.Dir) });
-            }
-            return result.ToArray();
+            return types.Where(t => !BitKhzPart.IsMatch(t.Nfo ?? "") && !BitKhzPart.IsMatch(t.Dir ?? "")
+                                    && !FixTags.Any(f => System.Text.RegularExpressions.Regex.IsMatch((t.Nfo ?? "") + " " + (t.Dir ?? ""), @"(?<![A-Za-z])" + f + @"(?![A-Za-z])",
+                                                                                                      System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
+                        .ToArray();
         }
+
+        /// <summary>Fix choices for the release name (scene ADDITIONAL tags); "" = none.</summary>
+        public QualityChoice[] FixChoices { get; } = new[] { new QualityChoice { Value = "", Name = "None" } }
+            .Concat(FixTags.Select(f => new QualityChoice { Value = f, Name = f })).ToArray();
 
         /// <summary>FLAC files from a WEB or Blu-ray source: the Bit/kHz choice applies.</summary>
         public bool HasBitKhz { get { return Get<bool>("HasBitKhz"); } private set { Set("HasBitKhz", value); } }
@@ -158,8 +128,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             Profile = profile;
 
             ReleaseInfoOptions options = profile != null ? profile.ReleaseInfo : null;
-            _allReleaseTypes = (options != null ? options.ReleaseTypes : null) ?? DefaultTypes;
-            ReleaseTypes = _allReleaseTypes;
+            ReleaseTypes = TypesFor((options != null ? options.ReleaseTypes : null) ?? DefaultTypes);
             Sources = (options != null ? options.Sources : null) ?? DefaultSources;
             Languages = (options != null ? options.Languages : null) ?? DefaultLanguages;
             LimitedEditionChoices = (options != null ? options.LimitedEdition : null) ?? NoYes;
@@ -177,6 +146,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             QualityChoices = SceneRules.QualityTags(album).Select(t => new QualityChoice { Value = t, Name = t == filesQuality ? t + " (files)" : t }).ToArray();
             ReleaseInfo release = ReleaseInfo.FromProfile(profile);
             release.Quality = "";
+            release.Fix = "";
             release.ReleaseType = release.ReleaseType ?? ReleaseTypes.FirstOrDefault();
             release.Source = release.Source ?? Sources.FirstOrDefault();
             release.Language = release.Language ?? Languages.FirstOrDefault();

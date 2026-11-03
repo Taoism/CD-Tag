@@ -100,6 +100,11 @@ namespace CDTag.Model.Tag
         /// <summary>New folder name, or null when the profile has no directory format.</summary>
         public string GetFolderName()
         {
+            return WithFix(FolderNameWithoutFix());
+        }
+
+        private string FolderNameWithoutFix()
+        {
             NamingFormat format = Format;
             if (format == null)
                 return null;
@@ -131,6 +136,41 @@ namespace CDTag.Model.Tag
             return folder;
         }
 
+        /// <summary>The fix chosen on the release page ("REPACK"), or null.</summary>
+        private string FixTag
+        {
+            get
+            {
+                string fix = (_release.Fix ?? "").Trim().ToUpperInvariant();
+                return fix.Length > 0 ? fix : null;
+            }
+        }
+
+        private static readonly Regex FlacSourcePart = new Regex(
+            @"-(\d{2}BIT(-\d{2,3}KHZ)?-)?\d*[xX]?(\d+INCH_)?(BLURAY|HDDVD|CDS|CDM|CDEP|MCD|CDREP|CDRS|CDR|CD|DVDA|DVD|VINYL|VLS|MLP|LP|EP|INCH_VINYL|FLEXI|WEB)-FLAC-",
+            RegexOptions.CultureInvariant);
+        private static readonly Regex Mp3TailPart = new Regex(
+            @"(-\d*(CDS|CDM|CDR|CD|WEB|VINYL|VLS|LP|DVD|BLURAY|SAT|CABLE|DAB|FM|LINE|SBD|MP3CD|FLASH|DVB|HDTV|SINGLE))*-(\d{4}|\d{3}x|\d{2}xx)-[^-]+$",
+            RegexOptions.CultureInvariant);
+
+        /// <summary>
+        /// Puts the fix tag (scene rules: ADDITIONAL tag) before the bit depth / source part of the release name:
+        /// Artist-Title-REPACK-16BIT-WEB-FLAC-2023-GRP, Artist-Title-DIRFIX-2CD-2021-GRP, Artist-Title-RERIP-2021-GRP.
+        /// Profiles with a &lt;Fix&gt; token place it themselves.
+        /// </summary>
+        private string WithFix(string name)
+        {
+            string fix = FixTag;
+            NamingFormat format = Format;
+            if (name == null || fix == null || Regex.IsMatch(name, "-" + fix + "-", RegexOptions.IgnoreCase)
+                || (format != null && (format.Directory ?? "").IndexOf("<Fix>", StringComparison.OrdinalIgnoreCase) >= 0))
+                return name;
+            Match match = FlacSourcePart.Match(name);
+            if (!match.Success)
+                match = Mp3TailPart.Match(name);
+            return match.Success ? name.Insert(match.Index, "-" + fix) : name;
+        }
+
         /// <summary>The Bit/kHz chosen on the release page ("24BIT-96KHZ"), or the bit depth of the files.</summary>
         private string QualityTag { get { return !string.IsNullOrWhiteSpace(_release.Quality) ? _release.Quality.Trim() : SceneRules.BitDepthTag(_album); } }
 
@@ -155,7 +195,11 @@ namespace CDTag.Model.Tag
             // Multi-disc: file names need the disc in front of the track ("101", "0101") or discs would clash.
             if (Discs > 1 && pattern != null && pattern.IndexOf("<Disc>", StringComparison.OrdinalIgnoreCase) < 0)
                 pattern = Regex.Replace(pattern, "<Track>", "<Disc><Track>", RegexOptions.IgnoreCase);
-            return Build(pattern, track, null, _profile.FileNaming.FileCharacterLimit, extension);
+            string name = Build(pattern, track, null, _profile.FileNaming.FileCharacterLimit, extension);
+            // FLAC rules 5.6: REPACKed releases have a -repack suffix at the end of each .flac file.
+            if (name != null && FixTag == "REPACK" && extension == ".flac" && !name.EndsWith("-repack.flac", StringComparison.OrdinalIgnoreCase))
+                name = name.Substring(0, name.Length - extension.Length) + "-repack" + extension;
+            return name;
         }
 
         /// <summary>Name for a cue sheet, playlist, checksum file, NFO, image or log (with extension), or null.</summary>
@@ -278,6 +322,7 @@ namespace CDTag.Model.Tag
                 case "PROFILE": return _profile.ProfileName;
                 case "BITDEPTH": return QualityTag;
                 case "SOURCE": return Dir(_release.Source);
+                case "FIX": return FixTag;
                 case "IMAGETEXT": return imageText;
                 case "BITRATE":
                     decimal bitrate = track != null ? track.Bitrate : AverageBitrate(_album);
