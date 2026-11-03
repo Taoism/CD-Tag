@@ -37,14 +37,18 @@
     <AllowedReferenceRelatedFileExtensions>none</AllowedReferenceRelatedFileExtensions>
   </PropertyGroup>
 
-  <Target Name="MoveSupportFilesToBin" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
+  <!-- Release layout: CD-Tag and its files in bin\, and the starter (Launcher, .NET Framework 4.8) as cdtag.exe on top;
+       the starter installs the .NET 10 Desktop Runtime when it is missing. -->
+  <Target Name="MoveToBinAndAddLauncher" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
     <ItemGroup>
       <_OldAppConfig Include="$(PublishDir)cdtag.dll.config;$(PublishDir)cdtag.exe.config" />
-      <_ToBin Include="$(PublishDir)**\*" Exclude="$(PublishDir)cdtag.exe;$(PublishDir)bin\**;@(_OldAppConfig)" />
+      <_ToBin Include="$(PublishDir)**\*" Exclude="$(PublishDir)bin\**;@(_OldAppConfig)" />
     </ItemGroup>
     <Delete Files="@(_OldAppConfig)" />
     <Move SourceFiles="@(_ToBin)" DestinationFiles="@(_ToBin->'$(PublishDir)bin\%(RecursiveDir)%(Filename)%(Extension)')" />
     <RemoveDir Directories="$(PublishDir)Languages" />
+    <MSBuild Projects="..\Launcher\CDTag.Launcher.csproj" Targets="Restore;Build" Properties="Configuration=Release" />
+    <Copy SourceFiles="..\Launcher\bin\Release\net48\cdtag.exe" DestinationFolder="$(PublishDir)" />
   </Target>
 
   <ItemGroup>

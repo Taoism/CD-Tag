@@ -16,4 +16,5 @@
   <Project Path="CDTag.Views.Interfaces/CDTag.Views.Interfaces.csproj" />
   <Project Path="CDTag.Views/CDTag.Views.csproj" />
   <Project Path="CDTag/CDTag.csproj" />
+  <Project Path="Launcher/CDTag.Launcher.csproj" />
 </Solution>
