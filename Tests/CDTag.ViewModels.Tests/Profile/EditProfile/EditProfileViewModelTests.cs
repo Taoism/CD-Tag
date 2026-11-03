@@ -1,4 +1,5 @@
-﻿using System.IO;
+using System.IO;
+using System.Linq;
 using System.Windows;
 using CDTag.Common;
 using CDTag.Common.ApplicationServices;
@@ -312,6 +313,94 @@ namespace CDTag.ViewModel.Tests.Profile.EditProfile
 
             // Assert
             Assert.Ignore("Not implemented (upstream placeholder test)");
+        }
+
+        [Test]
+        public void OkSavesEditedSettingsAndCloses()
+        {
+            DeleteUnitTestsProfile();
+            new UserProfile { ProfileName = _profileName }.Save();
+            EditProfileViewModel vm = IoC.Resolve<EditProfileViewModel>();
+            bool? closed = null;
+            vm.CloseWindow = r => closed = r;
+
+            vm.SelectedPage = 1;
+            vm.SelectedSlot = vm.NamingSlots[2];
+            vm.NamingFormat.Directory = "<Artist>-<Album>-<Discs>CD-<Year>-GRP";
+            vm.Profile.Finish.CreateSFV = false;
+            vm.Tagging.LongTrackNumbers = true;
+            vm.SourcesText = "CD\r\nWEB-FLAC\r\nNormal | ";
+            vm.ReplacementsText = " & => _and_\r\n";
+            vm.DeleteFilesText = "*.sfv\r\n*.m3u";
+            vm.RefreshChanges();
+            Assert.That(vm.WindowTitle, Does.EndWith("*"), "unsaved changes show in the title");
+
+            vm.OKCommand.Execute(null);
+
+            Assert.That(closed, Is.True);
+            UserProfile saved = UserProfile.Load(_unitTestsProfile);
+            Assert.That(saved.FileNaming.MultiCD.SingleArtist.Directory, Is.EqualTo("<Artist>-<Album>-<Discs>CD-<Year>-GRP"));
+            Assert.That(saved.Finish.CreateSFV, Is.False);
+            Assert.That(saved.Tagging.LongTrackNumbers, Is.True);
+            Assert.That(saved.ReleaseInfo.Sources.Select(s => s.Nfo + "/" + s.Dir), Is.EqualTo(new[] { "CD/CD", "WEB-FLAC/WEB-FLAC", "Normal/" }));
+            Assert.That(saved.NamingRules.Replacements[0].Find, Is.EqualTo(" &"));
+            Assert.That(saved.NamingRules.Replacements[0].Replace, Is.EqualTo("_and_"));
+            Assert.That(saved.DeleteFiles, Is.EqualTo(new[] { "*.sfv", "*.m3u" }));
+        }
+
+        [Test]
+        public void CancelAsksBeforeDroppingChanges()
+        {
+            DeleteUnitTestsProfile();
+            new UserProfile { ProfileName = _profileName }.Save();
+            EditProfileViewModel vm = IoC.Resolve<EditProfileViewModel>();
+            bool? closed = null;
+            vm.CloseWindow = r => closed = r;
+            string asked = null;
+            vm.ShowMessageBox += (s, e) => { asked = e.Data.MessageBoxText; e.Data.Result = MessageBoxResult.No; };
+
+            vm.Profile.Finish.CreateSFV = !vm.Profile.Finish.CreateSFV;
+            vm.CancelCommand.Execute(null);
+
+            Assert.That(asked, Does.Contain(_profileName));
+            Assert.That(closed, Is.False);
+            Assert.That(UserProfile.Load(_unitTestsProfile).Finish.CreateSFV, Is.EqualTo(new UserProfile().Finish.CreateSFV), "not saved");
+        }
+
+        [Test]
+        public void RenameAndCopy()
+        {
+            DeleteUnitTestsProfile();
+            string profileDirectory = IoC.Resolve<IPathService>().ProfileDirectory;
+            var profile = new UserProfile { ProfileName = _profileName };
+            profile.NFOOptions.TemplatePath = _profileName + ".nfo";
+            profile.Save();
+            File.WriteAllText(_unitTestsNFO, "nfo");
+            EditProfileViewModel vm = IoC.Resolve<EditProfileViewModel>();
+
+            vm.NewProfileName = _profileName2;
+            vm.RenameProfileCommand.Execute(null);
+
+            Assert.That(vm.Profile.ProfileName, Is.EqualTo(_profileName2));
+            Assert.That(File.Exists(_unitTestsProfile), Is.False);
+            Assert.That(File.Exists(_unitTestsProfile2), Is.True);
+            Assert.That(File.Exists(Path.Combine(profileDirectory, _profileName2 + ".nfo")), Is.True, "the template follows the profile");
+            Assert.That(UserProfile.Load(_unitTestsProfile2).NFOOptions.TemplatePath, Is.EqualTo(_profileName2 + ".nfo"));
+
+            string copyFile = Path.Combine(profileDirectory, _profileName2 + " copy.cfg");
+            try
+            {
+                vm.CopyProfileCommand.Execute(null);
+                Assert.That(vm.Profile.ProfileName, Is.EqualTo(_profileName2 + " copy"));
+                Assert.That(File.Exists(copyFile), Is.True);
+                Assert.That(vm.Profiles.Count, Is.EqualTo(2));
+            }
+            finally
+            {
+                File.Delete(copyFile);
+                File.Delete(Path.Combine(profileDirectory, _profileName2 + " copy.nfo"));
+                File.Delete(Path.Combine(profileDirectory, _profileName2 + ".nfo"));
+            }
         }
     }
 }

@@ -14,7 +14,7 @@ using CDTag.Views.Interfaces.Profile.NewProfile;
 
 namespace CDTag.ViewModels.Profile.EditProfile
 {
-    public class EditProfileViewModel : ViewModelBase<EditProfileViewModel>, IEditProfileViewModel
+    public partial class EditProfileViewModel : ViewModelBase<EditProfileViewModel>, IEditProfileViewModel
     {
         private readonly DelegateCommand _newProfileCommand;
         private readonly DelegateCommand _renameProfileCommand;
@@ -72,7 +72,7 @@ namespace CDTag.ViewModels.Profile.EditProfile
             EnhancedPropertyChanged += EditProfileViewModel_EnhancedPropertyChanged;
 
             Profile = _profiles.First();
-            Header = "Select Profile";
+            InitializeEditor();
             UpdateWindowTitle();
         }
 
@@ -93,6 +93,7 @@ namespace CDTag.ViewModels.Profile.EditProfile
                     newValue.EnhancedPropertyChanged += Profile_EnhancedPropertyChanged;
                     newValue.CheckHasChanges();
                 }
+                RefreshEditors();
 
                 UpdateWindowTitle();
             }
@@ -346,16 +347,6 @@ namespace CDTag.ViewModels.Profile.EditProfile
                     Profile = newProfile;
                 }
             }
-        }
-
-        private void RenameProfile()
-        {
-            throw new NotImplementedException();
-        }
-
-        private void CopyProfile()
-        {
-            throw new NotImplementedException();
         }
 
         private void DeleteProfile()

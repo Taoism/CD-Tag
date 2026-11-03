@@ -1,4 +1,4 @@
-﻿<Views:WindowViewBase
+<Views:WindowViewBase
     x:Class="CDTag.Views.Profile.EditProfile.EditProfileWindow"
     x:Name="editProfileWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -24,7 +24,13 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Background="{DynamicResource Theme.PaneBackground}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" BorderBrush="{DynamicResource Theme.PaneBorder}" BorderThickness="1" />
+        <ListBox Grid.Column="0" ItemsSource="{Binding Pages}" SelectedIndex="{Binding SelectedPage, Mode=TwoWay}" Background="{DynamicResource Theme.PaneBackground}" BorderBrush="{DynamicResource Theme.PaneBorder}" BorderThickness="1" Padding="0,4">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                    <Setter Property="Padding" Value="10,5" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
 
         <Grid Grid.Column="1" Margin="8,0,0,0">
             <Grid.RowDefinitions>
@@ -34,9 +40,10 @@
 
             <TextBlock Grid.Row="0" Text="{Binding Header, Mode=OneWay}" FontSize="16" VerticalAlignment="Stretch" Padding="7,2" Foreground="{DynamicResource Theme.DialogHeaderForeground}" Background="{DynamicResource Theme.DialogHeaderBackground}" Margin="0,0,0,4" />
 
-            <ContentControl Grid.Row="1" x:Name="ContentArea">
-                <EditProfile:SelectProfileUserControl />
-            </ContentControl>
+            <Grid Grid.Row="1" x:Name="ContentArea">
+                <EditProfile:SelectProfileUserControl Visibility="{Binding SelectedPage, Converter={StaticResource IsEqualToVisibilityConverter}, ConverterParameter=0}" />
+                <EditProfile:ProfileSettingsUserControl />
+            </Grid>
         </Grid>
 
         <Path Grid.Row="1" Grid.ColumnSpan="2" Data="M0,0 L1,0" Stroke="{DynamicResource Theme.Divider}" Stretch="Fill" Margin="0,8" />
@@ -46,10 +53,12 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" SharedSizeGroup="BottomButtons" MinWidth="80" />
                 <ColumnDefinition Width="Auto" SharedSizeGroup="BottomButtons" MinWidth="80" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="BottomButtons" MinWidth="80" />
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="1" Content="_OK" Command="{Binding OKCommand}" Padding="7,2" Margin="8,0,0,0" />
-            <Button Grid.Column="2" Content="_Cancel" Command="{Binding CancelCommand}" IsCancel="True" Padding="7,2" Margin="8,0,0,0" />
+            <Button Grid.Column="1" Content="_OK" Command="{Binding OKCommand}" Padding="7,2" Margin="8,0,0,0" ToolTip="Save the changed profiles and close" />
+            <Button Grid.Column="2" Content="_Cancel" Command="{Binding CancelCommand}" Padding="7,2" Margin="8,0,0,0" />
+            <Button Grid.Column="3" Content="_Apply" Command="{Binding ApplyCommand}" Padding="7,2" Margin="8,0,0,0" ToolTip="Save the changed profiles" />
         </Grid>
 
     </Grid>
