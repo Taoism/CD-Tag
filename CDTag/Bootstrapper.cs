@@ -58,6 +58,7 @@ namespace CDTag
             IoC.RegisterInstance<IDispatcher>(new ApplicationDispatcher());
             IoC.RegisterInstance<IDialogService>(new DialogService());
             IoC.RegisterInstance<IPathService>(new PathService());
+            InstallDefaults();
             IoC.RegisterInstance<IThemeService>(ThemeManager.Instance);
             IoC.RegisterInstance<ITagViewModel>(IoC.Resolve<TagViewModel>());
             // One instance per tab, shared by the tab view and its menu.
@@ -127,6 +128,35 @@ namespace CDTag
         /// Looks for updated scene rules (scenerules.org) in the background on every start; tells the user when a
         /// rule file is new or has changed. Offline or failing: silent.
         /// </summary>
+        /// <summary>
+        /// First run: copies the blank NFO template in Defaults (next to cdtag.exe) to the Profiles folder when it isn't
+        /// there yet. Existing files are never replaced.
+        /// </summary>
+        private static void InstallDefaults()
+        {
+            string defaults = System.IO.Path.Combine(AppContext.BaseDirectory, "Defaults");
+            if (!System.IO.Directory.Exists(defaults))
+                return;
+            IPathService paths = IoC.Resolve<IPathService>();
+            CopyIfMissing(System.IO.Path.Combine(defaults, "blank.nfo"), System.IO.Path.Combine(paths.ProfileDirectory, "blank.nfo"));
+        }
+
+        private static void CopyIfMissing(string source, string target)
+        {
+            try
+            {
+                if (System.IO.File.Exists(source) && !System.IO.File.Exists(target))
+                {
+                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+                    System.IO.File.Copy(source, target);
+                }
+            }
+            catch (Exception ex) when (ex is System.IO.IOException || ex is UnauthorizedAccessException)
+            {
+                // Not essential: built-in defaults are used.
+            }
+        }
+
         private static void CheckSceneRules(Window shell)
         {
             if (!CDTag.Common.Settings.AppOptions.Current.IsSceneTagging)

@@ -71,6 +71,29 @@ namespace CDTag.Common.Settings
     public static class AppOptions
     {
         private const string FileName = "options.json";
+
+        /// <summary>
+        /// options.json next to the program (the folder with cdtag.exe; for a release build that is the folder above bin\),
+        /// or null. When it exists, options are read from and saved to it instead of %LOCALAPPDATA%\CD-Tag.
+        /// </summary>
+        public static string ProgramOptionsFile
+        {
+            get
+            {
+                string baseDirectory = AppContext.BaseDirectory.TrimEnd('\\', '/');
+                string programDirectory = string.Equals(Path.GetFileName(baseDirectory), "bin", StringComparison.OrdinalIgnoreCase)
+                    ? Path.GetDirectoryName(baseDirectory)
+                    : baseDirectory;
+                string path = programDirectory != null ? Path.Combine(programDirectory, FileName) : null;
+                return path != null && File.Exists(path) ? path : null;
+            }
+        }
+
+        /// <summary>The options file in use (a full path next to the program, or the name in %LOCALAPPDATA%\CD-Tag).</summary>
+        private static string Location
+        {
+            get { return ProgramOptionsFile ?? FileName; }
+        }
         private static AppOptionsData _current;
 
         /// <summary>Raised after <see cref="Save"/> stored new options.</summary>
@@ -84,7 +107,7 @@ namespace CDTag.Common.Settings
                 if (_current == null)
                 {
                     AppOptionsData loaded;
-                    _current = SettingsFile.TryLoad(FileName, out loaded) && loaded != null ? loaded : new AppOptionsData();
+                    _current = SettingsFile.TryLoad(Location, out loaded) && loaded != null ? loaded : new AppOptionsData();
                 }
                 return _current;
             }
@@ -97,7 +120,7 @@ namespace CDTag.Common.Settings
                 throw new ArgumentNullException("options");
 
             _current = options.Clone();
-            SettingsFile.Save(FileName, _current);
+            SettingsFile.Save(Location, _current);
 
             EventHandler handler = Changed;
             if (handler != null)

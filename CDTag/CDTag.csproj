@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Content Include="Languages\english.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Defaults\blank.nfo" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\Encoders\**\*.exe;..\Encoders\**\*.dll;..\Encoders\**\*.txt" Condition="Exists('..\Encoders') And '$(Configuration)' != 'Release'" Link="Encoders\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
@@ -49,6 +50,8 @@
     <RemoveDir Directories="$(PublishDir)Languages" />
     <MSBuild Projects="..\Launcher\CDTag.Launcher.csproj" Targets="Restore;Build" Properties="Configuration=Release" />
     <Copy SourceFiles="..\Launcher\bin\Release\net48\cdtag.exe" DestinationFolder="$(PublishDir)" />
+    <!-- options.json next to cdtag.exe: CD-Tag reads and saves its options there ("enabled": "false" = no scene-style tagging). -->
+    <Copy SourceFiles="Defaults\options.json" DestinationFolder="$(PublishDir)" />
   </Target>
 
   <ItemGroup>

@@ -12,6 +12,7 @@ TestResults/
 # Never commit user/group profiles or NFO templates (CD-Tag 2.x and converted ones)
 *.cfg
 *.nfo
+!CDTag/Defaults/blank.nfo
 *.cdtag2.ini
 Profiles/
 

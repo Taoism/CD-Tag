@@ -1,3 +1,4 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -198,6 +199,17 @@ namespace CDTag.ViewModel.Tests.Tag
             string[] lines = Lines(new NfoGenerator(profile, album, Release()).Generate(Template));
 
             Assert.That(lines, Does.Contain("CD 2: Live"));
+        }
+
+        [Test]
+        public void TheBlankTemplateFillsEveryField()
+        {
+            string path = Path.GetFullPath(Path.Combine(TestContext.CurrentContext.TestDirectory, @"..\..\..\..\..\CDTag\Defaults\blank.nfo"));
+            string nfo = new NfoGenerator(Profile(), Album(), Release()).Generate(File.ReadAllText(path));
+
+            Assert.That(System.Text.RegularExpressions.Regex.Matches(nfo, @"#[A-Za-z]+").Cast<System.Text.RegularExpressions.Match>().Select(m => m.Value), Is.Empty,
+                        "every token is replaced");
+            Assert.That(nfo, Does.Not.Contain("GRP"), "no group name in the shipped template");
         }
     }
 

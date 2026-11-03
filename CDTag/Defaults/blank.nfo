@@ -1,0 +1,27 @@
+#Artist - #Album
+------------------------------------------------------------------------------
+
+  Label .......: #Label
+  Catalog # ...: #Catnum
+  Source ......: #Source
+  Genre .......: #Genre
+  Year ........: #Year
+  Store date ..: #Sdate
+  Rip date ....: #Rdate
+  Ripper ......: #Ripper
+  Rip tool ....: #RippingTool
+  Encoder .....: #Encoder
+  Quality .....: #Br kbps / #KHz kHz / #Mode
+  Size ........: #MBmegs
+  Playtime ....: #TT
+  URL .........: #url
+
+Tracklist
+------------------------------------------------------------------------------
+
+  #N. #Song #Time
+
+Release notes
+------------------------------------------------------------------------------
+
+  #Rnotes
