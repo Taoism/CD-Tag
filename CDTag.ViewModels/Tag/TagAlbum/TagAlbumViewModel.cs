@@ -93,13 +93,13 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         }
 
         private static readonly System.Text.RegularExpressions.Regex BitKhzPart = new System.Text.RegularExpressions.Regex(
-            @"\b\d{2}BIT\b|\d\s*KHZ\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            @"\b\d{2}BIT\b|\d\s*KHZ\b|\b(16|24|32)\s*[/-]\s*(44(\.1)?|48|88(\.2)?|96|176(\.4)?|192)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
         /// <summary>Fix tags have their own box (Fix), so they are not types.</summary>
         public static readonly string[] FixTags = { "RERIP", "REPACK", "DIRFIX", "NFOFIX" };
 
         /// <summary>
-        /// The Type list without entries that carry a bit depth / sample rate ("16BIT", "24BIT/96KHZ", "Remastered-24BiT/96KhZ")
+        /// The Type list without entries that carry a bit depth / sample rate ("16BIT", "24BIT/96KHZ", "Remastered-24BiT/96KhZ", "24/96")
         /// or a fix tag (REPACK, DIRFIX...): Bit/kHz and Fix have their own boxes.
         /// </summary>
         public static ReleaseListItem[] TypesFor(ReleaseListItem[] types)

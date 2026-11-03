@@ -399,7 +399,7 @@ namespace CDTag.ViewModel.Tests.Tag
         {
             ReleaseListItem[] types = new[] { "Normal release", "Remastered", "Remastered-24BiT/44KhZ", "Remastered-24BiT/96KhZ",
                                               "Deluxe Edition-24BIT/48KHZ", "16BIT", "24BIT/96KHZ", "Limited Edition-16BIT", "Promo",
-                                              "REPACK", "DIRFIX", "NFOFIX", "DIRFIX Reissue OST", "Reissue OST", "Proper", "Deluxe Edition" }
+                                              "REPACK", "DIRFIX", "NFOFIX", "DIRFIX Reissue OST", "Reissue OST", "Proper", "24/96", "24/192", "Deluxe Edition" }
                 .Select(t => new ReleaseListItem { Nfo = t, Dir = t == "Normal release" ? "" : t }).ToArray();
 
             Assert.That(TagAlbumViewModel.TypesFor(types).Select(t => t.Nfo), Is.EqualTo(new[] { "Normal release", "Remastered", "Promo", "Reissue OST", "Proper", "Deluxe Edition" }));
