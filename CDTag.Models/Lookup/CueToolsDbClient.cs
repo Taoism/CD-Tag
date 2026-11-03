@@ -16,7 +16,7 @@ namespace CDTag.Model.Lookup
     /// </summary>
     public class CueToolsDbClient
     {
-        private const string LookupUrl = "http://db.cuetools.net/lookup2.php?version=3&ctdb=0&metadata=extensive&fuzzy=1&toc=";
+        private const string LookupUrl = "http://db.cuetools.net/lookup2.php?version=3&ctdb=0&fuzzy=1&metadata=";
         private static readonly XNamespace Ns = "http://db.cuetools.net/ns/mmd-1.0#";
 
         private static readonly HttpClient Http = CreateClient();
@@ -29,12 +29,19 @@ namespace CDTag.Model.Lookup
             return client;
         }
 
-        public async Task<List<ReleaseDetails>> LookupAsync(DiscToc toc, CancellationToken cancellation = default(CancellationToken))
+        /// <summary>
+        /// Looks the disc up. <paramref name="metadataSearch"/> is the CTDB plugin's search mode: "fast", "default" or "extensive"
+        /// (all databases, fuzzy too; EAC's CTDB plugin setting MetadataSearch).
+        /// </summary>
+        public async Task<List<ReleaseDetails>> LookupAsync(DiscToc toc, CancellationToken cancellation = default(CancellationToken), string metadataSearch = "extensive")
         {
             if (toc == null)
                 throw new ArgumentNullException("toc");
+            string mode = (metadataSearch ?? "extensive").Trim().ToLowerInvariant();
+            if (mode != "fast" && mode != "default" && mode != "extensive")
+                mode = "extensive";
 
-            using (HttpResponseMessage response = await Http.GetAsync(LookupUrl + toc.CtdbToc, cancellation).ConfigureAwait(false))
+            using (HttpResponseMessage response = await Http.GetAsync(LookupUrl + mode + "&toc=" + toc.CtdbToc, cancellation).ConfigureAwait(false))
             {
                 if (response.StatusCode == HttpStatusCode.NotFound)
                     return new List<ReleaseDetails>();

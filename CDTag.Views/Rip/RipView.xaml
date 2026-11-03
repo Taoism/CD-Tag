@@ -98,7 +98,12 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding SettingsSource}" Foreground="{DynamicResource Theme.ForegroundSecondary}" Margin="0,0,0,6" />
+                <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,6">
+                    <TextBlock Text="{Binding SettingsSource}" Foreground="{DynamicResource Theme.ForegroundSecondary}" />
+                    <TextBlock Foreground="{DynamicResource Theme.ForegroundSecondary}" Margin="0,2,0,0">
+                        <Run Text="Find CD asks: " /><Run Text="{Binding MetadataSourcesText, Mode=OneWay}" /><Run Text=" (runs by itself when a disc goes in)" />
+                    </TextBlock>
+                </StackPanel>
                 <Button Grid.Row="0" Grid.Column="2" Content="Load from EAC" Command="{Binding LoadEacSettingsCommand}" Padding="10,2" Margin="6,0,0,6" />
 
                 <TextBlock Grid.Row="1" Text="Rip to" VerticalAlignment="Center" Margin="0,2,12,2" />

@@ -118,6 +118,21 @@
                 <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0" Text="Leave empty to use the built-in LAME 3.100 and FLAC 1.5.0. To use another version, put lame.exe in Encoders\mp3 or flac.exe in Encoders\flac next to cdtag.exe." />
             </StackPanel>
 
+            <!-- CD lookup -->
+            <TextBlock Text="CD lookup (Rip)" Style="{StaticResource SectionHeader}" />
+            <StackPanel Style="{StaticResource SectionBody}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Label Content="_gnudb address:" Target="{Binding ElementName=GnudbBox}" Padding="0" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBox x:Name="GnudbBox" Grid.Column="1" Text="{Binding GnudbEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="2,1" />
+                </Grid>
+                <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0"
+                           Text="gnudb.org (the freedb successor) only answers registered programs: enter the e-mail address you registered with gnudb to also look discs up there. MusicBrainz and CUETools DB need nothing." />
+            </StackPanel>
+
             <Path Data="M0,0 L1,0" Stroke="{DynamicResource Theme.Divider}" Stretch="Fill" Margin="0,0,0,10" />
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

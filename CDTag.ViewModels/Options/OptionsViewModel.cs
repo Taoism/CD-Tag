@@ -28,6 +28,7 @@ namespace CDTag.ViewModel.Options
             NewTagID3v2Version = options.NewTagID3v2Version == "ID3v24" ? "ID3v24" : "ID3v23";
             LamePath = options.LamePath;
             FlacPath = options.FlacPath;
+            GnudbEmail = options.GnudbEmail;
 
             BrowseStartupFolderCommand = new DelegateCommand(BrowseStartupFolder);
             BrowseLameCommand = new DelegateCommand(() => BrowseExe("lame.exe", "LamePath"));
@@ -80,6 +81,13 @@ namespace CDTag.ViewModel.Options
                 Set("LamePath", value);
                 LameInfo = EncoderInfo(value, CDTag.Model.Encoders.AudioEncoder.UserLameFolder, "lame", "lame.exe");
             }
+        }
+
+        /// <summary>Address registered with gnudb.org; empty = gnudb is not asked (Rip > Find CD).</summary>
+        public string GnudbEmail
+        {
+            get { return Get<string>("GnudbEmail"); }
+            set { Set("GnudbEmail", value); }
         }
 
         public string FlacPath
@@ -184,6 +192,7 @@ namespace CDTag.ViewModel.Options
             options.NewTagID3v2Version = NewTagID3v2Version;
             options.LamePath = string.IsNullOrWhiteSpace(LamePath) ? null : LamePath.Trim();
             options.FlacPath = string.IsNullOrWhiteSpace(FlacPath) ? null : FlacPath.Trim();
+            options.GnudbEmail = string.IsNullOrWhiteSpace(GnudbEmail) ? null : GnudbEmail.Trim();
             AppOptions.Save(options);
 
             if (!string.IsNullOrEmpty(Theme))

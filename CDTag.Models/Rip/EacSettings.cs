@@ -28,6 +28,11 @@ namespace CDTag.Model.Rip
         /// <summary>"wav", "flac" or "mp3" (from EAC's external encoder, or WAV when it uses its internal WAV writer).</summary>
         public string Format { get; set; }
 
+        /// <summary>EAC's metadata provider: "CTDB", "freedb", "GD3", or null when unknown.</summary>
+        public string MetadataProvider { get; set; }
+        /// <summary>The CTDB plugin's search mode ("Fast", "Default", "Extensive"); "Extensive" when not set.</summary>
+        public string CtdbSearch { get; set; } = "Extensive";
+
         // Drive (when found)
         public string DriveKey { get; set; }
         public int? DriveOffset { get; set; }
@@ -96,6 +101,11 @@ namespace CDTag.Model.Rip
                 }
             }
 
+            using (RegistryKey internet = Registry.CurrentUser.OpenSubKey(Root + @"\Internet Options"))
+                s.MetadataProvider = ProviderName(internet == null ? null : Text(internet, "MetadataPluginUsed"));
+            using (RegistryKey ctdb = Registry.CurrentUser.OpenSubKey(@"Software\CUETools\EACPugin"))   // sic: the plugin's own key
+                s.CtdbSearch = (ctdb == null ? null : Text(ctdb, "MetadataSearch")) ?? s.CtdbSearch;
+
             if (vendor != null && product != null)
             {
                 s.DriveKey = vendor + product + " " + (revision ?? "");
@@ -125,6 +135,42 @@ namespace CDTag.Model.Rip
                 }
             }
             return s;
+        }
+
+        /// <summary>The metadata plugin EAC uses, from its ID: the plugin DLL in the EAC folder that contains the ID.</summary>
+        private static string ProviderName(string pluginId)
+        {
+            if (string.IsNullOrWhiteSpace(pluginId))
+                return null;
+            string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Exact Audio Copy");
+            if (!Directory.Exists(folder))
+                return null;
+            byte[] ascii = Encoding.ASCII.GetBytes(pluginId.ToUpperInvariant());
+            byte[] wide = Encoding.Unicode.GetBytes(pluginId.ToUpperInvariant());
+            foreach (string dll in Directory.GetFiles(folder, "*.dll"))
+            {
+                string name = Path.GetFileName(dll).ToLowerInvariant();
+                if (!(name.Contains("ctdb") || name.Contains("freedb") || name.Contains("gd3")))
+                    continue;
+                byte[] data;
+                try { data = File.ReadAllBytes(dll); }
+                catch (IOException) { continue; }
+                byte[] upper = data.Select(b => b >= (byte)'a' && b <= (byte)'z' ? (byte)(b - 32) : b).ToArray();
+                if (IndexOf(upper, ascii) >= 0 || IndexOf(upper, wide) >= 0)
+                    return name.Contains("ctdb") ? "CTDB" : name.Contains("freedb") ? "freedb" : "GD3";
+            }
+            return null;
+        }
+
+        private static int IndexOf(byte[] data, byte[] pattern)
+        {
+            for (int i = 0; i + pattern.Length <= data.Length; i++)
+            {
+                int j = 0;
+                while (j < pattern.Length && data[i + j] == pattern[j]) j++;
+                if (j == pattern.Length) return i;
+            }
+            return -1;
         }
 
         private static string Text(RegistryKey key, string name)

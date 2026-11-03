@@ -47,6 +47,12 @@ namespace CDTag.Common.Settings
         public string EncodePreset { get; set; }
 
         /// <summary>
+        /// The address registered with gnudb.org for its CD database (it refuses lookups without one). Empty = gnudb is not used.
+        /// </summary>
+        [DataMember]
+        public string GnudbEmail { get; set; }
+
+        /// <summary>
         /// Scene-style tagging, "true" or "false" ("enabled" in options.json). On: Finish checks the scene rules, release names
         /// get the bit depth / fix tags, Tag Album shows Bit/kHz and Fix, genres follow the scene list, and the rules are
         /// checked for updates at startup. Missing = on.

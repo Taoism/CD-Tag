@@ -79,6 +79,7 @@ namespace CDTag.ViewModels.Rip
 
             LoadSettings(null, null, null);
             RefreshDrives();
+            StartDiscWatch();
         }
 
         public ObservableCollection<string> Drives { get; private set; }
@@ -197,6 +198,14 @@ namespace CDTag.ViewModels.Rip
             char? letter = DriveLetter;
             if (letter == null)
                 return;
+            try
+            {
+                var info = new DriveInfo(letter.Value.ToString());
+                _lookedUpDisc = info.IsReady ? letter.Value + "|" + info.VolumeLabel : null;   // the disc watch won't look it up again
+            }
+            catch (IOException)
+            {
+            }
             IsBusy = true;
             CommandManager.InvalidateRequerySuggested();
             Tracks.Clear();
@@ -239,8 +248,11 @@ namespace CDTag.ViewModels.Rip
 
                 DiscToc disc = RipJob.ToDiscToc(toc);
                 var found = new List<ReleaseDetails>();
-                try { found.AddRange(await new MusicBrainzClient().LookupDiscAsync(disc)); } catch (Exception ex) when (ex is System.Net.Http.HttpRequestException || ex is TaskCanceledException || ex is IOException) { }
-                try { found.AddRange(await new CueToolsDbClient().LookupAsync(disc)); } catch (Exception ex) when (ex is System.Net.Http.HttpRequestException || ex is TaskCanceledException || ex is IOException) { }
+                foreach (Func<Task<List<ReleaseDetails>>> source in MetadataSources(disc))
+                {
+                    try { found.AddRange(await source()); }
+                    catch (Exception ex) when (ex is System.Net.Http.HttpRequestException || ex is TaskCanceledException || ex is IOException || ex is System.Xml.XmlException) { }
+                }
                 int audioCount = toc.Count(t => t.IsAudio);
                 // MusicBrainz also returns discs with a similar TOC: releases with this disc's track count come first
                 // (in the order the services ranked them).
@@ -264,6 +276,75 @@ namespace CDTag.ViewModels.Rip
                 IsBusy = false;
                 CommandManager.InvalidateRequerySuggested();
             }
+        }
+
+        /// <summary>
+        /// The metadata sources in order: EAC's own provider first (CTDB with the plugin's search mode, or freedb = gnudb),
+        /// then MusicBrainz (disc ID), CUETools DB and gnudb (only with a gnudb address in Options).
+        /// </summary>
+        private List<Func<Task<List<ReleaseDetails>>>> MetadataSources(DiscToc disc)
+        {
+            string ctdbMode = _eac != null ? _eac.CtdbSearch : "Extensive";
+            var gnudb = new GnudbClient(CDTag.Common.Settings.AppOptions.Current.GnudbEmail);
+            Func<Task<List<ReleaseDetails>>> ctdb = () => new CueToolsDbClient().LookupAsync(disc, CancellationToken.None, ctdbMode);
+            Func<Task<List<ReleaseDetails>>> mb = () => new MusicBrainzClient().LookupDiscAsync(disc);
+            Func<Task<List<ReleaseDetails>>> gnu = () => gnudb.LookupAsync(disc);
+            string provider = _eac != null ? _eac.MetadataProvider : null;
+            var sources = provider == "freedb" ? new List<Func<Task<List<ReleaseDetails>>>> { gnu, mb, ctdb }
+                        : provider == "CTDB" ? new List<Func<Task<List<ReleaseDetails>>>> { ctdb, mb, gnu }
+                        : new List<Func<Task<List<ReleaseDetails>>>> { mb, ctdb, gnu };
+            MetadataSourcesText = string.Join(", ", (provider == "freedb" ? new[] { "gnudb", "MusicBrainz", "CUETools DB" }
+                                                    : provider == "CTDB" ? new[] { "CUETools DB (" + ctdbMode + ", as in EAC)", "MusicBrainz", "gnudb" }
+                                                    : new[] { "MusicBrainz", "CUETools DB", "gnudb" })
+                                                   .Where(n => n != "gnudb" || gnudb.IsEnabled));
+            return sources;
+        }
+
+        /// <summary>"CUETools DB (Extensive, as in EAC), MusicBrainz": the sources Find CD asks, in order.</summary>
+        public string MetadataSourcesText { get { return Get<string>("MetadataSourcesText"); } private set { Set("MetadataSourcesText", value); } }
+
+        // ---- automatic Find CD: watch the drive and look the disc up when one is put in
+        private System.Windows.Threading.DispatcherTimer _discWatch;
+        /// <summary>Drive letter + volume label of the disc Find CD last ran for (automatically or not); null = no disc.</summary>
+        private string _lookedUpDisc;
+
+        /// <summary>Every 2 seconds: a new disc in the selected drive is looked up once; taking it out clears the form.</summary>
+        private void StartDiscWatch()
+        {
+            _discWatch = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            _discWatch.Tick += async (s, e) =>
+            {
+                if (IsBusy || DriveLetter == null)
+                    return;
+                char letter = DriveLetter.Value;
+                string disc = null;
+                try
+                {
+                    disc = await Task.Run(() =>
+                    {
+                        var info = new DriveInfo(letter.ToString());
+                        return info.IsReady ? letter + "|" + info.VolumeLabel : null;
+                    });
+                }
+                catch (IOException)
+                {
+                }
+                if (IsBusy || disc == _lookedUpDisc)
+                    return;
+                _lookedUpDisc = disc;
+                if (disc != null)
+                {
+                    await FindCD();
+                }
+                else
+                {
+                    _toc = null;
+                    Tracks.Clear(); Releases.Clear(); HasReleases = false; Cover = null; _coverBytes = null;
+                    StatusText = "No disc in " + letter + ":";
+                    CommandManager.InvalidateRequerySuggested();
+                }
+            };
+            _discWatch.Start();
         }
 
         private async void ApplyRelease(ReleaseDetails r)
