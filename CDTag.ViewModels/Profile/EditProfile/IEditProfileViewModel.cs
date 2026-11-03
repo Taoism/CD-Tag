@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CDTag.Common;
 using CDTag.Common.Mvvm;
@@ -15,6 +15,7 @@ namespace CDTag.ViewModels.Profile.EditProfile
         ICommand CopyProfileCommand { get; }
         ICommand DeleteProfileCommand { get; }
         ICommand ImportProfileCommand { get; }
+        ICommand ExportProfileCommand { get; }
         ObservableCollection<UserProfile> Profiles { get; }
         UserProfile Profile { get; set; }
     }

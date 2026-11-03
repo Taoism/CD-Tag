@@ -155,6 +155,66 @@ namespace CDTag.ViewModel.Tests.Profile
         }
 
         [Test]
+        public void ExportRoundTripsAndKeepsUnusedTwoXSettings()
+        {
+            string source = WriteSample("GRP.cfg", withTemplate: true);
+            // A 2.x setting this version doesn't use
+            File.AppendAllText(source, "\r\n[TAGGING2]\r\nAPE_APEV2=Remove\r\n", Encoding.Latin1);
+            string profiles = Path.Combine(_directory, "Profiles");
+            Directory.CreateDirectory(profiles);
+            UserProfile profile = LegacyProfile.Import(source, profiles, "GRP");
+
+            // Edited in this version
+            profile.FileNaming.SingleCD.SingleArtist.Directory = "<SC><Artist>-<Album>-WEB-<Year></SC>-GRP";
+            profile.NFOOptions.SingleCDHeader = "Tracks" + Environment.NewLine;
+            profile.Tagging.Id3v1 = TagAction.Remove;
+            profile.ReleaseInfo = new ReleaseInfoOptions { Sources = new[] { new ReleaseListItem { Nfo = "CD", Dir = "CD" }, new ReleaseListItem { Nfo = "WEB", Dir = "WEB" } } };
+
+            string export = Path.Combine(_directory, "old cdtag");
+            var written = LegacyProfileExport.Export(profile, profiles, export);
+
+            string cfg = Path.Combine(export, "GRP.cfg");
+            Assert.That(written, Is.EqualTo(new[] { cfg, Path.Combine(export, "GRP.nfo") }));
+            Assert.That(LegacyProfile.IsLegacyFile(cfg), Is.True);
+            string text = File.ReadAllText(cfg, LegacyProfile.DosEncoding);
+            Assert.That(text, Does.Contain("[TAGGING2]\r\nAPE_APEV2=Remove\r\n"), "2.x settings this version doesn't use come back");
+            Assert.That(text, Does.Contain("Template=GRP.nfo\r\n"));
+            Assert.That(text, Does.Contain("SingleCDHeader=Tracks&nl;\r\n"));
+            Assert.That(text, Does.Contain("[SOURCENFO_LIST]\r\n1=CD\r\n2=WEB\r\n"));
+
+            string template;
+            UserProfile back = LegacyProfile.Convert(cfg, "GRP", out template);
+            Assert.That(template, Is.EqualTo(Path.Combine(export, "GRP.nfo")));
+            Assert.That(back.FileNaming.SingleCD.SingleArtist.Directory, Is.EqualTo("<SC><Artist>-<Album>-WEB-<Year></SC>-GRP"));
+            Assert.That(back.FileNaming.MultiCD.SingleArtist.AudioFile, Is.EqualTo("<LC><Disc><Track>-<Artist>-<Song></LC>-grp"));
+            Assert.That(back.FileNaming.DirectoryCharacterLimit, Is.EqualTo(100));
+            Assert.That(back.NFOOptions.MultiCDHeader, Is.EqualTo("Disc #Disc/#Discs" + Environment.NewLine));
+            Assert.That(back.NFOOptions.DecimalCharacter, Is.EqualTo(","));
+            Assert.That(back.Tagging.Id3v1, Is.EqualTo(TagAction.Remove));
+            Assert.That(back.Tagging.Id3v2, Is.EqualTo(TagAction.WriteAlways));
+            Assert.That(back.Finish.NFO, Is.EqualTo(FinishNFO.CreateNew));
+            Assert.That(back.ReleaseInfo.Sources.Length, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void ExportsAProfileMadeInThisVersion()
+        {
+            var profile = new UserProfile { ProfileName = "NEW" };
+            profile.FileNaming.SingleCD.SingleArtist.Directory = "<Artist>-<Album>-<Year>-NEW";
+            profile.Finish.NFO = FinishNFO.RenameIfExistsElseCreate;
+
+            string export = Path.Combine(_directory, "old cdtag");
+            LegacyProfileExport.Export(profile, null, export);
+
+            string template;
+            UserProfile back = LegacyProfile.Convert(Path.Combine(export, "NEW.cfg"), "NEW", out template);
+            Assert.That(template, Is.Null);
+            Assert.That(back.FileNaming.SingleCD.SingleArtist.Directory, Is.EqualTo("<Artist>-<Album>-<Year>-NEW"));
+            Assert.That(back.Finish.NFO, Is.EqualTo(FinishNFO.RenameIfExistsElseCreate));
+            Assert.That(File.ReadAllText(Path.Combine(export, "NEW.cfg"), LegacyProfile.DosEncoding), Does.StartWith("[CONFIG]\r\nRevision=13\r\n"));
+        }
+
+        [Test]
         public void LoadConvertsLegacyFileInPlaceAndKeepsOriginal()
         {
             string profiles = Path.Combine(_directory, "Profiles");
