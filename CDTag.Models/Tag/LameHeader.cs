@@ -23,6 +23,82 @@ namespace CDTag.Model.Tag
         /// <summary>Bitrate byte (CBR: the bitrate, VBR: the minimum bitrate; 255 = 255 or more).</summary>
         public int Bitrate { get; private set; }
 
+        /// <summary>Info tag revision (0 for LAME 3.90 and later, 15 reserved).</summary>
+        public int Revision { get; private set; }
+        /// <summary>Lowpass filter in Hz (0 = unknown).</summary>
+        public int Lowpass { get; private set; }
+        /// <summary>Peak signal amplitude (1.0 = full scale), when stored.</summary>
+        public float? Peak { get; private set; }
+        /// <summary>Track (radio) replay gain in dB, when stored.</summary>
+        public double? RadioGain { get; private set; }
+        /// <summary>Album (audiophile) replay gain in dB, when stored.</summary>
+        public double? AudiophileGain { get; private set; }
+        /// <summary>Bits: 1 nspsytune, 2 nssafejoint, 4 nogap (next), 8 nogap (previous).</summary>
+        public int Flags { get; private set; }
+        public int AthType { get; private set; }
+        /// <summary>Samples LAME added at the start (usually 576).</summary>
+        public int EncoderDelay { get; private set; }
+        /// <summary>Samples LAME added at the end to fill the last frame.</summary>
+        public int Padding { get; private set; }
+        public int NoiseShaping { get; private set; }
+        /// <summary>0 mono, 1 stereo, 2 dual, 3 joint, 4 forced, 5 auto, 6 intensity, 7 other.</summary>
+        public int StereoMode { get; private set; }
+        public bool Unwise { get; private set; }
+        /// <summary>0 32 kHz or less, 1 44.1 kHz, 2 48 kHz, 3 above 48 kHz.</summary>
+        public int SourceFrequency { get; private set; }
+        public int Mp3Gain { get; private set; }
+        public int Surround { get; private set; }
+        /// <summary>Bytes from the start of the first frame to the end of the last (no ID3 tags).</summary>
+        public uint MusicLength { get; private set; }
+        /// <summary>CRC-16 of the audio frames after the info frame.</summary>
+        public int MusicCrc { get; private set; }
+        /// <summary>CRC-16 of the first 190 bytes of the info frame.</summary>
+        public int TagCrc { get; private set; }
+        public bool TagCrcValid { get; private set; }
+        /// <summary>Frame and byte counts and VBR quality from the Xing/Info header (0 when absent).</summary>
+        public uint Frames { get; private set; }
+        public uint Bytes { get; private set; }
+        public int XingQuality { get; private set; }
+        /// <summary>Offset of the info frame in the data given to <see cref="Parse"/>.</summary>
+        public int FrameOffset { get; private set; }
+
+        public string MethodName
+        {
+            get
+            {
+                switch (Method)
+                {
+                    case 1: return "CBR";
+                    case 2: return "ABR";
+                    case 3: return "VBR (old/rh)";
+                    case 4: return "VBR (mtrh)";
+                    case 5: return "VBR (mt)";
+                    case 6: return "VBR";
+                    case 8: return "CBR (2 pass)";
+                    case 9: return "ABR (2 pass)";
+                    default: return "Unknown (" + Method.ToString(CultureInfo.InvariantCulture) + ")";
+                }
+            }
+        }
+
+        public string StereoModeName
+        {
+            get
+            {
+                string[] names = { "Mono", "Stereo", "Dual channel", "Joint stereo", "Forced joint stereo", "Auto", "Intensity stereo", "Other" };
+                return names[StereoMode & 7];
+            }
+        }
+
+        public string SourceFrequencyName
+        {
+            get
+            {
+                string[] names = { "32 kHz or less", "44.1 kHz", "48 kHz", "Above 48 kHz" };
+                return names[SourceFrequency & 3];
+            }
+        }
+
         public bool IsCbr { get { return Method == 1 || Method == 8; } }
         public bool IsVbr { get { return Method >= 3 && Method <= 6; } }
 
@@ -113,7 +189,7 @@ namespace CDTag.Model.Tag
             encoder = encoder.Substring(0, end);
             Match version = VersionPattern.Match(encoder);
 
-            return new LameHeader
+            var header = new LameHeader
             {
                 Encoder = encoder,
                 Version = version.Success ? version.Groups[1].Value : null,
@@ -121,6 +197,65 @@ namespace CDTag.Model.Tag
                 Bitrate = data[lame + 20],
                 Preset = ((data[lame + 26] & 0x07) << 8) | data[lame + 27]
             };
+
+            // The rest of the LAME tag (revision 0/1 layout).
+            header.Revision = data[lame + 9] >> 4;
+            header.Lowpass = data[lame + 10] * 100;
+            uint peak = ReadUInt32(data, lame + 11);
+            header.Peak = peak == 0 ? (float?)null : BitConverter.Int32BitsToSingle((int)peak);
+            header.RadioGain = ReplayGain(data, lame + 15);
+            header.AudiophileGain = ReplayGain(data, lame + 17);
+            header.Flags = data[lame + 19] >> 4;
+            header.AthType = data[lame + 19] & 0x0F;
+            header.EncoderDelay = (data[lame + 21] << 4) | (data[lame + 22] >> 4);
+            header.Padding = ((data[lame + 22] & 0x0F) << 8) | data[lame + 23];
+            header.NoiseShaping = data[lame + 24] & 0x03;
+            header.StereoMode = (data[lame + 24] >> 2) & 0x07;
+            header.Unwise = (data[lame + 24] & 0x20) != 0;
+            header.SourceFrequency = data[lame + 24] >> 6;
+            header.Mp3Gain = (sbyte)data[lame + 25];
+            header.Surround = (data[lame + 26] >> 3) & 0x07;
+            header.MusicLength = ReadUInt32(data, lame + 28);
+            header.MusicCrc = (data[lame + 32] << 8) | data[lame + 33];
+            header.TagCrc = (data[lame + 34] << 8) | data[lame + 35];
+            header.TagCrcValid = Crc16.Compute(data, sync, lame + 34 - sync) == header.TagCrc;
+            header.FrameOffset = sync;
+
+            if (xing >= 0)
+            {
+                int flags = (int)ReadUInt32(data, xing + 4);
+                int position = xing + 8;
+                if ((flags & 1) != 0 && position + 4 <= length)
+                {
+                    header.Frames = ReadUInt32(data, position);
+                    position += 4;
+                }
+                if ((flags & 2) != 0 && position + 4 <= length)
+                {
+                    header.Bytes = ReadUInt32(data, position);
+                    position += 4;
+                }
+                if ((flags & 4) != 0)
+                    position += 100;
+                if ((flags & 8) != 0 && position + 4 <= length)
+                    header.XingQuality = (int)ReadUInt32(data, position);
+            }
+            return header;
+        }
+
+        private static uint ReadUInt32(byte[] data, int offset)
+        {
+            return (uint)((data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3]);
+        }
+
+        /// <summary>Replay gain field: 3 bits name (1 radio, 2 audiophile), 3 bits originator, sign bit, 9 bits value in 0.1 dB.</summary>
+        private static double? ReplayGain(byte[] data, int offset)
+        {
+            int value = (data[offset] << 8) | data[offset + 1];
+            if ((value >> 13) == 0)
+                return null;
+            double gain = (value & 0x1FF) / 10.0;
+            return (value & 0x200) != 0 ? -gain : gain;
         }
 
         private static bool IsVersionChar(char c)
@@ -148,6 +283,35 @@ namespace CDTag.Model.Tag
                 return 0;
             long size = ((header[6] & 0x7F) << 21) | ((header[7] & 0x7F) << 14) | ((header[8] & 0x7F) << 7) | (header[9] & 0x7F);
             return 10 + size + ((header[5] & 0x10) != 0 ? 10 : 0);
+        }
+    }
+}
+
+namespace CDTag.Model.Tag
+{
+    /// <summary>CRC-16 (polynomial 0x8005, reflected, initial value 0) used by the LAME info tag.</summary>
+    public static class Crc16
+    {
+        private static readonly ushort[] Table = CreateTable();
+
+        private static ushort[] CreateTable()
+        {
+            var table = new ushort[256];
+            for (int i = 0; i < 256; i++)
+            {
+                int c = i;
+                for (int k = 0; k < 8; k++)
+                    c = (c & 1) != 0 ? (c >> 1) ^ 0xA001 : c >> 1;
+                table[i] = (ushort)c;
+            }
+            return table;
+        }
+
+        public static int Compute(byte[] data, int offset, int count, int crc = 0)
+        {
+            for (int i = offset; i < offset + count; i++)
+                crc = Table[(crc ^ data[i]) & 0xFF] ^ (crc >> 8);
+            return crc & 0xFFFF;
         }
     }
 }

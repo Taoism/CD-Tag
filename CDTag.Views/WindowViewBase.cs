@@ -155,14 +155,26 @@ namespace CDTag.Views
                 {
                     Height = windowSettings.Height ?? Height;
                     Width = windowSettings.Width ?? Width;
-                    if (WindowStartupLocation != WindowStartupLocation.CenterOwner)
+                    // Dialogs centre on their owner; other windows go back where they were, if that is still on a screen
+                    // (CenterScreen would otherwise move them back to the primary monitor).
+                    if (WindowStartupLocation != WindowStartupLocation.CenterOwner && windowSettings.Top != null && windowSettings.Left != null &&
+                        IsOnScreen(windowSettings.Left.Value, windowSettings.Top.Value, Width))
                     {
-                        Top = windowSettings.Top ?? Top;
-                        Left = windowSettings.Left ?? Left;
+                        WindowStartupLocation = WindowStartupLocation.Manual;
+                        Top = windowSettings.Top.Value;
+                        Left = windowSettings.Left.Value;
                     }
                     WindowState = (windowSettings.WindowState == null || windowSettings.WindowState == WindowState.Minimized) ? WindowState : windowSettings.WindowState.Value;
                 }
             }
+        }
+
+        /// <summary>The title bar (top 40 pixels of the window) is at least partly inside the virtual screen (all monitors).</summary>
+        private static bool IsOnScreen(double left, double top, double width)
+        {
+            double screenLeft = SystemParameters.VirtualScreenLeft, screenTop = SystemParameters.VirtualScreenTop;
+            double screenRight = screenLeft + SystemParameters.VirtualScreenWidth, screenBottom = screenTop + SystemParameters.VirtualScreenHeight;
+            return left + width > screenLeft + 50 && left < screenRight - 50 && top >= screenTop - 10 && top + 40 < screenBottom;
         }
 
         private void WindowViewBase_Closed(object sender, EventArgs e)

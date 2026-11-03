@@ -42,7 +42,7 @@ namespace CDTag.ViewModels.Tag
             NewProfileCommand = new DelegateCommand(() => ShowWindow<INewProfileWindow>());
             EditProfileCommand = new DelegateCommand(() => ShowWindow<IEditProfileWindow>());
             SplitCueSheetCommand = new DelegateCommand(() => ShowWindow<ISplitCueWindow>());
-            EncodingInspectorCommand = new DelegateCommand(() => ShowWindow<IEncodingInspectorWindow>());
+            EncodingInspectorCommand = new DelegateCommand(ShowEncodingInspector);
             OptionsCommand = new DelegateCommand(() => ShowWindow<IOptionsWindow>());
             CreateChecksumCommand = new DelegateCommand(() => ShowChecksum(verify: false));
             VerifyChecksumCommand = new DelegateCommand(() => ShowChecksum(verify: true));
@@ -147,6 +147,24 @@ namespace CDTag.ViewModels.Tag
             IVerifyEACLogWindow window = IoC.Resolve<IVerifyEACLogWindow>();
             var verify = (CDTag.ViewModels.Checksum.IVerifyEACLogViewModel)window.DataContext;
             verify.Load(folder, logFile);
+            ShowWindow(window);
+        }
+
+        /// <summary>Encoding Inspector for the selected audio files, otherwise the audio files in the selected or current folder.</summary>
+        private void ShowEncodingInspector()
+        {
+            var paths = new List<string>();
+            if (DirectoryViewModel != null && DirectoryViewModel.FileCollection != null)
+                paths.AddRange(DirectoryViewModel.FileCollection.Where(f => f.IsSelected && !f.IsDirectory && CDTag.Model.Tag.AudioInspector.CanInspect(f.FullName)).Select(f => f.FullName));
+            if (paths.Count == 0)
+            {
+                string folder = GetTagAlbumDirectory();
+                if (folder != null)
+                    paths.Add(folder);
+            }
+
+            IEncodingInspectorWindow window = IoC.Resolve<IEncodingInspectorWindow>();
+            ((CDTag.ViewModels.Tools.IEncodingInspectorViewModel)window.DataContext).AddFiles(paths);
             ShowWindow(window);
         }
 
