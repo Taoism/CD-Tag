@@ -129,6 +129,8 @@ namespace CDTag
         /// </summary>
         private static void CheckSceneRules(Window shell)
         {
+            if (!CDTag.Common.Settings.AppOptions.Current.IsSceneTagging)
+                return; // scene-style tagging is off ("enabled": "false" in options.json)
             string directory = System.IO.Path.Combine(IoC.Resolve<IPathService>().LocalApplicationDirectory, "Rules");
             var updater = new CDTag.Model.Tag.SceneRulesUpdater(directory);
             try

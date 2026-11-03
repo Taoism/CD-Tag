@@ -94,11 +94,11 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="130" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <ComboBox Margin="0,2" VerticalAlignment="Center" ItemsSource="{Binding Sources}" SelectedItem="{Binding Release.Source}" ItemTemplate="{StaticResource ListItemTemplate}" />
-                    <TextBlock Grid.Column="1" Text="Bit/kHz" Style="{StaticResource FieldLabel}" Margin="10,0,6,0" IsEnabled="{Binding HasBitKhz}" />
-                    <ComboBox Grid.Column="2" Margin="0,2" VerticalAlignment="Center" ItemsSource="{Binding QualityChoices}" DisplayMemberPath="Name" SelectedValuePath="Value"
+                    <TextBlock Grid.Column="1" Text="Bit/kHz" Style="{StaticResource FieldLabel}" Margin="10,0,6,0" IsEnabled="{Binding HasBitKhz}" Visibility="{Binding SceneTagging, Converter={StaticResource BoolToVisibility}}" />
+                    <ComboBox Grid.Column="2" Width="130" Margin="0,2" VerticalAlignment="Center" Visibility="{Binding SceneTagging, Converter={StaticResource BoolToVisibility}}" ItemsSource="{Binding QualityChoices}" DisplayMemberPath="Name" SelectedValuePath="Value"
                               SelectedValue="{Binding Release.Quality}" IsEnabled="{Binding HasBitKhz}" ToolTipService.ShowOnDisabled="True"
                               ToolTip="WEB-FLAC and Blu-ray only. WEB-FLAC (rules 4.10): read from the files (16BIT, or 24BIT-96KHZ); goes before the source in the release name (-16BIT-WEB-FLAC-, -24BIT-96KHZ-BLURAY-FLAC-). Finish checks it against the files." />
                 </Grid>
@@ -107,11 +107,11 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="130" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <ComboBox Margin="0,2" VerticalAlignment="Center" ItemsSource="{Binding ReleaseTypes}" SelectedItem="{Binding Release.ReleaseType}" ItemTemplate="{StaticResource ListItemTemplate}" />
-                    <TextBlock Grid.Column="1" Text="Fix" Style="{StaticResource FieldLabel}" Margin="10,0,6,0" />
-                    <ComboBox Grid.Column="2" Margin="0,2" VerticalAlignment="Center" ItemsSource="{Binding FixChoices}" DisplayMemberPath="Name" SelectedValuePath="Value"
+                    <TextBlock Grid.Column="1" Text="Fix" Style="{StaticResource FieldLabel}" Margin="10,0,6,0" Visibility="{Binding SceneTagging, Converter={StaticResource BoolToVisibility}}" />
+                    <ComboBox Grid.Column="2" Width="130" Margin="0,2" VerticalAlignment="Center" Visibility="{Binding SceneTagging, Converter={StaticResource BoolToVisibility}}" ItemsSource="{Binding FixChoices}" DisplayMemberPath="Name" SelectedValuePath="Value"
                               SelectedValue="{Binding Release.Fix}"
                               ToolTip="Goes before the source in the release name (-REPACK-16BIT-WEB-FLAC-, -DIRFIX-2CD-). FLAC REPACKs also get -repack at the end of each .flac file (FLAC rules 5.6). The NFO must name the release being fixed (rules 4.6.1); #Fix in an NFO template prints it." />
                 </Grid>

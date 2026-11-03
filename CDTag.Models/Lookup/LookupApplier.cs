@@ -29,7 +29,7 @@ namespace CDTag.Model.Lookup
                 : Plain(details.Artist);
             album.AlbumTitle = Plain(details.Title);
             if (!string.IsNullOrWhiteSpace(details.Genre))
-                album.Genre = SceneRules.ToAllowedGenre(details.Genre) ?? details.Genre;
+                album.Genre = CDTag.Common.Settings.AppOptions.Current.IsSceneTagging ? SceneRules.ToAllowedGenre(details.Genre) ?? details.Genre : details.Genre;
 
             if (release != null)
             {

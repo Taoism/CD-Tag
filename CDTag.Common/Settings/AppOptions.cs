@@ -15,6 +15,7 @@ namespace CDTag.Common.Settings
         {
             StartupFolderMode = StartupLastUsed;
             NewTagID3v2Version = "ID3v23";
+            SceneTaggingEnabled = "true";
         }
 
         /// <summary><see cref="StartupLastUsed"/> or <see cref="StartupSpecific"/>.</summary>
@@ -44,6 +45,21 @@ namespace CDTag.Common.Settings
         /// <summary>Convert Audio's last preset ("LameV0" or "Lame320").</summary>
         [DataMember]
         public string EncodePreset { get; set; }
+
+        /// <summary>
+        /// Scene-style tagging, "true" or "false" ("enabled" in options.json). On: Finish checks the scene rules, release names
+        /// get the bit depth / fix tags, Tag Album shows Bit/kHz and Fix, genres follow the scene list, and the rules are
+        /// checked for updates at startup. Missing = on.
+        /// </summary>
+        [DataMember(Name = "enabled")]
+        public string SceneTaggingEnabled { get; set; }
+
+        /// <summary>True unless <see cref="SceneTaggingEnabled"/> is "false".</summary>
+        [System.Xml.Serialization.XmlIgnore]
+        public bool IsSceneTagging
+        {
+            get { return !string.Equals((SceneTaggingEnabled ?? "").Trim(), "false", StringComparison.OrdinalIgnoreCase); }
+        }
 
         public AppOptionsData Clone()
         {

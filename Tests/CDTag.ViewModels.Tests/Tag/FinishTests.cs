@@ -432,6 +432,49 @@ namespace CDTag.ViewModel.Tests.Tag
         }
 
         [Test]
+        public void SceneTaggingCanBeTurnedOffInOptionsJson()
+        {
+            // options.json: "enabled": "true" / "false", under EncodePreset
+            string json = CDTag.Common.Json.JsonSerializer.SerializeObject(new CDTag.Common.Settings.AppOptionsData { EncodePreset = "LameV0" });
+            Assert.That(json, Does.Contain("\"EncodePreset\": \"LameV0\",").And.Contains("\"enabled\": \"true\""));
+            Assert.That(json.IndexOf("\"enabled\""), Is.GreaterThan(json.IndexOf("\"EncodePreset\"")));
+            Assert.That(json, Does.Not.Contain("IsSceneTagging"));
+            Assert.That(System.Text.Json.JsonDocument.Parse(json).RootElement.GetProperty("enabled").GetString(), Is.EqualTo("true"), "valid JSON");
+            var off = CDTag.Common.Json.JsonSerializer.ReadObject<CDTag.Common.Settings.AppOptionsData>("{ \"EncodePreset\": \"LameV0\", \"enabled\": \"false\" }");
+            Assert.That(off.IsSceneTagging, Is.False);
+            var missing = CDTag.Common.Json.JsonSerializer.ReadObject<CDTag.Common.Settings.AppOptionsData>("{ \"EncodePreset\": \"LameV0\" }");
+            Assert.That(missing.IsSceneTagging, Is.True, "missing = on");
+
+            // Off: no bit depth, fix or -repack in names, and no scene rules check
+            string dir = MakeFolder("scene off (src)", "untagged.flac", "01.flac");
+            Album album = Load(dir, "Ween", "Pure Guava", "Little Birdy");
+            UserProfile profile = Profile();
+            profile.FileNaming.SingleCD.SingleArtist.Directory = "<Artist>-<Album>-<Source>-FLAC-<Year>-GRP";
+            ReleaseInfo release = Release();
+            release.Source = new ReleaseListItem { Nfo = "WEB-FLAC", Dir = "WEB-FLAC" };
+            release.Fix = "REPACK";
+            CDTag.Common.Settings.AppOptionsData options = CDTag.Common.Settings.AppOptions.Current;
+            string before = options.SceneTaggingEnabled;
+            try
+            {
+                options.SceneTaggingEnabled = "false";
+                var namer = new AlbumNamer(profile, album, release);
+                Assert.That(namer.GetFolderName(), Is.EqualTo("Ween-Pure_Guava-WEB-FLAC-1994-GRP"));
+                Assert.That(namer.GetTrackFileName(album.Tracks[0]), Is.EqualTo("01-ween-little_birdy-grp.flac"));
+                FinishPlan plan = new AlbumFinisher(profile, album, release, "#Artist\r\n").Plan();
+                Assert.That(plan.RuleIssues, Is.Empty);
+                Assert.That(plan.RuleSetName, Is.Null);
+
+                options.SceneTaggingEnabled = "true";
+                Assert.That(new AlbumNamer(profile, album, release).GetFolderName(), Is.EqualTo("Ween-Pure_Guava-REPACK-16BIT-WEB-FLAC-1994-GRP"));
+            }
+            finally
+            {
+                options.SceneTaggingEnabled = before;
+            }
+        }
+
+        [Test]
         public void Mp3FixGoesBeforeTheSourceOrYear()
         {
             var album = new Album(@"C:\in", new[] { AlbumTrack.FromValues(@"C:\in\01.mp3", "1", "1", "Ween", "Little Birdy") }) { Artist = "Ween", AlbumTitle = "Pure Guava", ReleaseDate = "1994" };

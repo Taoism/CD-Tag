@@ -100,7 +100,11 @@ namespace CDTag.Model.Tag
         /// <summary>New folder name, or null when the profile has no directory format.</summary>
         public string GetFolderName()
         {
-            return WithFix(FolderNameWithoutFix());
+            string name = FolderNameWithoutFix();
+            // Source WEB-FLAC in a FLAC profile pattern ("<Source>-FLAC-") would give -WEB-FLAC-FLAC-.
+            if (name != null)
+                name = Regex.Replace(name, "-WEB-FLAC-FLAC-", "-WEB-FLAC-", RegexOptions.IgnoreCase);
+            return WithFix(name);
         }
 
         private string FolderNameWithoutFix()
@@ -109,7 +113,7 @@ namespace CDTag.Model.Tag
             if (format == null)
                 return null;
             string pattern = format.Directory;
-            if (pattern != null && IsWebFlac)
+            if (pattern != null && IsWebFlac && SceneTagging)
             {
                 string name = Build(pattern, null, null, _profile.FileNaming.DirectoryCharacterLimit, null);
                 // Source WEB-FLAC in a FLAC profile pattern ("<Source>-FLAC-") would give -WEB-FLAC-FLAC-.
@@ -128,7 +132,7 @@ namespace CDTag.Model.Tag
             string folder = Build(pattern, null, null, _profile.FileNaming.DirectoryCharacterLimit, null);
             // Blu-ray/HDDVD: a Bit/kHz picked on the release page goes before the source tag (-24BIT-96KHZ-BLURAY-FLAC-).
             string chosen = _release.Quality != null ? _release.Quality.Trim() : "";
-            if (folder != null && chosen.Length > 0 && SceneRules.HasBitKhzChoice(_album, Dir(_release.Source) ?? (_release.Source != null ? _release.Source.Nfo : null))
+            if (folder != null && chosen.Length > 0 && SceneTagging && SceneRules.HasBitKhzChoice(_album, Dir(_release.Source) ?? (_release.Source != null ? _release.Source.Nfo : null))
                 && pattern.IndexOf("<BitDepth>", StringComparison.OrdinalIgnoreCase) < 0 && !Regex.IsMatch(folder, @"\d{2}BIT(-\d{2,3}KHZ)?-"))
             {
                 folder = Regex.Replace(folder, @"-(\d*(BLURAY|HDDVD))-", "-" + chosen + "-$1-", RegexOptions.IgnoreCase);
@@ -136,12 +140,15 @@ namespace CDTag.Model.Tag
             return folder;
         }
 
+        /// <summary>Scene-style tagging (options.json "enabled"): bit depth, fix and -repack in names.</summary>
+        private static bool SceneTagging { get { return CDTag.Common.Settings.AppOptions.Current.IsSceneTagging; } }
+
         /// <summary>The fix chosen on the release page ("REPACK"), or null.</summary>
         private string FixTag
         {
             get
             {
-                string fix = (_release.Fix ?? "").Trim().ToUpperInvariant();
+                string fix = SceneTagging ? (_release.Fix ?? "").Trim().ToUpperInvariant() : "";
                 return fix.Length > 0 ? fix : null;
             }
         }
@@ -197,7 +204,7 @@ namespace CDTag.Model.Tag
                 pattern = Regex.Replace(pattern, "<Track>", "<Disc><Track>", RegexOptions.IgnoreCase);
             string name = Build(pattern, track, null, _profile.FileNaming.FileCharacterLimit, extension);
             // FLAC rules 5.6: REPACKed releases have a -repack suffix at the end of each .flac file.
-            if (name != null && FixTag == "REPACK" && extension == ".flac" && !name.EndsWith("-repack.flac", StringComparison.OrdinalIgnoreCase))
+            if (name != null && SceneTagging && FixTag == "REPACK" && extension == ".flac" && !name.EndsWith("-repack.flac", StringComparison.OrdinalIgnoreCase))
                 name = name.Substring(0, name.Length - extension.Length) + "-repack" + extension;
             return name;
         }

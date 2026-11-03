@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Linq;
 using System.Reflection;
@@ -140,16 +140,15 @@ namespace CDTag.Common.Json
             {
                 json.AppendLine("{");
 
-                PropertyInfo[] properties = classType.GetProperties(PublicInstanceBindingFlags);
+                PropertyInfo[] properties = Array.FindAll(classType.GetProperties(PublicInstanceBindingFlags),
+                    p => p.GetCustomAttributes(typeof(XmlIgnoreAttribute), inherit: false).Length == 0);
                 for (int i = 0; i < properties.Length; i++)
                 {
                     var property = properties[i];
 
-                    if (property.GetCustomAttributes(typeof(XmlIgnoreAttribute), inherit: false).Length > 0)
-                        continue;
-
                     json.Append(new string(' ', indentLevel * IndentSpacing));
-                    json.Append(string.Format("\"{0}\": ", property.Name));
+                    var dataMember = (System.Runtime.Serialization.DataMemberAttribute)Attribute.GetCustomAttribute(property, typeof(System.Runtime.Serialization.DataMemberAttribute));
+                    json.Append(string.Format("\"{0}\": ", dataMember != null && !string.IsNullOrEmpty(dataMember.Name) ? dataMember.Name : property.Name));
                     SerializeClass(property.GetGetMethod().Invoke(obj, null), json, indentLevel + 1);
 
                     if (i < properties.Length - 1)

@@ -288,7 +288,7 @@ namespace CDTag.Model.Tag
 
         private void CheckSceneRules(FinishPlan plan, HashSet<string> deleted)
         {
-            SceneRuleSet rules = _tagging.SkipSceneRules ? SceneRuleSet.None : SceneRules.RuleSetFor(_album, SourceTag);
+            SceneRuleSet rules = _tagging.SkipSceneRules || !CDTag.Common.Settings.AppOptions.Current.IsSceneTagging ? SceneRuleSet.None : SceneRules.RuleSetFor(_album, SourceTag);
             if (rules == SceneRuleSet.None)
                 return;
 

@@ -84,7 +84,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         private void UpdateHasBitKhz()
         {
             string source = Release != null && Release.Source != null ? SourceName(Release.Source) : null;
-            HasBitKhz = SceneRules.HasBitKhzChoice(Album, source);
+            HasBitKhz = SceneTagging && SceneRules.HasBitKhzChoice(Album, source);
             if (!HasBitKhz && Release != null && !string.IsNullOrEmpty(Release.Quality))
                 Release.Quality = "";
             // Read from the files: 16BIT, or 24BIT-96KHZ.
@@ -116,6 +116,9 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         public QualityChoice[] FixChoices { get; } = new[] { new QualityChoice { Value = "", Name = "None" } }
             .Concat(FixTags.Select(f => new QualityChoice { Value = f, Name = f })).ToArray();
 
+        /// <summary>Scene-style tagging ("enabled" in options.json): Bit/kHz and Fix are shown.</summary>
+        public bool SceneTagging { get { return CDTag.Common.Settings.AppOptions.Current.IsSceneTagging; } }
+
         /// <summary>FLAC files from a WEB or Blu-ray source: the Bit/kHz choice applies.</summary>
         public bool HasBitKhz { get { return Get<bool>("HasBitKhz"); } private set { Set("HasBitKhz", value); } }
 
@@ -128,7 +131,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             Profile = profile;
 
             ReleaseInfoOptions options = profile != null ? profile.ReleaseInfo : null;
-            ReleaseTypes = TypesFor((options != null ? options.ReleaseTypes : null) ?? DefaultTypes);
+            ReleaseTypes = SceneTagging ? TypesFor((options != null ? options.ReleaseTypes : null) ?? DefaultTypes) : (options != null ? options.ReleaseTypes : null) ?? DefaultTypes;
             Sources = (options != null ? options.Sources : null) ?? DefaultSources;
             Languages = (options != null ? options.Languages : null) ?? DefaultLanguages;
             LimitedEditionChoices = (options != null ? options.LimitedEdition : null) ?? NoYes;
