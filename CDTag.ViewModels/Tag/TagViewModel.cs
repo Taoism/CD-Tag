@@ -41,7 +41,7 @@ namespace CDTag.ViewModels.Tag
             MassTagCommand = new DelegateCommand(() => ShowWindow<IMassTagWindow>());
             NewProfileCommand = new DelegateCommand(() => ShowWindow<INewProfileWindow>());
             EditProfileCommand = new DelegateCommand(() => ShowWindow<IEditProfileWindow>());
-            SplitCueSheetCommand = new DelegateCommand(() => ShowWindow<ISplitCueWindow>());
+            SplitCueSheetCommand = new DelegateCommand(ShowSplitCue);
             EncodingInspectorCommand = new DelegateCommand(ShowEncodingInspector);
             OptionsCommand = new DelegateCommand(() => ShowWindow<IOptionsWindow>());
             CreateChecksumCommand = new DelegateCommand(() => ShowChecksum(verify: false));
@@ -166,6 +166,20 @@ namespace CDTag.ViewModels.Tag
             IEncodingInspectorWindow window = IoC.Resolve<IEncodingInspectorWindow>();
             ((CDTag.ViewModels.Tools.IEncodingInspectorViewModel)window.DataContext).AddFiles(paths);
             ShowWindow(window);
+        }
+
+        /// <summary>Split CUE for the selected .cue file, otherwise the CUE sheets in the selected or current folder.</summary>
+        private void ShowSplitCue()
+        {
+            string cueFile = GetSelectedFile(f => f.EndsWith(".cue", StringComparison.OrdinalIgnoreCase));
+            string folder = cueFile != null ? Path.GetDirectoryName(cueFile) : GetTagAlbumDirectory();
+
+            ISplitCueWindow window = IoC.Resolve<ISplitCueWindow>();
+            var split = (CDTag.ViewModels.Tools.ISplitCueViewModel)window.DataContext;
+            split.Load(folder, cueFile);
+            ShowWindow(window);
+            if (split.HasSplit && DirectoryViewModel != null)
+                DirectoryViewModel.RefreshExplorer();
         }
 
         /// <summary>The first selected file in the file list that matches <paramref name="match"/>, or null.</summary>

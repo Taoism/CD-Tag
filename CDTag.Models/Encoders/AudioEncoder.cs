@@ -192,6 +192,43 @@ namespace CDTag.Model.Encoders
             }
         }
 
+        /// <summary>
+        /// Encodes a WAV to FLAC (-8, with an audio MD5) and writes <paramref name="tags"/> as Vorbis comments ("ARTIST", "TITLE"...).
+        /// Writes to a temporary name and renames at the end.
+        /// </summary>
+        public static async Task EncodeFlacAsync(string wav, string target, IEnumerable<KeyValuePair<string, string>> tags, IProgress<int> progress, CancellationToken cancellation)
+        {
+            string flac = FlacPath;
+            if (flac == null)
+                throw new FileNotFoundException("flac.exe was not found. Put it in the Encoders\\flac folder or set it in Tools > Options.");
+
+            string temp = target + ".~cdtag";
+            try
+            {
+                var arguments = new List<string> { "-8", "-f", "--no-utf8-convert" };
+                if (tags != null)
+                {
+                    foreach (KeyValuePair<string, string> tag in tags.Where(t => !string.IsNullOrWhiteSpace(t.Value)))
+                    {
+                        arguments.Add("-T");
+                        arguments.Add(tag.Key + "=" + tag.Value.Trim());
+                    }
+                }
+                arguments.Add("-o");
+                arguments.Add(temp);
+                arguments.Add(wav);
+                await RunAsync(flac, arguments, progress, cancellation).ConfigureAwait(false);
+                if (!File.Exists(temp))
+                    throw new IOException("flac.exe did not write " + Path.GetFileName(target) + ".");
+                File.Move(temp, target, true);
+                progress?.Report(100);
+            }
+            finally
+            {
+                TryDelete(temp);
+            }
+        }
+
         private static Task DecodeFlacAsync(string source, string wav, CancellationToken cancellation)
         {
             string flac = FlacPath;
