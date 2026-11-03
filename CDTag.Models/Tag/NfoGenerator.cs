@@ -145,11 +145,15 @@ namespace CDTag.Model.Tag
                 int disc = Number(track.DiscNumber, 1);
                 if (disc != currentDisc)
                 {
+                    bool firstDisc = currentDisc == -1;
                     currentDisc = disc;
                     if (!string.IsNullOrEmpty(header))
                     {
-                        string text = DiscHeader(header, disc, discs);
-                        foreach (string headerLine in SplitLines(text))
+                        string[] headerLines = SplitLines(DiscHeader(header, disc, discs)).ToArray();
+                        // A blank line between the last track of one disc and the next disc's header.
+                        if (!firstDisc && headerLines.Length > 0 && headerLines[0].Trim().Length > 0)
+                            yield return "";
+                        foreach (string headerLine in headerLines)
                             yield return headerLine;
                     }
                 }

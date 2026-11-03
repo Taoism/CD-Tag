@@ -178,6 +178,17 @@ namespace CDTag.ViewModel.Tests.Tag
         }
 
         [Test]
+        public void BlankLineBetweenDiscs()
+        {
+            string[] lines = Lines(new NfoGenerator(Profile(), Album(discs: 2), Release()).Generate(Template));
+            int header2 = Array.IndexOf(lines, "Disc 2/2");
+
+            Assert.That(lines[header2 - 1], Is.EqualTo(""), "blank line before the next disc");
+            Assert.That(lines[header2 - 2], Does.Contain("Drifter In The Dark"), "last track of disc 1");
+            Assert.That(lines[Array.IndexOf(lines, "Disc 1/2") - 1], Is.Not.EqualTo(""), "no extra line before the first disc");
+        }
+
+        [Test]
         public void DiscNameTokenPlacesTheName()
         {
             UserProfile profile = Profile();
