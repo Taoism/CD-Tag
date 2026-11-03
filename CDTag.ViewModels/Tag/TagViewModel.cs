@@ -44,8 +44,8 @@ namespace CDTag.ViewModels.Tag
             SplitCueSheetCommand = new DelegateCommand(() => ShowWindow<ISplitCueWindow>());
             EncodingInspectorCommand = new DelegateCommand(() => ShowWindow<IEncodingInspectorWindow>());
             OptionsCommand = new DelegateCommand(() => ShowWindow<IOptionsWindow>());
-            CreateChecksumCommand = new DelegateCommand(() => ShowWindow<IChecksumWindow>());
-            VerifyChecksumCommand = new DelegateCommand(() => ShowWindow<IChecksumWindow>());
+            CreateChecksumCommand = new DelegateCommand(() => ShowChecksum(verify: false));
+            VerifyChecksumCommand = new DelegateCommand(() => ShowChecksum(verify: true));
             VerifyEACLogCommand = new DelegateCommand(() => ShowWindow<IVerifyEACLogWindow>());
             RefreshCommand = new DelegateCommand(() => { if (DirectoryViewModel != null) DirectoryViewModel.RefreshExplorer(); });
 
@@ -122,6 +122,29 @@ namespace CDTag.ViewModels.Tag
                 else
                     DirectoryViewModel.RefreshExplorer();
             }
+        }
+
+        /// <summary>Create/Verify Checksum for the selected folder (or a selected .sfv/.md5/.sha1 file), otherwise the current folder.</summary>
+        private void ShowChecksum(bool verify)
+        {
+            string checksumFile = GetSelectedFile(f => CDTag.Model.Checksum.ChecksumList.IsChecksumFile(f));
+            string folder = checksumFile != null ? Path.GetDirectoryName(checksumFile) : GetTagAlbumDirectory();
+
+            IChecksumWindow window = IoC.Resolve<IChecksumWindow>();
+            var checksum = (CDTag.ViewModels.Checksum.IChecksumViewModel)window.DataContext;
+            checksum.Load(folder, verify || checksumFile != null, checksumFile);
+            ShowWindow(window);
+            if (DirectoryViewModel != null)
+                DirectoryViewModel.RefreshExplorer();
+        }
+
+        /// <summary>The first selected file in the file list that matches <paramref name="match"/>, or null.</summary>
+        private string GetSelectedFile(Func<string, bool> match)
+        {
+            if (DirectoryViewModel == null || DirectoryViewModel.FileCollection == null)
+                return null;
+            var selected = DirectoryViewModel.FileCollection.FirstOrDefault(f => f.IsSelected && !f.IsDirectory && match(f.FullName));
+            return selected != null ? selected.FullName : null;
         }
 
         /// <summary>The first folder selected in the file list, otherwise the current folder.</summary>

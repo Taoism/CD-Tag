@@ -222,4 +222,8 @@
 
     <!-- Profile-wizard check marks -->
     <SolidColorBrush x:Key="Theme.CheckMarkOn" Color="#FF70A16F" />
+    <!-- Result states (checksums, log checks) -->
+    <SolidColorBrush x:Key="Theme.StatusGood" Color="#FF107C10" />
+    <SolidColorBrush x:Key="Theme.StatusWarning" Color="#FF9D5D00" />
+    <SolidColorBrush x:Key="Theme.StatusBad" Color="#FFC42B1C" />
 </ResourceDictionary>

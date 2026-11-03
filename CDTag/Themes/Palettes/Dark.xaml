@@ -169,4 +169,8 @@
     <SolidColorBrush x:Key="{x:Static SystemColors.MenuTextBrushKey}" Color="#FFE4E4E4" />
     <SolidColorBrush x:Key="{x:Static SystemColors.InfoBrushKey}" Color="#FF2B2B2B" />
     <SolidColorBrush x:Key="{x:Static SystemColors.InfoTextBrushKey}" Color="#FFE4E4E4" />
+    <!-- Result states (checksums, log checks) -->
+    <SolidColorBrush x:Key="Theme.StatusGood" Color="#FF6CCB5F" />
+    <SolidColorBrush x:Key="Theme.StatusWarning" Color="#FFFCE100" />
+    <SolidColorBrush x:Key="Theme.StatusBad" Color="#FFFF99A4" />
 </ResourceDictionary>
