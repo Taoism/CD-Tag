@@ -13,7 +13,8 @@
   Encoder .....: #Encoder
   Quality .....: #Br kbps / #KHz kHz / #Mode
   Size ........: #MBmegs
-  Playtime ....: #TT
+  Tracks ......: #TT
+  Playtime ....: #M:SS
   URL .........: #url
 
 Tracklist

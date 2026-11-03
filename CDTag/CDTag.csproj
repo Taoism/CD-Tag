@@ -47,7 +47,7 @@
     </ItemGroup>
     <Delete Files="@(_OldAppConfig)" />
     <Move SourceFiles="@(_ToBin)" DestinationFiles="@(_ToBin->'$(PublishDir)bin\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <RemoveDir Directories="$(PublishDir)Languages" />
+    <RemoveDir Directories="$(PublishDir)Languages;$(PublishDir)Defaults" />
     <MSBuild Projects="..\Launcher\CDTag.Launcher.csproj" Targets="Restore;Build" Properties="Configuration=Release" />
     <Copy SourceFiles="..\Launcher\bin\Release\net48\cdtag.exe" DestinationFolder="$(PublishDir)" />
     <!-- options.json next to cdtag.exe: CD-Tag reads and saves its options there ("enabled": "false" = no scene-style tagging). -->

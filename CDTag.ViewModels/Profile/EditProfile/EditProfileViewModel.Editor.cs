@@ -87,6 +87,19 @@ namespace CDTag.ViewModels.Profile.EditProfile
             get { return Profile != null ? SelectedSlot.Get(Profile) : null; }
         }
 
+        /// <summary>Scene-style tagging (options.json): the scene rules option is shown.</summary>
+        public bool SceneTagging { get { return CDTag.Common.Settings.AppOptions.Current.IsSceneTagging; } }
+
+        /// <summary>The naming tokens (the scene ones only with scene-style tagging).</summary>
+        public string TokenHint
+        {
+            get
+            {
+                return "Tokens: <Artist> <Album> <Year> <Track> <Disc> <Discs> <Song> <Source> " + (SceneTagging ? "<Fix> <BitDepth> " : "") +
+                       "<ExtInfo>..<ExtInfo8> <ImageText>; <LC>..</LC> lowercase, <SC>..</SC> smart case.";
+            }
+        }
+
         public TagAction[] TagActions { get; } = { TagAction.WriteAlways, TagAction.WriteIfExists, TagAction.Remove, TagAction.Leave };
         public FinishNFO[] FinishNFOChoices { get; } = (FinishNFO[])Enum.GetValues(typeof(FinishNFO));
 

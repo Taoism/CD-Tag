@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -50,6 +50,12 @@ namespace CDTag.Views
 
         public void ShowError(Exception exception)
         {
+            // MainWindow belongs to the UI thread; errors from background threads are shown from there.
+            if (!_dispatcher.CheckAccess())
+            {
+                _dispatcher.BeginInvoke(() => ShowError(exception));
+                return;
+            }
             ErrorContainer errorItems = ((MainWindow)Application.Current.MainWindow).ErrorItems;
             ShowError(exception, errorItems);
         }

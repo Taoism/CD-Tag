@@ -21,7 +21,11 @@ namespace CDTag.Common.ApplicationServices
             {
                 if (_localApplicationDirectory == null)
                 {
-                    _localApplicationDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"CD-Tag");
+                    // CDTAG_DATA points CD-Tag at another settings folder (testing, a separate setup).
+                    string custom = Environment.GetEnvironmentVariable("CDTAG_DATA");
+                    _localApplicationDirectory = !string.IsNullOrWhiteSpace(custom)
+                        ? Path.GetFullPath(custom)
+                        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"CD-Tag");
                     if (!Directory.Exists(_localApplicationDirectory))
                         Directory.CreateDirectory(_localApplicationDirectory);
                 }

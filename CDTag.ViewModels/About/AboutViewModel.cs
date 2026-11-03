@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -49,28 +49,31 @@ namespace CDTag.ViewModels.About
         {
             try
             {
-                string appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-                string[] files = Directory.GetFiles(appDir, "*.dll", SearchOption.TopDirectoryOnly);
-                ObservableCollection<ComponentInformation> items = new ObservableCollection<ComponentInformation>();
-                foreach (string file in files)
+                // The loaded assemblies (works in a single-file build too, where assemblies have no file location).
+                foreach (AssemblyName referenced in Assembly.GetEntryAssembly().GetReferencedAssemblies())
                 {
                     try
                     {
-                        Assembly assembly = Assembly.LoadFrom(file);
-                        AssemblyName assemblyName = assembly.GetName();
-                        Version version = assemblyName.Version;
-
-                        ComponentInformation info = new ComponentInformation();
-                        info.Name = assemblyName.Name;
-                        info.Version = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
-                        info.SortVersion = string.Format("{0:0000000}.{1:0000000}.{2:0000000}.{3:0000000}", version.Major, version.Minor, version.Build, version.Revision);
-                        
-                        items.Add(info);
+                        Assembly.Load(referenced);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        ShowException(ex);
                     }
+                }
+                ObservableCollection<ComponentInformation> items = new ObservableCollection<ComponentInformation>();
+                foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies()
+                                                       .Where(a => !a.IsDynamic)
+                                                       .Where(a => { string n = a.GetName().Name; return n.StartsWith("CDTag", StringComparison.OrdinalIgnoreCase) || n.StartsWith("cdtag", StringComparison.OrdinalIgnoreCase) || n.StartsWith("IdSharp", StringComparison.Ordinal) || n.StartsWith("Microsoft.Xaml.Behaviors", StringComparison.Ordinal); })
+                                                       .OrderBy(a => a.GetName().Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    AssemblyName assemblyName = assembly.GetName();
+                    Version version = assemblyName.Version ?? new Version(0, 0, 0, 0);
+
+                    ComponentInformation info = new ComponentInformation();
+                    info.Name = assemblyName.Name;
+                    info.Version = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
+                    info.SortVersion = string.Format("{0:0000000}.{1:0000000}.{2:0000000}.{3:0000000}", version.Major, version.Minor, version.Build, version.Revision);
+                    items.Add(info);
                 }
 
                 BeginInvoke(() =>

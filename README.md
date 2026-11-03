@@ -14,8 +14,39 @@ an unfinished project. The fork brings it up to date:
   NFO/M3U/SFV creation, renaming and FLAC/MP3 tagging on *Finish*.
 - **Convert Audio**: WAV/FLAC to MP3 with LAME (`-V0` or `-b 320`), FLAC/MP3 to WAV.
 - **Profiles**: edit, import from and export to CD-Tag 2.x (`.cfg` + NFO template).
-- **Scene-style tagging** (optional, off by default): checks against the scene rules, bit depth / kHz and fix
-  tags in release names.
+
+## Screenshots
+
+The music, artist and profile in these screenshots are examples made for this page.
+
+**Tag/Rename and Convert Audio**
+
+![Tag/Rename](docs/screenshots/01-tag-rename.png)
+![Convert Audio](docs/screenshots/02-convert-audio.png)
+
+**Tag Album**: release page, track preview, album page, NFO preview and look up
+
+![Tag Album: release](docs/screenshots/11-tag-album-release.png)
+![Tag Album: track preview](docs/screenshots/12-tag-album-track-preview.png)
+![Tag Album: album](docs/screenshots/13-tag-album-album.png)
+![Preview NFO](docs/screenshots/14-preview-nfo.png)
+![Look up](docs/screenshots/15-look-up.png)
+
+**Edit Profile**
+
+![Profiles](docs/screenshots/04-profile-profiles.png)
+![File naming](docs/screenshots/05-profile-file-naming.png)
+![Naming rules](docs/screenshots/06-profile-naming-rules.png)
+![Release info](docs/screenshots/07-profile-release-info.png)
+![NFO](docs/screenshots/08-profile-nfo.png)
+![Finish](docs/screenshots/09-profile-finish.png)
+![Tagging](docs/screenshots/10-profile-tagging.png)
+
+**Options, New Profile and About**
+
+![Options](docs/screenshots/03-options.png)
+![New Profile](docs/screenshots/16-new-profile.png)
+![About](docs/screenshots/17-about.png)
 
 ## Running a release
 
@@ -47,23 +78,10 @@ bin\Encoders\flac\flac.exe
 When building from source, put them in `Encoders\lame\` and `Encoders\flac\` at the root of the repository;
 the Debug build copies them next to `cdtag.exe`. That folder is in `.gitignore`.
 
-The scene rules want MP3s made with LAME 3.100: `-V0` for CD, vinyl and other sources, `-b 320` for lossless
-WEB sources. *Finish* reads the LAME header of each MP3 and reports other encoders or settings.
-
 ## options.json
 
-A release has `options.json` next to `cdtag.exe`; CD-Tag reads and saves its options there. Without that file,
-options are kept in `%LOCALAPPDATA%\CD-Tag\options.json`.
-
-```json
-    "EncodePreset": "LameV0",
-    "enabled": "false"
-```
-
-`"enabled"` switches scene-style tagging: `"true"` turns on the scene rules check on *Finish*, bit depth / kHz
-and fix tags in release names, the *Bit/kHz* and *Fix* boxes in Tag Album, scene genre names, and a check for
-updated rules on [scenerules.org](https://scenerules.org) at startup (the rules are downloaded to
-`%LOCALAPPDATA%\CD-Tag\Rules`, never included here). `"false"` (the default here) turns all of that off.
+A release has `options.json` next to `cdtag.exe`; CD-Tag reads and saves its options there (the same settings as
+*Tools → Options*). Without that file, options are kept in `%LOCALAPPDATA%\CD-Tag\options.json`.
 
 ## NFO template
 
