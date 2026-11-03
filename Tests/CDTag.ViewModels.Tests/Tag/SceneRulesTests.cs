@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -224,6 +225,28 @@ namespace CDTag.ViewModel.Tests.Tag
             Assert.That(genres.First(), Is.EqualTo("A Cappella"));
             Assert.That(genres.Last(), Is.EqualTo("Unknown"));
             Assert.That(genres, Is.EquivalentTo(SceneRules.FlacGenres.Where(g => g != "Psychadelic")));
+        }
+
+        [Test]
+        public void HasRulesOnlyWhenTheManifestAndItsFilesExist()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cdtag-rules-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                var updater = new SceneRulesUpdater(dir);
+                Assert.That(updater.HasRules, Is.False, "empty folder");
+
+                File.WriteAllText(Path.Combine(dir, "rules.json"), "[ { \"Kind\": \"FLAC\", \"Year\": 2016, \"FileName\": \"2016_FLAC.nfo\", \"Sha256\": \"x\" } ]");
+                Assert.That(updater.HasRules, Is.False, "manifest without the file");
+
+                File.WriteAllText(Path.Combine(dir, "2016_FLAC.nfo"), "rules");
+                Assert.That(updater.HasRules, Is.True);
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
         }
     }
 }

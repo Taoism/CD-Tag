@@ -141,12 +141,14 @@ namespace CDTag
             {
             }
 
+            // No rules yet (first start, or the Rules folder was emptied): download them without telling the user.
+            bool silent = !updater.HasRules;
             System.Threading.Tasks.Task.Run(async () =>
             {
                 try
                 {
                     var changes = await updater.CheckAsync();
-                    if (changes.Count == 0)
+                    if (silent || changes.Count == 0)
                         return;
                     string text = "The scene rules on scenerules.org have changed:" + Environment.NewLine + Environment.NewLine +
                                   string.Join(Environment.NewLine, changes.Select(c => "- " + c)) + Environment.NewLine + Environment.NewLine +

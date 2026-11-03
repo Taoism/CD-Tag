@@ -70,6 +70,16 @@ namespace CDTag.Model.Tag
             return client;
         }
 
+        /// <summary>True when the Rules folder has a manifest and every rule file it lists.</summary>
+        public bool HasRules
+        {
+            get
+            {
+                Dictionary<string, SceneRuleFile> known = LoadManifest();
+                return known.Count > 0 && known.Values.All(f => f.FileName != null && File.Exists(Path.Combine(_directory, f.FileName)));
+            }
+        }
+
         /// <summary>The year of the rules the checks in <see cref="SceneRules"/> follow.</summary>
         public static int BuiltInYear(string kind)
         {
