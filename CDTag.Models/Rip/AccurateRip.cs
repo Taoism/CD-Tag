@@ -35,7 +35,7 @@ namespace CDTag.Model.Rip
         private static HttpClient CreateClient()
         {
             var client = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("CD-Tag/3.0");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("CD-Tag/3.1");
             return client;
         }
 

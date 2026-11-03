@@ -90,7 +90,14 @@ namespace CDTag.Model.Rip
     /// </summary>
     public class RipJob
     {
-        public const string LogTitle = "CD-Tag 3.0 extraction log";
+        /// <summary>"CD-Tag 3.1 extraction log" (the program version).</summary>
+        public static readonly string LogTitle = "CD-Tag " + VersionText() + " extraction log";
+
+        private static string VersionText()
+        {
+            Version v = typeof(RipJob).Assembly.GetName().Version;
+            return v == null ? "" : v.Major.ToString(CultureInfo.InvariantCulture) + "." + v.Minor.ToString(CultureInfo.InvariantCulture);
+        }
 
         public List<CdTrack> Toc { get; set; }
         public RipAlbum Album { get; set; }
