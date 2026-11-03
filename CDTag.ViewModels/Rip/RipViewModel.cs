@@ -32,6 +32,10 @@ namespace CDTag.ViewModels.Rip
         public string Type { get; set; }
         public bool IsAudio { get; set; }
         public string Status { get { return _status; } set { _status = value; OnChanged("Status"); } }
+        private string _pregap, _isrc;
+        /// <summary>Pregap (INDEX 00 to INDEX 01), "?" when the drive gave no subchannel data.</summary>
+        public string Pregap { get { return _pregap; } set { _pregap = value; OnChanged("Pregap"); } }
+        public string Isrc { get { return _isrc; } set { _isrc = value; OnChanged("Isrc"); } }
 
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnChanged(string name) { PropertyChangedEventHandler h = PropertyChanged; if (h != null) h(this, new PropertyChangedEventArgs(name)); }
@@ -219,6 +223,7 @@ namespace CDTag.ViewModels.Rip
                 string vendor, product, revision;
                 List<CdTrack> toc;
                 StatusText = "Reading the disc...";
+                _extras = null;
                 using (CdDrive drive = await Task.Run(() => CdDrive.Open(letter.Value.ToString())))
                 {
                     toc = await Task.Run(() => drive.ReadToc());
@@ -226,15 +231,35 @@ namespace CDTag.ViewModels.Rip
                     vendor = drive.Vendor; product = drive.Product;
                     string name = drive.Name ?? "";
                     revision = name.StartsWith(vendor + " " + product + " ", StringComparison.Ordinal) ? name.Substring(vendor.Length + product.Length + 2) : "";
+                    foreach (CdTrack t in toc)
+                    {
+                        Tracks.Add(new RipTrack
+                        {
+                            Track = t.Number, IsAudio = t.IsAudio, Type = t.IsAudio ? "Audio" : "Data",
+                            Start = Time(t.StartSector), Length = Time(t.Sectors), Song = t.IsAudio ? "" : "(data track, not ripped)"
+                        });
+                    }
+
+                    // ISRCs, catalog number, CD-Text and pregaps (a few seconds, from the subchannel)
+                    var steps = new Progress<string>(m => StatusText = m);
+                    try
+                    {
+                        _extras = await Task.Run(() => GapDetector.Read(drive, toc, steps, CancellationToken.None));
+                    }
+                    catch (IOException)
+                    {
+                    }
                 }
                 _toc = toc;
-                foreach (CdTrack t in toc)
+                if (_extras != null)
                 {
-                    Tracks.Add(new RipTrack
+                    foreach (RipTrack row in Tracks.Where(t => t.IsAudio))
                     {
-                        Track = t.Number, IsAudio = t.IsAudio, Type = t.IsAudio ? "Audio" : "Data",
-                        Start = Time(t.StartSector), Length = Time(t.Sectors), Song = t.IsAudio ? "" : "(data track, not ripped)"
-                    });
+                        int gap = _extras.Pregap(row.Track);
+                        row.Pregap = _extras.GapsDetected ? Time(gap) : "?";
+                        string isrc;
+                        row.Isrc = _extras.Isrc.TryGetValue(row.Track, out isrc) ? isrc : "";
+                    }
                 }
                 CommandManager.InvalidateRequerySuggested();
 
@@ -254,6 +279,9 @@ namespace CDTag.ViewModels.Rip
                     catch (Exception ex) when (ex is System.Net.Http.HttpRequestException || ex is TaskCanceledException || ex is IOException || ex is System.Xml.XmlException) { }
                 }
                 int audioCount = toc.Count(t => t.IsAudio);
+                ReleaseDetails cdText = CdTextRelease(_extras, toc);
+                if (cdText != null)
+                    found.Add(cdText);
                 // MusicBrainz also returns discs with a similar TOC: releases with this disc's track count come first
                 // (in the order the services ranked them).
                 foreach (ReleaseDetails r in found.Where(r => r.Tracks != null && r.Tracks.Count > 0)
@@ -383,6 +411,30 @@ namespace CDTag.ViewModels.Rip
             }
         }
 
+        private DiscExtras _extras;
+
+        /// <summary>The disc's own CD-Text as a release (source "CD-Text"), or null when it has none.</summary>
+        private static ReleaseDetails CdTextRelease(DiscExtras extras, List<CdTrack> toc)
+        {
+            CdText text = extras == null ? null : extras.CdText;
+            if (text == null || (text.AlbumTitle == null && text.AlbumPerformer == null))
+                return null;
+            var r = new ReleaseDetails
+            {
+                Artist = text.AlbumPerformer ?? "", Title = text.AlbumTitle ?? "", Source = "CD-Text", Format = "CD", Discs = 1,
+                Tracks = new List<ReleaseTrack>()
+            };
+            int i = 0;
+            foreach (CdTrack t in toc.Where(t => t.IsAudio))
+            {
+                string performer = text.Performer(t.Number);
+                r.Tracks.Add(new ReleaseTrack { Disc = 1, Position = ++i, Title = text.Title(t.Number) ?? "", Artist = performer ?? r.Artist, Length = t.Sectors / 75 });
+                if (performer != null && !string.Equals(performer, r.Artist, StringComparison.OrdinalIgnoreCase))
+                    r.IsVariousArtists = true;
+            }
+            return r;
+        }
+
         /// <summary>The tracks of the disc that is in the drive (disc 1, or the disc a disc-ID lookup matched).</summary>
         private static List<ReleaseTrack> MediumTracks(ReleaseDetails r)
         {
@@ -440,7 +492,7 @@ namespace CDTag.ViewModels.Rip
                 Eac = _eac, OutputFolder = OutputFolder, Naming = Naming, VariousNaming = VariousNaming, UseVariousNaming = _eac == null || _eac.UseVariousNaming,
                 Format = SelectedFormat.Format, Mp3Preset = SelectedFormat.Preset, TestAndCopy = TestAndCopy, EjectWhenDone = EjectWhenDone
             };
-            var job = new RipJob { Toc = _toc, Album = CurrentAlbum(), Settings = settings, DriveName = _driveName, Offset = offset, OffsetSource = offsetSource };
+            var job = new RipJob { Toc = _toc, Album = CurrentAlbum(), Settings = settings, DriveName = _driveName, Offset = offset, OffsetSource = offsetSource, Extras = _extras };
             List<string> paths = job.TrackPaths();
             string existing = paths.FirstOrDefault(File.Exists);
             if (existing != null)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
@@ -37,6 +38,91 @@ namespace CDTag.Model.Rip
         private const uint IOCTL_STORAGE_QUERY_PROPERTY = 0x002D1400;
         private const uint IOCTL_STORAGE_EJECT_MEDIA = 0x002D4808;
         private const uint IOCTL_STORAGE_CHECK_VERIFY = 0x002D4800;
+        private const uint IOCTL_CDROM_READ_Q_CHANNEL = 0x0002402C;
+        private const uint IOCTL_CDROM_READ_TOC_EX = 0x00024054;
+
+        // ------------------------------------------------------------------ ISRC, catalog number, CD-Text, subchannel
+
+        /// <summary>The track's ISRC (12 characters) from the Q subchannel, or null when the disc has none.</summary>
+        public string ReadIsrc(int track)
+        {
+            // CDROM_SUB_Q_DATA_FORMAT { Format = IOCTL_CDROM_TRACK_ISRC (3), Track }; SUB_Q_TRACK_ISRC: Tcval bit at 8, ISRC at 9
+            byte[] output = new byte[48];
+            int returned;
+            if (!DeviceIoControl(_handle, IOCTL_CDROM_READ_Q_CHANNEL, new byte[] { 3, (byte)track }, 2, output, output.Length, out returned, IntPtr.Zero) || returned < 21)
+                return null;
+            if ((output[8] & 0x80) == 0 && (output[8] & 0x01) == 0)
+                return null;
+            string isrc = Encoding.ASCII.GetString(output, 9, 12).Trim('\0', ' ');
+            return IsPlausibleCode(isrc, 12) ? isrc : null;
+        }
+
+        /// <summary>The disc's media catalog number (UPC/EAN, 13 digits), or null.</summary>
+        public string ReadCatalogNumber()
+        {
+            // Format = IOCTL_CDROM_MEDIA_CATALOG (2); SUB_Q_MEDIA_CATALOG_NUMBER: Mcval bit at 8, number at 9
+            byte[] output = new byte[48];
+            int returned;
+            if (!DeviceIoControl(_handle, IOCTL_CDROM_READ_Q_CHANNEL, new byte[] { 2, 0 }, 2, output, output.Length, out returned, IntPtr.Zero) || returned < 22)
+                return null;
+            if ((output[8] & 0x80) == 0 && (output[8] & 0x01) == 0)
+                return null;
+            string mcn = Encoding.ASCII.GetString(output, 9, 13).Trim('\0', ' ');
+            return mcn.Length == 13 && mcn.All(char.IsDigit) && mcn.Any(c => c != '0') ? mcn : null;
+        }
+
+        private static bool IsPlausibleCode(string code, int length)
+        {
+            return code.Length == length && code.All(c => char.IsLetterOrDigit(c)) && code.Any(c => c != '0');
+        }
+
+        /// <summary>
+        /// CD-Text (block 0): album title/performer (index 0) and per track (index = track number), or null when the disc
+        /// has none or the drive can't read it.
+        /// </summary>
+        public CdText ReadCdText()
+        {
+            // CDROM_READ_TOC_EX { Format = CDTEXT (5), SessionTrack, ... }
+            byte[] output = new byte[4 + 18 * 2048];
+            int returned;
+            if (!DeviceIoControl(_handle, IOCTL_CDROM_READ_TOC_EX, new byte[] { 5, 0, 0, 0 }, 4, output, output.Length, out returned, IntPtr.Zero) || returned < 4 + 18)
+                return null;
+            return CdText.Parse(output, 4, returned - 4);
+        }
+
+        /// <summary>
+        /// Reads one sector with its subchannel (2,352 + 96 raw P-W bytes) and returns the Q channel position, or null when the
+        /// drive can't read subchannel data or the Q data's CRC is wrong.
+        /// </summary>
+        public QPosition ReadQ(int lba)
+        {
+            QPosition[] one = ReadQRange(lba, 1);
+            return one == null ? null : one[0];
+        }
+
+        /// <summary>
+        /// Q positions of <paramref name="count"/> sectors from <paramref name="lba"/> (at most 26) in one read; an entry is null
+        /// when its CRC is wrong. Null when the drive can't read subchannel data.
+        /// </summary>
+        public QPosition[] ReadQRange(int lba, int count)
+        {
+            const int raw = SectorBytes + 96;
+            if (count < 1 || count > MaxSectorsPerRead)
+                throw new ArgumentOutOfRangeException("count");
+            byte[] info = new byte[16];
+            BitConverter.GetBytes((long)lba * 2048).CopyTo(info, 0);
+            BitConverter.GetBytes(count).CopyTo(info, 8);
+            BitConverter.GetBytes(5).CopyTo(info, 12);   // RawWithSubCode
+            byte[] buffer = new byte[raw * count];
+            int returned;
+            if (!DeviceIoControl(_handle, IOCTL_CDROM_RAW_READ, info, info.Length, buffer, buffer.Length, out returned, IntPtr.Zero) || returned < raw * count)
+                return null;
+            var result = new QPosition[count];
+            for (int i = 0; i < count; i++)
+                result[i] = QPosition.FromRawSubcode(buffer, i * raw + SectorBytes);
+            return result;
+        }
+
 
         private readonly SafeFileHandle _handle;
 

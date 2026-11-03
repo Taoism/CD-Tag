@@ -53,6 +53,27 @@ namespace CDTag.ViewModels.Tests.Rip
         }
 
         [Test]
+        public void ReadsExtras()
+        {
+            using (CdDrive drive = CdDrive.Open(DriveLetter()))
+            {
+                var toc = drive.ReadToc();
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                var steps = new SyncProgress(m => TestContext.Out.WriteLine("{0,6} ms  {1}", watch.ElapsedMilliseconds, m));
+                DiscExtras extras = GapDetector.Read(drive, toc, steps, System.Threading.CancellationToken.None);
+                TestContext.Out.WriteLine("{0} ms; MCN {1}; CD-Text {2}; gaps detected {3}", watch.ElapsedMilliseconds, extras.CatalogNumber ?? "-",
+                                          extras.CdText == null ? "none" : extras.CdText.AlbumPerformer + " / " + extras.CdText.AlbumTitle, extras.GapsDetected);
+                foreach (CdTrack t in toc.Where(t => t.IsAudio))
+                {
+                    string isrc; extras.Isrc.TryGetValue(t.Number, out isrc);
+                    TestContext.Out.WriteLine("  {0,2} pregap {1} isrc {2} text {3} / {4}", t.Number, GapDetector.Time(extras.Pregap(t.Number)), isrc ?? "-",
+                                              extras.CdText == null ? "" : extras.CdText.Performer(t.Number), extras.CdText == null ? "" : extras.CdText.Title(t.Number));
+                }
+                Assert.That(extras.GapsDetected, "the drive returns subchannel data");
+            }
+        }
+
+        [Test]
         public void ReadsTocAndSectors()
         {
             using (CdDrive drive = CdDrive.Open(DriveLetter()))
@@ -73,6 +94,13 @@ namespace CDTag.ViewModels.Tests.Rip
                 Assert.That(drive.ReadSectors(lba, CdDrive.MaxSectorsPerRead, again));
                 Assert.That(again, Is.EqualTo(buffer), "same sectors read twice");
             }
+        }
+    
+        private sealed class SyncProgress : IProgress<string>
+        {
+            private readonly Action<string> _report;
+            public SyncProgress(Action<string> report) { _report = report; }
+            public void Report(string value) { _report(value); }
         }
     }
 }

@@ -105,6 +105,8 @@ namespace CDTag.Model.Rip
         public string DriveName { get; set; }
         public int Offset { get; set; }
         public string OffsetSource { get; set; }
+        /// <summary>ISRCs, catalog number, CD-Text and pregaps read by Find CD (null when not read).</summary>
+        public DiscExtras Extras { get; set; }
 
         public List<RipTrackResult> Results { get; private set; } = new List<RipTrackResult>();
         public List<string> AccurateRipLines { get; private set; } = new List<string>();
@@ -235,6 +237,9 @@ namespace CDTag.Model.Rip
                 new KeyValuePair<string, string>("TRACKNUMBER", Audio[i].Number.ToString(CultureInfo.InvariantCulture)),
                 new KeyValuePair<string, string>("TOTALTRACKS", Audio.Count.ToString(CultureInfo.InvariantCulture))
             };
+            string isrc = IsrcOf(Audio[i].Number);
+            if (isrc != null) tags.Add(new KeyValuePair<string, string>("ISRC", isrc));
+            if (Extras != null && Extras.CatalogNumber != null) tags.Add(new KeyValuePair<string, string>("CATALOGNUMBER", Extras.CatalogNumber));
             if (Settings.Format == RipFormat.Flac)
             {
                 await AudioEncoder.EncodeFlacAsync(wav, target, tags, null, cancellation).ConfigureAwait(false);
@@ -258,23 +263,49 @@ namespace CDTag.Model.Rip
         }
 
         /// <summary>A CUE sheet for the track files (gaps appended to the previous track, as ripped).</summary>
+        private string IsrcOf(int track)
+        {
+            string isrc;
+            return Extras != null && Extras.Isrc.TryGetValue(track, out isrc) ? isrc : null;
+        }
+
+        private static string CueTime(int sectors)
+        {
+            return string.Format(CultureInfo.InvariantCulture, "{0:00}:{1:00}:{2:00}", sectors / 4500, sectors / 75 % 60, sectors % 75);
+        }
+
+        /// <summary>
+        /// A CUE sheet for the track files, like EAC's for "gaps appended to previous track": a track's pregap (INDEX 00) is
+        /// in the previous track's file, its INDEX 01 at the start of its own. With CATALOG and ISRC when the disc has them.
+        /// </summary>
         public string CueSheetText(List<string> paths)
         {
             var sb = new StringBuilder();
             if (!string.IsNullOrWhiteSpace(Album.Genre)) sb.AppendFormat("REM GENRE \"{0}\"\r\n", Album.Genre.Trim());
             if (!string.IsNullOrWhiteSpace(Album.Year)) sb.AppendFormat("REM DATE {0}\r\n", Album.Year.Trim());
             sb.AppendFormat("REM COMMENT \"{0}\"\r\n", LogTitle.Replace(" extraction log", ""));
+            if (Extras != null && Extras.CatalogNumber != null) sb.AppendFormat("CATALOG {0}\r\n", Extras.CatalogNumber);
             sb.AppendFormat("PERFORMER \"{0}\"\r\n", Album.AlbumArtist);
             sb.AppendFormat("TITLE \"{0}\"\r\n", (Album.Title ?? "").Trim());
             List<CdTrack> audio = Audio;
+            string type = Settings.Format == RipFormat.Mp3 ? "MP3" : "WAVE";
             for (int i = 0; i < audio.Count; i++)
             {
-                string type = Settings.Format == RipFormat.Mp3 ? "MP3" : "WAVE";
-                sb.AppendFormat("FILE \"{0}\" {1}\r\n", Path.GetFileName(paths[i]), type);
+                int gap = Extras == null ? 0 : Extras.Pregap(audio[i].Number);
+                // the track's header: in the previous file when it has a pregap there
+                if (gap == 0 || i == 0)
+                    sb.AppendFormat("FILE \"{0}\" {1}\r\n", Path.GetFileName(paths[i]), type);
                 sb.AppendFormat("  TRACK {0:00} AUDIO\r\n", audio[i].Number);
                 sb.AppendFormat("    TITLE \"{0}\"\r\n", Album.TrackTitle(i));
                 sb.AppendFormat("    PERFORMER \"{0}\"\r\n", Album.TrackArtist(i));
+                string isrc = IsrcOf(audio[i].Number);
+                if (isrc != null) sb.AppendFormat("    ISRC {0}\r\n", isrc);
                 if (audio[i].PreEmphasis) sb.Append("    FLAGS PRE\r\n");
+                if (gap > 0 && i > 0)
+                {
+                    sb.AppendFormat("    INDEX 00 {0}\r\n", CueTime(audio[i - 1].Sectors - gap));
+                    sb.AppendFormat("FILE \"{0}\" {1}\r\n", Path.GetFileName(paths[i]), type);
+                }
                 sb.Append("    INDEX 01 00:00:00\r\n");
             }
             return sb.ToString();
@@ -295,7 +326,8 @@ namespace CDTag.Model.Rip
             sb.AppendLine();
             sb.AppendFormat(CultureInfo.InvariantCulture, "Read offset correction                      : {0} ({1})\r\n", Offset, OffsetSource);
             sb.AppendLine("Fill up missing offset samples with silence : Yes");
-            sb.AppendLine("Gap handling                                : Appended to previous track");
+            sb.AppendLine(Extras != null && Extras.GapsDetected ? "Gap handling                                : Appended to previous track"
+                                                                 : "Gap handling                                : Not detected, thus appended to previous track");
             sb.AppendFormat("Output format                               : {0}\r\n", Settings.Format == RipFormat.Flac ? (AudioEncoder.GetVersion(AudioEncoder.FlacPath) ?? "flac") + " -8" : Settings.Format == RipFormat.Mp3 ? AudioEncoder.Describe(Settings.Mp3Preset) : "WAV");
             sb.AppendLine("Sample format                               : 44.100 Hz; 16 Bit; Stereo");
             sb.AppendLine();
@@ -314,7 +346,11 @@ namespace CDTag.Model.Rip
                 sb.AppendLine();
                 sb.AppendFormat("Track {0,2}\r\n\r\n", r.Number);
                 sb.AppendFormat("     Filename {0}\r\n\r\n", paths[i]);
+                int pregap = Extras == null ? 0 : Extras.Pregap(r.Number);
+                if (pregap > 0) sb.AppendFormat("     Pre-gap length  {0}\r\n\r\n", GapDetector.Time(pregap));
                 sb.AppendFormat(CultureInfo.InvariantCulture, "     Peak level {0:0.0} %\r\n", r.Peak);
+                string trackIsrc = IsrcOf(r.Number);
+                if (trackIsrc != null) sb.AppendFormat("     ISRC {0}\r\n", trackIsrc);
                 if (r.Tested) sb.AppendFormat("     Test CRC {0:X8}\r\n", r.TestCrc);
                 sb.AppendFormat("     Copy CRC {0:X8}\r\n", r.CopyCrc);
                 if (i < AccurateRipLines.Count) sb.AppendFormat("     {0}\r\n", AccurateRipLines[i]);

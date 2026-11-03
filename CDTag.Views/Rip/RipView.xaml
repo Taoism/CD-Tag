@@ -142,6 +142,8 @@
                 <DataGridTextColumn Header="Artist" Binding="{Binding Artist, UpdateSourceTrigger=LostFocus}" Width="2*" />
                 <DataGridTextColumn Header="Start" Binding="{Binding Start}" Width="70" IsReadOnly="True" />
                 <DataGridTextColumn Header="Length" Binding="{Binding Length}" Width="70" IsReadOnly="True" />
+                <DataGridTextColumn Header="Pregap" Binding="{Binding Pregap}" Width="65" IsReadOnly="True" />
+                <DataGridTextColumn Header="ISRC" Binding="{Binding Isrc}" Width="105" IsReadOnly="True" />
                 <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="55" IsReadOnly="True" />
                 <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="3*" IsReadOnly="True" />
             </DataGrid.Columns>
