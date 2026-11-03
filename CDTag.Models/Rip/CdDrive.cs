@@ -133,7 +133,7 @@ namespace CDTag.Model.Rip
             for (int i = 0; i <= last - first + 1; i++)
             {
                 int o = 4 + i * 8;
-                int control = toc[o + 1] >> 4;
+                int control = toc[o + 1] & 0x0F;   // TRACK_DATA: Control is the low nibble, Adr the high one
                 int number = toc[o + 2];
                 int lba = Msf(toc[o + 5], toc[o + 6], toc[o + 7]);
                 entries.Add(Tuple.Create(number, control, lba));

@@ -25,7 +25,7 @@ namespace CDTag.ViewModels.Tests.Tag
             "REM GENRE \"Test Genre\"\r\n" +
             "REM DATE 2026\r\n" +
             "PERFORMER \"Test Artist\"\r\n" +
-            "TITLE \"Test Album\"\r\n" +
+            "TITLE \"Test’s Album\"\r\n" +
             "FILE \"image.wav\" WAVE\r\n" +
             "  TRACK 01 AUDIO\r\n" +
             "    TITLE \"One: the start\"\r\n" +
@@ -116,7 +116,7 @@ namespace CDTag.ViewModels.Tests.Tag
         {
             CueSheet sheet = CueSheet.Parse(Cue);
             Assert.That(sheet.Performer, Is.EqualTo("Test Artist"));
-            Assert.That(sheet.Title, Is.EqualTo("Test Album"));
+            Assert.That(sheet.Title, Is.EqualTo("Test’s Album"));
             Assert.That(sheet.Genre, Is.EqualTo("Test Genre"));
             Assert.That(sheet.Date, Is.EqualTo("2026"));
             Assert.That(sheet.IsImage);
@@ -194,7 +194,7 @@ namespace CDTag.ViewModels.Tests.Tag
             var tag = new VorbisComment(two);
             Assert.That(tag.Artist, Is.EqualTo("Guest"));
             Assert.That(tag.Title, Is.EqualTo("Två"));
-            Assert.That(tag.Album, Is.EqualTo("Test Album"));
+            Assert.That(tag.Album, Is.EqualTo("Test’s Album"), "a curly apostrophe survives (not cp1252)");
             Assert.That(tag.TrackNumber, Is.EqualTo("2"));
             Assert.That(tag.Items.Any(i => i.Name == "ALBUMARTIST" && i.Value == "Test Artist"));
             Assert.That(tag.Items.Any(i => i.Name == "ISRC" && i.Value == "USAAA2600001"));

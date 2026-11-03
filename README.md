@@ -12,6 +12,10 @@ an unfinished project. The fork brings it up to date:
   at runtime. Dark title bars and, on Windows 11, a Mica backdrop.
 - **Tag Album** in the CD-Tag 2.x style: release page, lookup (MusicBrainz, CUETools DB), track preview,
   NFO/M3U/SFV creation, renaming and FLAC/MP3 tagging on *Finish*.
+- **Rip**: reads the disc and looks it up (MusicBrainz disc ID, CUETools DB), then rips in test & copy mode with read
+  offset correction (AccurateRip drive database), re-reads of mismatching blocks and an AccurateRip check per track;
+  WAV, tagged FLAC or MP3, a CUE sheet, a log and the cover. Output folder, file naming, format and eject come from
+  Exact Audio Copy's settings when EAC is installed.
 - **Convert Audio**: WAV/FLAC to MP3 with LAME (`-V0` or `-b 320`), FLAC/MP3 to WAV.
 - **Profiles**: edit, import from and export to CD-Tag 2.x (`.cfg` + NFO template).
 - **Tools**: Split CUE (WAV/FLAC image to WAV or tagged FLAC tracks), Encoding Inspector (LAME tag with CRC checks,

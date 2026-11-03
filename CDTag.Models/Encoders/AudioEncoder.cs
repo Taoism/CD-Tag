@@ -227,21 +227,19 @@ namespace CDTag.Model.Encoders
             string temp = target + ".~cdtag";
             try
             {
-                var arguments = new List<string> { "-8", "-f", "--no-utf8-convert" };
-                if (tags != null)
-                {
-                    foreach (KeyValuePair<string, string> tag in tags.Where(t => !string.IsNullOrWhiteSpace(t.Value)))
-                    {
-                        arguments.Add("-T");
-                        arguments.Add(tag.Key + "=" + tag.Value.Trim());
-                    }
-                }
-                arguments.Add("-o");
-                arguments.Add(temp);
-                arguments.Add(wav);
+                var arguments = new List<string> { "-8", "-f", "-o", temp, wav };
                 await RunAsync(flac, arguments, progress, cancellation).ConfigureAwait(false);
                 if (!File.Exists(temp))
                     throw new IOException("flac.exe did not write " + Path.GetFileName(target) + ".");
+                // Tags are written here rather than with flac -T: flac.exe gets its command line in the ANSI code page,
+                // which broke characters such as ’ (U+2019). Vorbis comments are UTF-8.
+                if (tags != null)
+                {
+                    var vorbis = new IdSharp.Tagging.VorbisComment.VorbisComment(temp);
+                    foreach (KeyValuePair<string, string> tag in tags.Where(t => !string.IsNullOrWhiteSpace(t.Value)))
+                        vorbis.Items.SetValue(tag.Key, tag.Value.Trim());
+                    vorbis.Save(temp);
+                }
                 File.Move(temp, target, true);
                 progress?.Report(100);
             }
