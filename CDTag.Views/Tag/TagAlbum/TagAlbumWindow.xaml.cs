@@ -50,6 +50,7 @@ namespace CDTag.Views.Tag.TagAlbum
         private void UpdateArtistColumn()
         {
             ArtistColumn.Visibility = _album != null && _album.IsVariousArtists ? Visibility.Visible : Visibility.Collapsed;
+            PreviewArtistColumn.Visibility = ArtistColumn.Visibility;
         }
 
         // ------------------------------------------------------------------ song name menu

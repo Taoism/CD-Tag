@@ -111,6 +111,19 @@
                 <TabItem Header="Long Comment">
                     <TextBox Text="{Binding Release.LongComment, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" />
                 </TabItem>
+                <TabItem Header="Track Preview">
+                    <DataGrid ItemsSource="{Binding TrackPreview}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                              GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="False" BorderThickness="0"
+                              AlternatingRowBackground="{DynamicResource Theme.RowAlternateBackground}" AlternationCount="2">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Disc" Binding="{Binding Disc}" Width="44" />
+                            <DataGridTextColumn Header="#" Binding="{Binding Track}" Width="38" />
+                            <DataGridTextColumn x:Name="PreviewArtistColumn" Header="Artist" Binding="{Binding Artist}" Width="*" />
+                            <DataGridTextColumn Header="Song name" Binding="{Binding Title}" Width="2*" />
+                            <DataGridTextColumn Header="Time" Binding="{Binding Time}" Width="56" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
             </TabControl>
 
             <Grid Grid.Row="2">
@@ -187,7 +200,6 @@
                 <ComboBox Grid.Row="2" Grid.Column="4" Margin="0,2" VerticalAlignment="Center" IsEditable="True" ItemsSource="{Binding Genres}" Text="{Binding Album.Genre, UpdateSourceTrigger=PropertyChanged}" />
                 <StackPanel Grid.Row="3" Grid.Column="3" Grid.ColumnSpan="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <CheckBox Content="Show all genres" IsChecked="{Binding ShowAllGenres}" Margin="0,4,16,4" />
-                    <Button Content="_Look up" Padding="10,1" Command="{Binding LookupCommand}" ToolTip="Look up this album on MusicBrainz (track titles, date, label, catalog #, cover)" />
                 </StackPanel>
 
                 <!-- Cover -->
@@ -250,7 +262,11 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" Content="Preview _NFO" Command="{Binding PreviewNFOCommand}" Padding="10,3" />
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <Button Content="Preview _NFO" Command="{Binding PreviewNFOCommand}" Padding="10,3" />
+                <Button Content="_Look up" Command="{Binding LookupCommand}" Padding="10,3" Margin="8,0,0,0"
+                        ToolTip="Look up this album (MusicBrainz, CUETools DB: track titles, date, label, catalog #, cover)" />
+            </StackPanel>
             <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="12,0" Foreground="{DynamicResource Theme.ForegroundSecondary}"
                        Text="{Binding Profile.ProfileName, Mode=OneWay, StringFormat='Profile: {0}', FallbackValue='Profile: (none)', TargetNullValue='Profile: (none)'}" />
             <Button Grid.Column="2" Content="_Previous" Command="{Binding PreviousCommand}" MinWidth="86" Padding="10,3" Margin="8,0,0,0" />

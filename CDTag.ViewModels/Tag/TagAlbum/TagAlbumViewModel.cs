@@ -135,6 +135,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         /// <summary>Recomputes the new folder name and every new file name from the profile.</summary>
         private void UpdateNames()
         {
+            UpdateTrackPreview();
             if (_updatingNames || Album == null || Profile == null)
                 return;
 
@@ -312,6 +313,47 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         {
             get { return Get<string>("OldFolderName"); }
             private set { Set("OldFolderName", value); }
+        }
+
+        /// <summary>The tracks in disc / track order (Track Preview tab).</summary>
+        public List<TrackPreviewRow> TrackPreview
+        {
+            get { return Get<List<TrackPreviewRow>>("TrackPreview"); }
+            private set { Set("TrackPreview", value); }
+        }
+
+        private void UpdateTrackPreview()
+        {
+            if (Album == null)
+                return;
+            bool longTracks = Album.Tracks.Any(t => Math.Round(t.TotalSeconds) >= 600);
+            List<TrackPreviewRow> rows = Album.Tracks
+                .OrderBy(t => PreviewNumber(t.DiscNumber, 1)).ThenBy(t => PreviewNumber(t.TrackNumber, 0)).ThenBy(t => t.OriginalFileName, StringComparer.OrdinalIgnoreCase)
+                .Select(t =>
+                {
+                    int seconds = (int)Math.Round(t.TotalSeconds);
+                    string time = string.Format(longTracks ? "{0:00}:{1:00}" : "{0}:{1:00}", seconds / 60, seconds % 60);
+                    return new TrackPreviewRow
+                    {
+                        Disc = PreviewNumber(t.DiscNumber, 1),
+                        Track = PreviewNumber(t.TrackNumber, 0),
+                        Artist = t.Artist,
+                        Title = t.Title,
+                        Time = seconds > 0 ? time : ""
+                    };
+                }).ToList();
+
+            // Same rows: keep the list (and its scroll position) while typing elsewhere.
+            List<TrackPreviewRow> current = TrackPreview;
+            if (current == null || !current.SequenceEqual(rows))
+                TrackPreview = rows;
+        }
+
+        private static int PreviewNumber(string text, int fallback)
+        {
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(text ?? "", @"\d+");
+            int number;
+            return match.Success && int.TryParse(match.Value, out number) ? number : fallback;
         }
 
         public string NfoFileName
