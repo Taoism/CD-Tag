@@ -371,6 +371,8 @@ namespace CDTag.ViewModel.Tests.Tag
             release.Source = new ReleaseListItem { Nfo = "BLURAY", Dir = "BLURAY" };
             Assert.That(SceneRules.HasBitKhzChoice(album, "BLURAY"), Is.True);
             Assert.That(SceneRules.HasBitKhzChoice(album, "CD"), Is.False);
+            Assert.That(SceneRules.FilesQualityTag(album), Is.EqualTo("16BIT"), "read from the files; 16 bit has no kHz");
+            Assert.That(SceneRules.QualityTags(album).First(), Is.EqualTo("16BIT"));
 
             // Auto: nothing added to the name
             release.Quality = "";
@@ -390,6 +392,20 @@ namespace CDTag.ViewModel.Tests.Tag
             release.Quality = "16BIT-44KHZ";
             plan = new AlbumFinisher(profile, album, release, "#Artist\r\n").Plan();
             Assert.That(plan.RuleIssues, Has.Some.EqualTo("FLAC 3.4.2: 16BIT has no kHz tag; use -16BIT- instead of -16BIT-44KHZ-."));
+        }
+
+        [Test]
+        public void TypesLoseTheirBitKhzPartsWhenBitKhzHasItsOwnBox()
+        {
+            ReleaseListItem[] types = new[] { "Normal release", "Remastered", "Remastered-24BiT/44KhZ", "Remastered-24BiT/96KhZ",
+                                              "Deluxe Edition-24BIT/48KHZ", "16BIT", "24BIT/96KHZ", "Limited Edition-16BIT", "Promo" }
+                .Select(t => new ReleaseListItem { Nfo = t, Dir = t == "Normal release" ? "" : t }).ToArray();
+
+            ReleaseListItem[] result = TagAlbumViewModel.WithoutBitKhz(types);
+
+            Assert.That(result.Select(t => t.Nfo), Is.EqualTo(new[] { "Normal release", "Remastered", "Deluxe Edition", "Limited Edition", "Promo" }));
+            Assert.That(result[1], Is.SameAs(types[1]), "existing entries are reused");
+            Assert.That(result.Single(t => t.Nfo == "Deluxe Edition").Dir, Is.EqualTo("Deluxe Edition"));
         }
 
         [Test]

@@ -171,15 +171,10 @@ namespace CDTag.Model.Tag
         /// </summary>
         public static List<string> QualityTags(Album album)
         {
-            string bits = BitDepthTag(album);
-            string rate = SampleRateTag(album);
             var tags = new List<string>();
-            if (bits != null)
-            {
-                tags.Add(bits);
-                if (rate != null && bits != "16BIT")
-                    tags.Add(bits + "-" + rate);
-            }
+            string files = FilesQualityTag(album);
+            if (files != null)
+                tags.Add(files);
             // 16 bit is only 16BIT (no kHz); 24 bit can carry the sample rate.
             tags.Add("16BIT");
             tags.Add("24BIT");
@@ -188,6 +183,15 @@ namespace CDTag.Model.Tag
             return tags.Distinct().ToList();
         }
 
+        /// <summary>Bit depth and sample rate read from the files: "16BIT" (16 bit has no kHz) or "24BIT-96KHZ"; null when unknown.</summary>
+        public static string FilesQualityTag(Album album)
+        {
+            string bits = BitDepthTag(album);
+            if (bits == null)
+                return null;
+            string rate = SampleRateTag(album);
+            return bits == "16BIT" || rate == null ? bits : bits + "-" + rate;
+        }
         /// <summary>BLURAY / HDDVD sources (2BLURAY...): bits and sample rate are kept from the disc (FLAC rules 3.4.2).</summary>
         public static bool IsBluray(string source)
         {

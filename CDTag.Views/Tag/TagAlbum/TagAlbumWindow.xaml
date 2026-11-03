@@ -100,7 +100,7 @@
                     <TextBlock Grid.Column="1" Text="Bit/kHz" Style="{StaticResource FieldLabel}" Margin="10,0,6,0" IsEnabled="{Binding HasBitKhz}" />
                     <ComboBox Grid.Column="2" Margin="0,2" VerticalAlignment="Center" ItemsSource="{Binding QualityChoices}" DisplayMemberPath="Name" SelectedValuePath="Value"
                               SelectedValue="{Binding Release.Quality}" IsEnabled="{Binding HasBitKhz}" ToolTipService.ShowOnDisabled="True"
-                              ToolTip="WEB-FLAC and Blu-ray only. WEB-FLAC (rules 4.10): ##BIT is required in the release name, ##KHZ optional; Auto uses the bit depth of the files. Blu-ray: Auto adds nothing, a chosen value goes before the source (-24BIT-96KHZ-BLURAY-FLAC-). Finish checks it against the files." />
+                              ToolTip="WEB-FLAC and Blu-ray only. WEB-FLAC (rules 4.10): read from the files (16BIT, or 24BIT-96KHZ); goes before the source in the release name (-16BIT-WEB-FLAC-, -24BIT-96KHZ-BLURAY-FLAC-). Finish checks it against the files." />
                 </Grid>
                 <TextBlock Grid.Row="1" Grid.Column="3" Text="Type" Style="{StaticResource FieldLabel}" />
                 <ComboBox Grid.Row="1" Grid.Column="4" Margin="0,2" VerticalAlignment="Center" ItemsSource="{Binding ReleaseTypes}" SelectedItem="{Binding Release.ReleaseType}" ItemTemplate="{StaticResource ListItemTemplate}" />
