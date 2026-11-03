@@ -61,6 +61,19 @@ namespace CDTag.Views.Tag.TagAlbum
             MenuItem paste = menu.Items.OfType<MenuItem>().FirstOrDefault(m => "_Paste Tracklist".Equals(m.Header));
             if (paste != null)
                 paste.IsEnabled = ClipboardText() != null;
+
+            MenuItem undo = menu.Items.OfType<MenuItem>().FirstOrDefault(m => "UndoTitles".Equals(m.Tag));
+            if (undo != null)
+            {
+                string text = _viewModel.UndoTitlesText;
+                undo.Header = text != null ? "_" + text : "_Undo";
+                undo.IsEnabled = text != null;
+            }
+        }
+
+        private void UndoTitles_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.UndoTitles();
         }
 
         private void Casing_Click(object sender, RoutedEventArgs e)

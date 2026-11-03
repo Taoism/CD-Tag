@@ -58,6 +58,39 @@ namespace CDTag.Model.Lookup
             }
         }
 
+        /// <summary>Exact length of audio track <paramref name="index"/> (0-based) in seconds.</summary>
+        public decimal TrackLength(int index)
+        {
+            int end = index + 1 < Offsets.Count ? Offsets[index + 1] : LeadOut;
+            if (index + 1 < Offsets.Count && !IsAudio[index + 1])
+                end = AudioLeadOut;
+            return (end - Offsets[index]) / (decimal)SectorsPerSecond;
+        }
+
+        /// <summary>
+        /// MP3 rips with a log: each track gets its exact CD length from the log's TOC (MP3 lengths are estimates).
+        /// Only discs whose log has as many audio tracks as the disc are changed. Returns how many tracks changed.
+        /// </summary>
+        public static int ApplyLogLengths(Album album, IEnumerable<DiscToc> tocs)
+        {
+            if (album == null || tocs == null)
+                return 0;
+            int changed = 0;
+            foreach (DiscToc toc in tocs.Where(t => t.Source != null && t.Source.EndsWith("log", StringComparison.OrdinalIgnoreCase)))
+            {
+                List<AlbumTrack> tracks = album.Tracks.Where(t => Number(t.DiscNumber, 1) == toc.Disc)
+                    .OrderBy(t => Number(t.TrackNumber, 0)).ThenBy(t => t.OriginalFileName, StringComparer.OrdinalIgnoreCase).ToList();
+                if (tracks.Count != toc.AudioTrackCount || tracks.Any(t => t.IsFlac))
+                    continue;
+                for (int i = 0; i < tracks.Count; i++)
+                {
+                    tracks[i].SetCdLength(toc.TrackLength(i));
+                    changed++;
+                }
+            }
+            return changed;
+        }
+
         /// <summary>Length of audio track <paramref name="index"/> (0-based) in seconds.</summary>
         public int TrackSeconds(int index)
         {

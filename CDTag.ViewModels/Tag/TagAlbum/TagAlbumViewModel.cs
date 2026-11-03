@@ -77,6 +77,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             IsCommentLocked = options != null && options.LockComment;
 
             Album album = new Album(path);
+            DiscToc.ApplyLogLengths(album, DiscToc.ForAlbum(album));
             ReleaseInfo release = ReleaseInfo.FromProfile(profile);
             release.ReleaseType = release.ReleaseType ?? ReleaseTypes.FirstOrDefault();
             release.Source = release.Source ?? Sources.FirstOrDefault();
@@ -123,12 +124,54 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         {
             if (e.PropertyName != "NewFolderName")
                 UpdateNames();
+            if (e.PropertyName == "DiscNames")
+                RaisePropertyChanged("DiscName", null, null);
         }
 
         private void Track_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName != "NewFileName")
                 UpdateNames();
+            if (e.PropertyName == "DiscNumber" && sender == SelectedTrack)
+                RaiseDiscNameChanged();
+        }
+
+        /// <summary>Disc of the selected track (disc names are edited per disc).</summary>
+        public int SelectedDisc
+        {
+            get { return SelectedTrack != null ? DiscNumberOf(SelectedTrack) : 1; }
+        }
+
+        /// <summary>Name of the selected track's disc ("McCabe's Guitar Shop, Santa Monica, CA, 10/9/94").</summary>
+        public string DiscName
+        {
+            get { return Album != null ? Album.GetDiscName(SelectedDisc) : null; }
+            set
+            {
+                if (Album == null || Album.GetDiscName(SelectedDisc) == (string.IsNullOrWhiteSpace(value) ? null : value.Trim()))
+                    return;
+                Album.SetDiscName(SelectedDisc, value);
+                RaisePropertyChanged("DiscName", null, null);
+            }
+        }
+
+        public string DiscNameLabel
+        {
+            get { return string.Format("Disc {0} name", SelectedDisc); }
+        }
+
+        private void RaiseDiscNameChanged()
+        {
+            RaisePropertyChanged("SelectedDisc", null, null);
+            RaisePropertyChanged("DiscName", null, null);
+            RaisePropertyChanged("DiscNameLabel", null, null);
+        }
+
+        private static int DiscNumberOf(AlbumTrack track)
+        {
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(track.DiscNumber ?? "", @"\d+");
+            int number;
+            return match.Success && int.TryParse(match.Value, out number) && number > 0 ? number : 1;
         }
 
         /// <summary>Recomputes the new folder name and every new file name from the profile.</summary>
@@ -159,6 +202,10 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             {
                 if (Album != null && SelectedTrackIndex >= 0 && SelectedTrackIndex < Album.Tracks.Count)
                     SelectedTrack = Album.Tracks[SelectedTrackIndex];
+            }
+            else if (e.IsProperty(p => p.SelectedTrack))
+            {
+                RaiseDiscNameChanged();
             }
             else if (e.IsProperty(p => p.ShowAllGenres))
             {
@@ -216,18 +263,57 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             return Album.Tracks.ToList();
         }
 
+        // ------------------------------------------------------------------ song name undo
+
+        private readonly Stack<Tuple<string, Dictionary<AlbumTrack, string>>> _titleUndo = new Stack<Tuple<string, Dictionary<AlbumTrack, string>>>();
+
+        /// <summary>"Undo Capitalize Every Word", or null when there is nothing to undo.</summary>
+        public string UndoTitlesText
+        {
+            get { return _titleUndo.Count > 0 ? "Undo " + _titleUndo.Peek().Item1 : null; }
+        }
+
+        /// <summary>Puts back the song names from before the last casing / replace / paste.</summary>
+        public void UndoTitles()
+        {
+            if (_titleUndo.Count == 0)
+                return;
+            foreach (KeyValuePair<AlbumTrack, string> saved in _titleUndo.Pop().Item2)
+                saved.Key.Title = saved.Value;
+        }
+
+        /// <summary>Runs <paramref name="change"/> on the song names and keeps the old names for Undo when any changed.</summary>
+        private void ChangeTitles(string description, Action change)
+        {
+            Dictionary<AlbumTrack, string> before = Album.Tracks.ToDictionary(t => t, t => t.Title);
+            change();
+            if (Album.Tracks.Any(t => t.Title != before[t]))
+                _titleUndo.Push(Tuple.Create(description, before));
+        }
+
         public void ApplyCasing(TitleCasing casing)
         {
             if (Album == null)
                 return;
-            foreach (AlbumTrack track in Album.Tracks)
-                track.Title = TitleText.ApplyCasing(track.Title, casing);
+            string[] names = { "Capitalize Every Word", "UPPERCASE", "lowercase", "Sentence case" };
+            ChangeTitles(names[(int)casing], () =>
+            {
+                foreach (AlbumTrack track in Album.Tracks)
+                    track.Title = TitleText.ApplyCasing(track.Title, casing);
+            });
         }
 
         public int SearchReplace(string find, string replace, bool matchCase)
         {
             if (Album == null || string.IsNullOrEmpty(find))
                 return 0;
+            int result = 0;
+            ChangeTitles("Search & Replace", () => result = ReplaceTitles(find, replace, matchCase));
+            return result;
+        }
+
+        private int ReplaceTitles(string find, string replace, bool matchCase)
+        {
             int changed = 0;
             foreach (AlbumTrack track in Album.Tracks)
             {
@@ -247,8 +333,11 @@ namespace CDTag.ViewModels.Tag.TagAlbum
                 return 0;
             List<string> titles = TitleText.ParseTracklist(text);
             List<AlbumTrack> tracks = OrderedTracks();
-            for (int i = 0; i < titles.Count && i < tracks.Count; i++)
-                tracks[i].Title = titles[i];
+            ChangeTitles("Paste Tracklist", () =>
+            {
+                for (int i = 0; i < titles.Count && i < tracks.Count; i++)
+                    tracks[i].Title = titles[i];
+            });
             return titles.Count;
         }
 

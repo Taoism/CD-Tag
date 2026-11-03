@@ -105,6 +105,28 @@ namespace CDTag.ViewModel.Tests.Tag
         }
 
         [Test]
+        public void Mp3TracksGetTheirCdLengthFromTheLog()
+        {
+            var tracks = Enumerable.Range(1, 12).Select(n => CDTag.Model.Tag.AlbumTrack.FromValues(@"C:\in\" + n.ToString("00") + ".mp3", "1", n.ToString(), "Nirvana", "x", 192, 300)).ToList();
+            var album = new CDTag.Model.Tag.Album(@"C:\in", tracks);
+
+            Assert.That(DiscToc.ApplyLogLengths(album, new[] { Nevermind() }), Is.EqualTo(12));
+            Assert.That(tracks[0].TotalSeconds, Is.EqualTo(22617m / 75));
+            Assert.That(tracks[11].TotalSeconds, Is.EqualTo((267075m - 174447m) / 75));
+            Assert.That(tracks[0].IsLengthFromLog, Is.True);
+        }
+
+        [Test]
+        public void LogLengthsNeedTheSameTrackCount()
+        {
+            var tracks = Enumerable.Range(1, 11).Select(n => CDTag.Model.Tag.AlbumTrack.FromValues(@"C:\in\" + n + ".mp3", "1", n.ToString(), "A", "x", 192, 300)).ToList();
+            var album = new CDTag.Model.Tag.Album(@"C:\in", tracks);
+
+            Assert.That(DiscToc.ApplyLogLengths(album, new[] { Nevermind() }), Is.EqualTo(0));
+            Assert.That(tracks[0].TotalSeconds, Is.EqualTo(300m));
+        }
+
+        [Test]
         public void NotFoundIsNoMatch()
         {
             Assert.That(CueToolsDbClient.Parse("Not Found", Nevermind()), Is.Empty);

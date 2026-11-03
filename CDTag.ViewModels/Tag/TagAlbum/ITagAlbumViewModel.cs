@@ -19,6 +19,12 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         /// <summary>The album folder after Finish (it may have been renamed), or null.</summary>
         string FinishedDirectory { get; }
 
+        /// <summary>"Undo Capitalize Every Word", or null when there is nothing to undo.</summary>
+        string UndoTitlesText { get; }
+
+        /// <summary>Puts back the song names from before the last casing / replace / paste.</summary>
+        void UndoTitles();
+
         /// <summary>Changes the casing of every song name.</summary>
         void ApplyCasing(TitleCasing casing);
 

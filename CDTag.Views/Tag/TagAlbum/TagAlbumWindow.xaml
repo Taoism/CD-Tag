@@ -14,6 +14,8 @@
     <Views:WindowViewBase.Resources>
         <!-- Right-click on a song name (CD-Tag 2.x) -->
         <ContextMenu x:Key="SongNameMenu" x:Shared="False" Opened="SongNameMenu_Opened">
+            <MenuItem Header="_Undo" Tag="UndoTitles" Click="UndoTitles_Click" />
+            <Separator />
             <MenuItem Header="_Casing">
                 <MenuItem Header="Capitalize Every Word" Tag="CapitalizeEveryWord" Click="Casing_Click" />
                 <MenuItem Header="UPPERCASE" Tag="Uppercase" Click="Casing_Click" />
@@ -183,6 +185,7 @@
                     <RowDefinition Height="8" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="New folder" Style="{StaticResource FieldLabel}" />
@@ -212,6 +215,9 @@
                 <TextBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="5" Margin="0,2" VerticalAlignment="Center" IsReadOnly="True" Text="{Binding SelectedTrack.OriginalFileName, Mode=OneWay, Converter={StaticResource ShortFileNameConverter}}" />
                 <TextBlock Grid.Row="6" Text="New file name" Style="{StaticResource FieldLabel}" />
                 <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="5" Margin="0,2" VerticalAlignment="Center" IsReadOnly="True" Text="{Binding SelectedTrack.NewFileName, Mode=OneWay}" />
+                <TextBlock Grid.Row="7" Text="{Binding DiscNameLabel}" Style="{StaticResource FieldLabel}" />
+                <TextBox Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="5" Margin="0,2" VerticalAlignment="Center" Text="{Binding DiscName, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Name of the selected track's disc: shown in the NFO disc header (Disc 1/14 - name) and written as the disc subtitle tag" />
             </Grid>
 
             <DataGrid x:Name="TracksDataGrid" Grid.Row="1" Margin="0,8,0,0"

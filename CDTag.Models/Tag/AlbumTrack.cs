@@ -241,6 +241,16 @@ namespace CDTag.Model.Tag
             private set { Set("Bitrate", value); }
         }
 
+        /// <summary>True when <see cref="TotalSeconds"/> is the exact CD length from the rip log.</summary>
+        public bool IsLengthFromLog { get; private set; }
+
+        /// <summary>Uses the exact CD length (from the rip log's TOC) instead of the length estimated from the file.</summary>
+        public void SetCdLength(decimal seconds)
+        {
+            TotalSeconds = seconds;
+            IsLengthFromLog = true;
+        }
+
         public decimal TotalSeconds
         {
             get { return Get<decimal>("TotalSeconds"); }
