@@ -307,6 +307,32 @@ namespace CDTag.ViewModel.Tests.Tag
         }
 
         [Test]
+        public void WebFlacGetsTheBitDepthInItsNameAndKeepsShopArtwork()
+        {
+            string folder = MakeFolder("web (src)", "untagged.flac", "01.flac");
+            string file = Path.Combine(folder, "01.flac");
+            var shop = new VorbisComment(file);
+            shop.SetPictureBlocks(new[] { AlbumFinisher.FlacPictureBlock(Cover()) });
+            shop.Save(file);
+
+            Album album = Load(folder, "Ween", "Pure Guava", "Little Birdy");
+            UserProfile profile = Profile();
+            profile.FileNaming.SingleCD.SingleArtist.Directory = "<Artist>-<Album>-WEB-FLAC-<Year>-GRP";
+            ReleaseInfo release = Release();
+            release.Source = new ReleaseListItem { Nfo = "WEB", Dir = "WEB" };
+            release.Url = "https://example.bandcamp.com/album/pure-guava";
+
+            var finisher = new AlbumFinisher(profile, album, release, "#Artist\r\n");
+            FinishPlan plan = finisher.Plan();
+            Assert.That(plan.RuleSetName, Is.EqualTo("WEB FLAC rules 1.0"));
+            string result = finisher.Run(plan);
+
+            Assert.That(Path.GetFileName(result), Is.EqualTo("Ween-Pure_Guava-16BIT-WEB-FLAC-1994-GRP"));
+            var vorbis = new VorbisComment(Directory.GetFiles(result, "*.flac").Single());
+            Assert.That(vorbis.GetPictureBlocks().Count, Is.EqualTo(1), "WEB FLAC rules do not require an empty picture block");
+        }
+
+        [Test]
         public void ProblemsStopFinishBeforeAnythingChanges()
         {
             string folder = MakeFolder("bad (src)", "untagged.flac", "01.flac", "02.flac");

@@ -77,7 +77,8 @@ namespace CDTag.Model.Tag
             {
                 case "FLAC": return 2016;
                 case "MP3": return 2021;
-                default: return 0; // WEB FLAC rules are not checked
+                case "WEBFLAC": return 2023;
+                default: return 0;
             }
         }
 

@@ -101,7 +101,32 @@ namespace CDTag.Model.Tag
         public string GetFolderName()
         {
             NamingFormat format = Format;
-            return format == null ? null : Build(format.Directory, null, null, _profile.FileNaming.DirectoryCharacterLimit, null);
+            if (format == null)
+                return null;
+            string pattern = format.Directory;
+            // WEB FLAC rules 4.10.1: the release name needs the bit depth (-16BIT-WEB-FLAC-); 2.x profiles have no token for it.
+            if (pattern != null && IsWebFlac && pattern.IndexOf("<BitDepth>", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                string name = Build(pattern, null, null, _profile.FileNaming.DirectoryCharacterLimit, null);
+                if (name != null && name.Contains("-WEB-FLAC-") && !Regex.IsMatch(name, @"\d{2}BIT(-\d{2,3}KHZ)?-WEB-FLAC-"))
+                {
+                    string bits = SceneRules.BitDepthTag(_album);
+                    if (bits != null)
+                        name = name.Replace("-WEB-FLAC-", "-" + bits + "-WEB-FLAC-");
+                }
+                return name;
+            }
+            return Build(pattern, null, null, _profile.FileNaming.DirectoryCharacterLimit, null);
+        }
+
+        /// <summary>All FLAC files from a WEB source.</summary>
+        private bool IsWebFlac
+        {
+            get
+            {
+                string source = _release.Source != null ? (_release.Source.Dir ?? _release.Source.Nfo) : null;
+                return SceneRules.IsWeb(source) && _album.Tracks.Count > 0 && _album.Tracks.All(t => t.IsFlac);
+            }
         }
 
         /// <summary>New file name (with the original extension) for a track, or null.</summary>
@@ -236,6 +261,7 @@ namespace CDTag.Model.Tag
                 case "DISC": return track != null ? FormatDisc(track.DiscNumber) : _disc > 0 ? FormatDisc(_disc.ToString(CultureInfo.InvariantCulture)) : null;
                 case "DISCS": return Discs.ToString(CultureInfo.InvariantCulture);
                 case "PROFILE": return _profile.ProfileName;
+                case "BITDEPTH": return SceneRules.BitDepthTag(_album);
                 case "IMAGETEXT": return imageText;
                 case "BITRATE":
                     decimal bitrate = track != null ? track.Bitrate : AverageBitrate(_album);

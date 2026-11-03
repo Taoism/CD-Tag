@@ -143,6 +143,22 @@ namespace CDTag.Model.Tag
         /// <summary>Disc name from the tags (FLAC DISCSUBTITLE), or null.</summary>
         public string DiscSubtitle { get; set; }
 
+        private int? _bitsPerSample;
+
+        /// <summary>Bits per sample of a FLAC file (read once), 0 when unknown or not FLAC.</summary>
+        public int BitsPerSample
+        {
+            get
+            {
+                if (_bitsPerSample == null)
+                {
+                    CDTag.Model.Lookup.FlacStreamInfo info = IsFlac && _path != null ? CDTag.Model.Lookup.FlacStreamInfo.Read(_path) : null;
+                    _bitsPerSample = info != null ? info.BitsPerSample : 0;
+                }
+                return _bitsPerSample.Value;
+            }
+        }
+
         /// <summary>True for FLAC files (tags come from Vorbis comments).</summary>
         public bool IsFlac { get; private set; }
 

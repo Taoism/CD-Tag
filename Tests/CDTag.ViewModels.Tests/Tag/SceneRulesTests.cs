@@ -82,6 +82,61 @@ namespace CDTag.ViewModel.Tests.Tag
             Assert.That(issues.Count, Is.EqualTo(2));
         }
 
+        private static Album WebAlbum()
+        {
+            string file = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "untagged.flac");
+            var tracks = new List<AlbumTrack>
+            {
+                AlbumTrack.FromValues(file, "1", "1", "Ween", "a"),
+                AlbumTrack.FromValues(file, "1", "2", "Ween", "b")
+            };
+            return new Album(Path.GetDirectoryName(file), tracks) { Artist = "Ween", AlbumTitle = "X", Genre = "Rock" };
+        }
+
+        [Test]
+        public void WebFlacUsesTheWebRulesAndCdFlacTheFlacRules()
+        {
+            Assert.That(SceneRules.RuleSetFor(WebAlbum(), "WEB"), Is.EqualTo(SceneRuleSet.WebFlac2023));
+            Assert.That(SceneRules.RuleSetFor(WebAlbum(), "CD"), Is.EqualTo(SceneRuleSet.Flac2016));
+            Assert.That(SceneRules.BitDepthTag(WebAlbum()), Is.EqualTo("16BIT"));
+        }
+
+        [Test]
+        public void AGoodWebFlacReleaseHasNoFindings()
+        {
+            var release = new SceneRelease
+            {
+                Name = "Ween-X-16BIT-WEB-FLAC-2023-GRP", Album = WebAlbum(), Source = "WEB", Discs = 1, Year = "2023",
+                Url = "https://example.bandcamp.com/album/x",
+                Files = new List<string> { "01-ween-a.flac", "02-ween-b.flac", "00-ween-x-16bit-web-flac-2023.sfv", "00-ween-x-16bit-web-flac-2023.nfo" }
+            };
+
+            Assert.That(SceneRules.Check(SceneRuleSet.WebFlac2023, release), Is.Empty, "no proof JPG needed for WEB");
+        }
+
+        [Test]
+        public void WebFlacFindings()
+        {
+            var release = new SceneRelease
+            {
+                Name = "Ween-X-24BIT-WEBFLAC-2023-GRP", Album = WebAlbum(), Source = "WEB", Discs = 1, Year = "2023",
+                Files = new List<string> { "01-ween_-_a.flac", "00-x.sfv", "00-x.nfo", "00-x.cue", "00-x.log" }
+            };
+            List<string> issues = SceneRules.Check(SceneRuleSet.WebFlac2023, release);
+
+            Assert.That(issues, Has.Some.StartsWith("WEB FLAC 4.12.1"));
+            Assert.That(issues, Has.Some.StartsWith("WEB FLAC 4.4"));
+            Assert.That(issues, Has.Some.StartsWith("WEB FLAC 4.10.1"));
+            Assert.That(issues, Has.Some.StartsWith("WEB FLAC 1.2.3: 00-x.cue"));
+            Assert.That(issues, Has.Some.StartsWith("WEB FLAC 1.2.3: 00-x.log"));
+            Assert.That(issues, Has.Some.StartsWith("WEB FLAC 5.6.1"));
+            Assert.That(issues, Has.Some.StartsWith("WEB FLAC 7.2"));
+            Assert.That(issues, Has.None.Contains("proof"));
+
+            release.Name = "Ween-X-24BIT-WEB-FLAC-2023-GRP";
+            Assert.That(SceneRules.Check(SceneRuleSet.WebFlac2023, release), Has.Some.Contains("says 24BIT but the files are 16BIT"));
+        }
+
         [TestCase("Alternative Rock", "AlternRock")]
         [TestCase("hip hop", "Hip-Hop")]
         [TestCase("grunge", "Grunge")]

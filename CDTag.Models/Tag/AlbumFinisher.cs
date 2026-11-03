@@ -148,6 +148,12 @@ namespace CDTag.Model.Tag
             _finish = profile.Finish ?? new Finish();
         }
 
+        /// <summary>Source tag from the release page ("CD", "WEB"...).</summary>
+        private string SourceTag
+        {
+            get { return _release.Source != null ? (string.IsNullOrWhiteSpace(_release.Source.Dir) ? _release.Source.Nfo : _release.Source.Dir) : null; }
+        }
+
         private string Folder
         {
             get { return _album.OldDirectoryName.TrimEnd('\\'); }
@@ -282,7 +288,7 @@ namespace CDTag.Model.Tag
 
         private void CheckSceneRules(FinishPlan plan, HashSet<string> deleted)
         {
-            SceneRuleSet rules = _tagging.SkipSceneRules ? SceneRuleSet.None : SceneRules.RuleSetFor(_album);
+            SceneRuleSet rules = _tagging.SkipSceneRules ? SceneRuleSet.None : SceneRules.RuleSetFor(_album, SourceTag);
             if (rules == SceneRuleSet.None)
                 return;
 
@@ -298,7 +304,8 @@ namespace CDTag.Model.Tag
                 Name = Path.GetFileName(plan.NewDirectory),
                 Files = files,
                 Album = _album,
-                Source = _release.Source != null ? (_release.Source.Dir ?? _release.Source.Nfo) : null,
+                Source = SourceTag,
+                Url = _release.Url,
                 Discs = _namer.Discs,
                 Year = _namer.Year
             };
@@ -561,9 +568,10 @@ namespace CDTag.Model.Tag
                         vorbis.SetPictureBlocks(blocks);
                     }
                 }
-                else
+                else if (!SceneRules.IsWeb(SourceTag))
                 {
-                    // FLAC rules 6.3: the picture block MUST be empty.
+                    // FLAC rules 6.3 (CD, vinyl...): the picture block MUST be empty. WEB FLAC has no such rule,
+                    // so artwork from the shop stays.
                     vorbis.SetPictureBlocks(new byte[0][]);
                 }
                 vorbis.Save(path);
