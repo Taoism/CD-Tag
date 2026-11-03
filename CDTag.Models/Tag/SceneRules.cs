@@ -218,6 +218,14 @@ namespace CDTag.Model.Tag
                     issues.Add("MP3 3.1: the release name must end with -YEAR-GROUP.");
                 if (release.Discs > 1 && !Regex.IsMatch(name, @"-" + release.Discs + @"[A-Z]+-"))
                     issues.Add(string.Format("MP3 3.6: a {0}-disc release needs a multi-disc tag (-{0}CD-).", release.Discs));
+
+                bool webInName = Regex.IsMatch(name, @"-WEB-");
+                if (web && !webInName)
+                    issues.Add("MP3 13.2.1: a WEB release needs the -WEB- source tag in the release name.");
+                if (!web && source.Length > 0 && webInName)
+                    issues.Add(string.Format("MP3 13: the release name says WEB but the source is {0} (one source tag only).", source));
+                if (web && album != null && album.Tracks.Count == 1 && album.Tracks[0].TotalSeconds <= 25 * 60 && !Regex.IsMatch(name, @"-SINGLE-"))
+                    issues.Add("MP3 3.9: a one-track WEB release needs the -SINGLE- tag after the title (unless it is longer than 25 minutes).");
             }
             if (album != null && album.IsVariousArtists && !name.StartsWith("VA-", StringComparison.Ordinal))
                 issues.Add(rule("4.2.1", "4.2.1", "3.7") + ": a various artists release name must start with VA-.");
@@ -293,6 +301,13 @@ namespace CDTag.Model.Tag
                 AlbumTrack wrong = album.Tracks.FirstOrDefault(t => t.Frequency != 0 && t.Frequency != 44100 && t.Frequency != 48000);
                 if (wrong != null)
                     issues.Add(string.Format("MP3 10.3: {0} is {1} Hz (44.1 or 48 kHz only).", Path.GetFileName(wrong.OriginalFileName), wrong.Frequency));
+
+                // WEB music: 320 kbps CBR (bought as MP3, or encoded from a lossless download with LAME -b 320).
+                AlbumTrack low = web ? album.Tracks.FirstOrDefault(t => t.Bitrate > 0 && t.Bitrate < 319) : null;
+                if (low != null)
+                    issues.Add(string.Format("MP3 10.1 / 10.2.1: WEB music is 320 kbps CBR; {0} is {1:0} kbps.", Path.GetFileName(low.OriginalFileName), low.Bitrate));
+                if (album.Tracks.Select(t => Math.Round(t.Bitrate)).Where(b => b > 0).Distinct().Count() > 1 && web)
+                    issues.Add("MP3 13: all tracks of a WEB release must have the same bitrate.");
             }
 
             return issues;

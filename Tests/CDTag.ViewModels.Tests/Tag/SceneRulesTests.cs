@@ -137,6 +137,47 @@ namespace CDTag.ViewModel.Tests.Tag
             Assert.That(SceneRules.Check(SceneRuleSet.WebFlac2023, release), Has.Some.Contains("says 24BIT but the files are 16BIT"));
         }
 
+        private static Album Mp3Album(int tracks, decimal bitrate, decimal seconds = 200)
+        {
+            var list = Enumerable.Range(1, tracks)
+                .Select(n => AlbumTrack.FromValues(@"C:\in\" + n + ".mp3", "1", n.ToString(), "Ween", "s" + n, bitrate, seconds)).ToList();
+            return new Album(@"C:\in", list) { Artist = "Ween", AlbumTitle = "X", Genre = "Rock" };
+        }
+
+        [Test]
+        public void AGoodWebMp3ReleaseHasNoFindings()
+        {
+            var release = new SceneRelease
+            {
+                Name = "Ween-X-WEB-2023-GRP", Album = Mp3Album(2, 320), Source = "WEB", Discs = 1, Year = "2023",
+                Url = "https://example.bandcamp.com/album/x",
+                Files = new List<string> { "01-ween-s1.mp3", "02-ween-s2.mp3", "00-ween-x-web-2023.sfv", "00-ween-x-web-2023.nfo" }
+            };
+
+            Assert.That(SceneRules.RuleSetFor(release.Album, "WEB"), Is.EqualTo(SceneRuleSet.Mp3_2021));
+            Assert.That(SceneRules.Check(SceneRuleSet.Mp3_2021, release), Is.Empty, "no proof JPG needed for WEB");
+        }
+
+        [Test]
+        public void WebMp3Findings()
+        {
+            var release = new SceneRelease
+            {
+                Name = "Ween-X-2023-GRP", Album = Mp3Album(1, 245), Source = "WEB", Discs = 1, Year = "2023",
+                Files = new List<string> { "01-ween-s1.mp3", "00-x.sfv", "00-x.nfo" }
+            };
+            List<string> issues = SceneRules.Check(SceneRuleSet.Mp3_2021, release);
+
+            Assert.That(issues, Has.Some.StartsWith("MP3 13.2.1"));
+            Assert.That(issues, Has.Some.StartsWith("MP3 3.9"));
+            Assert.That(issues, Has.Some.StartsWith("MP3 10.1 / 10.2.1"));
+            Assert.That(issues, Has.Some.Contains("full URL"));
+
+            release.Source = "CD";
+            release.Name = "Ween-X-WEB-2023-GRP";
+            Assert.That(SceneRules.Check(SceneRuleSet.Mp3_2021, release), Has.Some.Contains("says WEB but the source is CD"));
+        }
+
         [TestCase("Alternative Rock", "AlternRock")]
         [TestCase("hip hop", "Hip-Hop")]
         [TestCase("grunge", "Grunge")]
