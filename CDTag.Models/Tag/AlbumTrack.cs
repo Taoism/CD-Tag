@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using CDTag.Common;
@@ -125,6 +125,7 @@ namespace CDTag.Model.Tag
             ReleaseDate = vorbis.Year;
             TrackNumber = vorbis.TrackNumber;
             DiscNumber = vorbis.Items.GetValue("DISCNUMBER");
+            DiscSubtitle = vorbis.Items.GetValue("DISCSUBTITLE");
 
             // Prefer the front cover; otherwise take the first picture.
             foreach (byte[] block in vorbis.GetPictureBlocks())
@@ -138,6 +139,9 @@ namespace CDTag.Model.Tag
                     break;
             }
         }
+
+        /// <summary>Disc name from the tags (FLAC DISCSUBTITLE), or null.</summary>
+        public string DiscSubtitle { get; set; }
 
         /// <summary>True for FLAC files (tags come from Vorbis comments).</summary>
         public bool IsFlac { get; private set; }

@@ -53,6 +53,8 @@ namespace CDTag.ViewModel.Tests.Tag
             Assert.That(release.Tracks[0].Title, Is.EqualTo("Koko"));
             Assert.That(release.Tracks.First(t => t.Disc == 2).Title, Is.EqualTo("Baby Bitch"));
             Assert.That(release.Tracks[0].Length, Is.GreaterThan(0));
+            Assert.That(release.DiscNames[1], Is.EqualTo("McCabe's Guitar Shop, Santa Monica, CA, 10/9/94"));
+            Assert.That(release.DiscNames[14], Is.EqualTo("Trocadero Theatre, Philadelphia, PA, 6/16/95 (cont.)"));
         }
 
         [Test]

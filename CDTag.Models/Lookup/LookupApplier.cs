@@ -45,6 +45,12 @@ namespace CDTag.Model.Lookup
                     release.Source = source;
             }
 
+            foreach (KeyValuePair<int, string> discName in details.DiscNames ?? new Dictionary<int, string>())
+            {
+                if (details.OnlyDisc <= 0 || discName.Key == details.OnlyDisc)
+                    album.SetDiscName(discName.Key, Plain(discName.Value));
+            }
+
             List<AlbumTrack> tracks = album.Tracks
                 .Where(t => details.OnlyDisc <= 0 || Number(t.DiscNumber, 1) == details.OnlyDisc)
                 .OrderBy(t => Number(t.DiscNumber, 1)).ThenBy(t => Number(t.TrackNumber, 0)).ThenBy(t => t.OriginalFileName, StringComparer.OrdinalIgnoreCase)

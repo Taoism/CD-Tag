@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using CDTag.Common;
 using CDTag.Common.ApplicationServices;
 using CDTag.Common.Dispatcher;
@@ -136,6 +137,56 @@ namespace CDTag.ViewModel.Tests.Tag
         {
             string[] lines = Lines(new NfoGenerator(Profile(), Album(), Release()).Generate(Template));
             Assert.That(lines.Last(), Does.StartWith("  :: ").And.EndWith("::"));
+        }
+
+        [Test]
+        public void LongSongNamesPushEveryTimeToTheSameColumn()
+        {
+            Album album = Album();
+            album.Tracks[1].Title = "Push Th' Little Daisies / Never Squeel (Incomplete)";
+            string[] tracks = Lines(new NfoGenerator(Profile(), album, Release()).Generate(Template)).Where(l => l.Contains("2:05")).ToArray();
+
+            Assert.That(tracks[1], Is.EqualTo("   2. Push Th' Little Daisies / Never Squeel (Incomplete) 2:05"));
+            Assert.That(tracks.Select(t => t.IndexOf("2:05")).Distinct().Count(), Is.EqualTo(1), "all times line up with the longest name");
+        }
+
+        [Test]
+        public void TimesGetTwoDigitMinutesWhenATrackIsTenMinutesOrLonger()
+        {
+            var tracks = new List<AlbumTrack>
+            {
+                AlbumTrack.FromValues(@"C:\in.flac", "1", "1", "Ween", "Short", 1000, 410),
+                AlbumTrack.FromValues(@"C:\in.flac", "1", "2", "Ween", "Long", 1000, 1611)
+            };
+            var album = new Album(@"C:\in", tracks) { Artist = "Ween", AlbumTitle = "X" };
+            string[] lines = Lines(new NfoGenerator(Profile(), album, Release()).Generate(Template));
+
+            Assert.That(lines.Any(l => l.TrimEnd().EndsWith(" 06:50")), Is.True);
+            Assert.That(lines.Any(l => l.TrimEnd().EndsWith(" 26:51")), Is.True);
+            Assert.That(lines.Any(l => Regex.IsMatch(l, @"\s6:50$")), Is.False);
+        }
+
+        [Test]
+        public void DiscHeaderShowsTheDiscName()
+        {
+            Album album = Album(discs: 2);
+            album.SetDiscName(1, "McCabe's Guitar Shop, Santa Monica, CA, 10/9/94");
+            string[] lines = Lines(new NfoGenerator(Profile(), album, Release()).Generate(Template));
+
+            Assert.That(lines, Does.Contain("Disc 1/2 - McCabe's Guitar Shop, Santa Monica, CA, 10/9/94"));
+            Assert.That(lines, Does.Contain("Disc 2/2"), "no name, no dash");
+        }
+
+        [Test]
+        public void DiscNameTokenPlacesTheName()
+        {
+            UserProfile profile = Profile();
+            profile.NFOOptions.MultiCDHeader = "CD #Disc: #DiscName" + Environment.NewLine;
+            Album album = Album(discs: 2);
+            album.SetDiscName(2, "Live");
+            string[] lines = Lines(new NfoGenerator(profile, album, Release()).Generate(Template));
+
+            Assert.That(lines, Does.Contain("CD 2: Live"));
         }
     }
 

@@ -92,6 +92,9 @@ namespace CDTag.Model.Lookup
                     OnlyDisc = toc != null ? toc.Disc : 0,
                     Tracks = new List<ReleaseTrack>()
                 };
+                string discName = Clean((string)meta.Attribute("discname"));
+                if (discName != null)
+                    details.DiscNames[toc != null && toc.Disc > 0 ? toc.Disc : 1] = discName;
                 if (details.Genre != null)
                     details.Genre = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(details.Genre);
 

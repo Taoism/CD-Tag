@@ -94,11 +94,51 @@ namespace CDTag.Model.Tag
 
         // ------------------------------------------------------------------ track list
 
+        /// <summary>
+        /// The disc header with #Disc / #Discs / #DiscName filled. When the disc has a name and the header has no
+        /// #DiscName, " - name" goes after the line with the disc number ("Disc 1/14 - McCabe's Guitar Shop").
+        /// </summary>
+        private string DiscHeader(string header, int disc, int discs)
+        {
+            string name = _album.GetDiscName(disc) ?? "";
+            if (name.Length > 0 && header.IndexOf("#DiscName", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                string[] lines = header.Replace("\r\n", "\n").Split('\n');
+                int index = Array.FindIndex(lines, l => l.IndexOf("#Disc", StringComparison.OrdinalIgnoreCase) >= 0);
+                if (index < 0)
+                    index = Array.FindIndex(lines, l => l.Trim().Length > 0);
+                if (index >= 0)
+                {
+                    lines[index] = lines[index].TrimEnd() + " - #DiscName";
+                    header = string.Join(Environment.NewLine, lines);
+                }
+            }
+            return Regex.Replace(header, "#DiscName", name.Replace("$", "$$"), RegexOptions.IgnoreCase)
+                        .Replace("#Discs", discs.ToString(CultureInfo.InvariantCulture))
+                        .Replace("#Disc", disc.ToString(CultureInfo.InvariantCulture));
+        }
+
         private IEnumerable<string> TrackLines(string line)
         {
             int discs = _namer.Discs;
             string header = discs > 1 ? _profile.NFOOptions.MultiCDHeader : _profile.NFOOptions.SingleCDHeader;
             int currentDisc = -1;
+
+            // Fields after a column gap (#Time) line up one space past the longest song name on every track.
+            var columns = new List<int>();
+            foreach (AlbumTrack track in _tracks)
+            {
+                var needed = new List<int>();
+                Replace(line, track, null, needed);
+                for (int g = 0; g < needed.Count; g++)
+                {
+                    if (g < columns.Count)
+                        columns[g] = Math.Max(columns[g], needed[g]);
+                    else
+                        columns.Add(needed[g]);
+                }
+            }
+            int[] gapColumns = columns.ToArray();
 
             foreach (AlbumTrack track in _tracks)
             {
@@ -108,13 +148,12 @@ namespace CDTag.Model.Tag
                     currentDisc = disc;
                     if (!string.IsNullOrEmpty(header))
                     {
-                        string text = header.Replace("#Discs", discs.ToString(CultureInfo.InvariantCulture))
-                                            .Replace("#Disc", disc.ToString(CultureInfo.InvariantCulture));
+                        string text = DiscHeader(header, disc, discs);
                         foreach (string headerLine in SplitLines(text))
                             yield return headerLine;
                     }
                 }
-                yield return Replace(line, track);
+                yield return Replace(line, track, gapColumns, null);
             }
 
             if (!string.IsNullOrEmpty(_profile.NFOOptions.TracklistFooter))
@@ -186,8 +225,11 @@ namespace CDTag.Model.Tag
 
         // ------------------------------------------------------------------ token replacement
 
-        private string Replace(string line, AlbumTrack track)
+        /// <param name="gapColumns">Minimum output column of the field after each column gap (track list alignment).</param>
+        /// <param name="needed">Receives, per column gap, the column the next field needs (one space past the value).</param>
+        private string Replace(string line, AlbumTrack track, int[] gapColumns = null, List<int> needed = null)
         {
+            int gap = 0;
             var sb = new StringBuilder(line.Length + 16);
             int i = 0;
             while (i < line.Length)
@@ -212,7 +254,11 @@ namespace CDTag.Model.Tag
                 {
                     // A column gap in the template: the next field keeps its original column (at least one space).
                     int column = after + spaces;
-                    sb.Append(' ', Math.Max(1, column - sb.Length));
+                    if (needed != null)
+                        needed.Add(sb.Length + 1);
+                    int target = gapColumns != null && gap < gapColumns.Length ? Math.Max(column, gapColumns[gap]) : column;
+                    sb.Append(' ', Math.Max(1, target - sb.Length));
+                    gap++;
                     i = column;
                 }
                 else
@@ -276,7 +322,13 @@ namespace CDTag.Model.Tag
                     if (track == null)
                         return "";
                     return _album.IsVariousArtists && !string.IsNullOrWhiteSpace(track.Artist) ? track.Artist + " - " + track.Title : track.Title;
-                case "#TIME": return track == null ? "" : MinutesSeconds((int)Math.Round(track.TotalSeconds));
+                case "#TIME":
+                    if (track == null)
+                        return "";
+                    // Same width for every track: 06:50 when another track is 26:51.
+                    int seconds = (int)Math.Round(track.TotalSeconds);
+                    bool longTracks = _tracks.Any(t => Math.Round(t.TotalSeconds) >= 600);
+                    return longTracks && seconds < 600 ? "0" + MinutesSeconds(seconds) : MinutesSeconds(seconds);
                 case "#DISC": return (track != null ? Number(track.DiscNumber, 1) : 1).ToString(CultureInfo.InvariantCulture);
                 case "#DISCS": return _namer.Discs.ToString(CultureInfo.InvariantCulture);
 

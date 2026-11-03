@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -211,6 +211,12 @@ namespace CDTag.Model.Tag
             Genre = first.Genre;
             Artist = first.Artist;
             ReleaseDate = first.ReleaseDate;
+            foreach (AlbumTrack track in _tracks)
+            {
+                int disc;
+                if (!string.IsNullOrWhiteSpace(track.DiscSubtitle) && int.TryParse((track.DiscNumber ?? "").Trim(), out disc) && !_discNames.ContainsKey(disc))
+                    _discNames[disc] = track.DiscSubtitle.Trim();
+            }
             if (first.Picture != null)
             {
                 Picture = new Picture(first.Picture).ImageSource;
@@ -279,6 +285,24 @@ namespace CDTag.Model.Tag
         {
             get { return Get<bool>("IsVariousArtists"); }
             set { Set("IsVariousArtists", value); }
+        }
+
+        private readonly Dictionary<int, string> _discNames = new Dictionary<int, string>();
+
+        /// <summary>Disc names/subtitles by disc number ("McCabe's Guitar Shop, Santa Monica, CA, 10/9/94"); null when none.</summary>
+        public string GetDiscName(int disc)
+        {
+            string name;
+            return _discNames.TryGetValue(disc, out name) && !string.IsNullOrWhiteSpace(name) ? name : null;
+        }
+
+        public void SetDiscName(int disc, string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                _discNames.Remove(disc);
+            else
+                _discNames[disc] = name.Trim();
+            RaisePropertyChanged("DiscNames", null, null);
         }
 
         /// <summary>Cover image bytes chosen in Tag Album (e.g. from an online lookup); null = keep the existing cover.</summary>

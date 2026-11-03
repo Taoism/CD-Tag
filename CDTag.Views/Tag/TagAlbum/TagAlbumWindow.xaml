@@ -1,4 +1,4 @@
-﻿<Views:WindowViewBase
+<Views:WindowViewBase
     x:Class="CDTag.Views.Tag.TagAlbum.TagAlbumWindow"
     x:Name="tagAlbumWindow2"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -12,6 +12,22 @@
     MinHeight="500"
 >
     <Views:WindowViewBase.Resources>
+        <!-- Right-click on a song name (CD-Tag 2.x) -->
+        <ContextMenu x:Key="SongNameMenu" x:Shared="False" Opened="SongNameMenu_Opened">
+            <MenuItem Header="_Casing">
+                <MenuItem Header="Capitalize Every Word" Tag="CapitalizeEveryWord" Click="Casing_Click" />
+                <MenuItem Header="UPPERCASE" Tag="Uppercase" Click="Casing_Click" />
+                <MenuItem Header="lowercase" Tag="Lowercase" Click="Casing_Click" />
+                <MenuItem Header="Sentence case" Tag="SentenceCase" Click="Casing_Click" />
+            </MenuItem>
+            <MenuItem Header="_Search &amp; Replace..." Click="SearchReplace_Click" />
+            <Separator />
+            <MenuItem Header="_Paste Tracklist" Click="PasteTracklist_Click" />
+            <Separator />
+            <MenuItem Command="ApplicationCommands.Cut" />
+            <MenuItem Command="ApplicationCommands.Copy" />
+            <MenuItem Command="ApplicationCommands.Paste" />
+        </ContextMenu>
         <Converters:ShortFileNameConverter x:Key="ShortFileNameConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
@@ -217,7 +233,7 @@
                     <DataGridTemplateColumn Header="Song name" Width="2*">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" />
+                                <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" ContextMenu="{StaticResource SongNameMenu}" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

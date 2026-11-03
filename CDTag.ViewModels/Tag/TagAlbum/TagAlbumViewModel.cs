@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -209,6 +209,48 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         }
 
         public ICommand LookupCommand { get; private set; }
+
+        /// <summary>Tracks in disc / track order (as listed).</summary>
+        private List<AlbumTrack> OrderedTracks()
+        {
+            return Album.Tracks.ToList();
+        }
+
+        public void ApplyCasing(TitleCasing casing)
+        {
+            if (Album == null)
+                return;
+            foreach (AlbumTrack track in Album.Tracks)
+                track.Title = TitleText.ApplyCasing(track.Title, casing);
+        }
+
+        public int SearchReplace(string find, string replace, bool matchCase)
+        {
+            if (Album == null || string.IsNullOrEmpty(find))
+                return 0;
+            int changed = 0;
+            foreach (AlbumTrack track in Album.Tracks)
+            {
+                string title = TitleText.Replace(track.Title, find, replace, matchCase);
+                if (title != track.Title)
+                {
+                    track.Title = title;
+                    changed++;
+                }
+            }
+            return changed;
+        }
+
+        public int PasteTracklist(string text)
+        {
+            if (Album == null)
+                return 0;
+            List<string> titles = TitleText.ParseTracklist(text);
+            List<AlbumTrack> tracks = OrderedTracks();
+            for (int i = 0; i < titles.Count && i < tracks.Count; i++)
+                tracks[i].Title = titles[i];
+            return titles.Count;
+        }
 
         private void PreviewNFO()
         {

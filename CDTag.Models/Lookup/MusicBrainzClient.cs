@@ -70,6 +70,8 @@ namespace CDTag.Model.Lookup
         public string CoverUrl { get; set; }
         /// <summary>When the data covers one disc of the album only (disc-ID lookups): that disc; otherwise 0.</summary>
         public int OnlyDisc { get; set; }
+        /// <summary>Disc names (MusicBrainz medium titles, CTDB disc names) by disc number.</summary>
+        public Dictionary<int, string> DiscNames { get; set; } = new Dictionary<int, string>();
 
         public ReleaseSearchResult ToSearchResult(int trackCount)
         {
@@ -337,6 +339,9 @@ namespace CDTag.Model.Lookup
                         if (details.Format == null)
                             details.Format = Str(medium, "format");
                         details.Discs++;
+                        string discName = Str(medium, "title");
+                        if (discName != null)
+                            details.DiscNames[disc > 0 ? disc : details.Discs] = discName;
 
                         JsonElement tracks;
                         if (!medium.TryGetProperty("tracks", out tracks) || tracks.ValueKind != JsonValueKind.Array)
