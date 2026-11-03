@@ -242,6 +242,50 @@ namespace CDTag.ViewModel.Tests.Tag
         }
 
         [Test]
+        public void TenOrMoreDiscsGetTwoDigitDiscNumbers()
+        {
+            string[] files = Enumerable.Range(1, 10).Select(d => @"CD" + d + @"\01.flac").ToArray();
+            string folder = MakeFolder("box (src)", "untagged.flac", files);
+            Album album = Load(folder, "Ween", "Box", Enumerable.Range(1, 10).Select(d => "Song " + d).ToArray());
+
+            string result = Finish(album, Profile());
+
+            Assert.That(File.Exists(Path.Combine(result, "CD1", "0101-ween-song_1-grp.flac")), Is.True);
+            Assert.That(File.Exists(Path.Combine(result, "CD10", "1001-ween-song_10-grp.flac")), Is.True);
+        }
+
+        [Test]
+        public void MultiDiscNamesGetTheDiscEvenWhenTheProfileLeavesItOut()
+        {
+            string folder = MakeFolder("two (src)", "untagged.flac", @"CD1\01.flac", @"CD2\01.flac");
+            Album album = Load(folder, "Ween", "Two", "One", "Two");
+            UserProfile profile = Profile();
+            profile.FileNaming.MultiCD.SingleArtist.AudioFile = "<LC><Track>-<Artist>-<Song></LC>-grp";
+
+            string result = Finish(album, profile);
+
+            Assert.That(File.Exists(Path.Combine(result, "CD1", "101-ween-one-grp.flac")), Is.True);
+            Assert.That(File.Exists(Path.Combine(result, "CD2", "201-ween-two-grp.flac")), Is.True);
+        }
+
+        [Test]
+        public void DiscFoldersWinWhenEveryFileIsTaggedDiscOne()
+        {
+            string folder = MakeFolder("tagged (src)", "untagged.flac", @"CD1\01.flac", @"CD2\01.flac");
+            foreach (string file in Directory.GetFiles(folder, "*.flac", SearchOption.AllDirectories))
+            {
+                var vorbis = new VorbisComment(file);
+                vorbis.Items.SetValue("DISCNUMBER", "1");
+                vorbis.Items.SetValue("TRACKNUMBER", "1");
+                vorbis.Save(file);
+            }
+
+            Album album = Load(folder, "Ween", "Two", "One", "Two");
+
+            Assert.That(album.Tracks.Select(t => t.DiscNumber), Is.EqualTo(new[] { "1", "2" }));
+        }
+
+        [Test]
         public void ProblemsStopFinishBeforeAnythingChanges()
         {
             string folder = MakeFolder("bad (src)", "untagged.flac", "01.flac", "02.flac");

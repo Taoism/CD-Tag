@@ -111,7 +111,11 @@ namespace CDTag.Model.Tag
             if (format == null || track == null)
                 return null;
             string extension = System.IO.Path.GetExtension(track.OriginalFileName ?? "").ToLowerInvariant();
-            return Build(format.AudioFile, track, null, _profile.FileNaming.FileCharacterLimit, extension);
+            string pattern = format.AudioFile;
+            // Multi-disc: file names need the disc in front of the track ("101", "0101") or discs would clash.
+            if (Discs > 1 && pattern != null && pattern.IndexOf("<Disc>", StringComparison.OrdinalIgnoreCase) < 0)
+                pattern = Regex.Replace(pattern, "<Track>", "<Disc><Track>", RegexOptions.IgnoreCase);
+            return Build(pattern, track, null, _profile.FileNaming.FileCharacterLimit, extension);
         }
 
         /// <summary>Name for a cue sheet, playlist, checksum file, NFO, image or log (with extension), or null.</summary>

@@ -63,7 +63,38 @@ namespace CDTag.Model.Tag
                 if (string.IsNullOrWhiteSpace(track.ReleaseDate))
                     track.ReleaseDate = folder.Year;
             }
-            return tracks;
+
+            // CD1 / CD2 folders whose files are all tagged with the same disc: the folders say which disc.
+            var discFolders = tracks.GroupBy(t => Path.GetDirectoryName(t.OriginalFileName), StringComparer.OrdinalIgnoreCase)
+                .Where(g => IsDiscFolderName(Path.GetFileName(g.Key)))
+                .ToList();
+            if (discFolders.Count > 1)
+            {
+                var discsPerFolder = discFolders.Select(g => g.Select(t => (t.DiscNumber ?? "").Trim()).Distinct().ToList()).ToList();
+                bool distinct = discsPerFolder.All(d => d.Count == 1) && discsPerFolder.Select(d => d[0]).Distinct().Count() == discFolders.Count;
+                if (!distinct)
+                {
+                    foreach (var group in discFolders)
+                    {
+                        System.Text.RegularExpressions.Match number = System.Text.RegularExpressions.Regex.Match(Path.GetFileName(group.Key), @"(\d+)");
+                        if (!number.Success)
+                            continue;
+                        foreach (AlbumTrack track in group)
+                            track.DiscNumber = int.Parse(number.Value).ToString();
+                    }
+                }
+            }
+
+            // Disc / track order (paths sort CD10 before CD2).
+            return tracks.OrderBy(t => SortNumber(t.DiscNumber, 1)).ThenBy(t => SortNumber(t.TrackNumber, 0))
+                         .ThenBy(t => t.OriginalFileName, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        private static int SortNumber(string text, int fallback)
+        {
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(text ?? "", @"\d+");
+            int number;
+            return match.Success && int.TryParse(match.Value, out number) ? number : fallback;
         }
 
         public Album(string path, ICollection<AlbumTrack> tracks)
