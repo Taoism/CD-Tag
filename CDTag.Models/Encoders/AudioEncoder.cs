@@ -214,6 +214,27 @@ namespace CDTag.Model.Encoders
             }
         }
 
+        private static readonly Dictionary<string, bool> FlacThreadSupport = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Threads for one FLAC encode: flac 1.5.0 and later encode in several threads (--threads); older versions don't know
+        /// the option, so they get 1. Up to 8 threads (more gains little for one CD track).
+        /// </summary>
+        public static int FlacThreads(string flac)
+        {
+            bool supported;
+            lock (FlacThreadSupport)
+            {
+                if (!FlacThreadSupport.TryGetValue(flac, out supported))
+                {
+                    Match m = Regex.Match(GetVersion(flac) ?? "", @"flac (\d+)\.(\d+)");
+                    supported = m.Success && (int.Parse(m.Groups[1].Value) > 1 || (int.Parse(m.Groups[1].Value) == 1 && int.Parse(m.Groups[2].Value) >= 5));
+                    FlacThreadSupport[flac] = supported;
+                }
+            }
+            return supported ? Math.Clamp(Environment.ProcessorCount, 1, 8) : 1;
+        }
+
         /// <summary>
         /// Encodes a WAV to FLAC (-8, with an audio MD5) and writes <paramref name="tags"/> as Vorbis comments ("ARTIST", "TITLE"...).
         /// Writes to a temporary name and renames at the end.
@@ -227,7 +248,11 @@ namespace CDTag.Model.Encoders
             string temp = target + ".~cdtag";
             try
             {
-                var arguments = new List<string> { "-8", "-f", "-o", temp, wav };
+                var arguments = new List<string> { "-8", "-f" };
+                int threads = FlacThreads(flac);
+                if (threads > 1)
+                    arguments.Add("--threads=" + threads.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                arguments.AddRange(new[] { "-o", temp, wav });
                 await RunAsync(flac, arguments, progress, cancellation).ConfigureAwait(false);
                 if (!File.Exists(temp))
                     throw new IOException("flac.exe did not write " + Path.GetFileName(target) + ".");

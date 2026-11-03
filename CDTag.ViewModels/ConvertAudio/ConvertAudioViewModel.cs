@@ -59,6 +59,8 @@ namespace CDTag.ViewModels.ConvertAudio
     {
         private const string AudioFilter = "Audio files (*.wav;*.flac;*.mp3)|*.wav;*.flac;*.mp3|All files (*.*)|*.*";
         private CancellationTokenSource _cancellation;
+        /// <summary>Most files encoded or decoded at the same time (more mostly waits for the disk).</summary>
+        private const int MaxParallel = 8;
 
         public ConvertAudioViewModel(IEventAggregator eventAggregator)
             : base(eventAggregator)
@@ -187,56 +189,94 @@ namespace CDTag.ViewModels.ConvertAudio
                 file.Status = queue.Contains(file) ? "Waiting" : "Skipped: " + (encode ? "not WAV/FLAC" : "not FLAC/MP3");
 
             _cancellation = new CancellationTokenSource();
+            CancellationToken token = _cancellation.Token;
             IsBusy = true;
             CommandManager.InvalidateRequerySuggested();
-            int done = 0, failed = 0, skipped = 0;
-            try
-            {
-                for (int i = 0; i < queue.Count; i++)
-                {
-                    ConvertFile file = queue[i];
-                    string target = Path.ChangeExtension(file.FullPath, encode ? ".mp3" : ".wav");
-                    if (File.Exists(target))
-                    {
-                        file.Status = "Skipped: " + Path.GetFileName(target) + " exists";
-                        skipped++;
-                        continue;
-                    }
+            int done = 0, failed = 0, skipped = 0, finished = 0;
+            string verb = encode ? "Encoding" : "Decoding";
 
-                    string verb = encode ? "Encoding" : "Decoding";
-                    StatusText = string.Format("{0} {1} of {2}: {3}", verb, i + 1, queue.Count, file.Name);
-                    file.Status = verb + "...";
-                    var progress = new Progress<int>(p => file.Status = string.Format("{0} {1}%", verb, p));
+            // Several files at once (LAME and flac use one core per file): one per core, at most 8.
+            int parallel = Math.Clamp(Environment.ProcessorCount, 1, MaxParallel);
+            var work = new List<Tuple<ConvertFile, string>>();
+            var targets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (ConvertFile file in queue)
+            {
+                string target = Path.ChangeExtension(file.FullPath, encode ? ".mp3" : ".wav");
+                if (File.Exists(target))
+                {
+                    file.Status = "Skipped: " + Path.GetFileName(target) + " exists";
+                    skipped++;
+                }
+                else if (!targets.Add(target))
+                {
+                    // e.g. "a.wav" and "a.flac" would both become "a.mp3"
+                    file.Status = "Skipped: another file in the list also makes " + Path.GetFileName(target);
+                    skipped++;
+                }
+                else
+                {
+                    work.Add(Tuple.Create(file, target));
+                }
+            }
+            StatusText = string.Format("{0} {1} files, {2} at a time...", verb, work.Count, Math.Min(parallel, Math.Max(1, work.Count)));
+
+            using (var gate = new SemaphoreSlim(parallel))
+            {
+                var tasks = work.Select(async item =>
+                {
+                    ConvertFile file = item.Item1;
+                    string target = item.Item2;
                     try
                     {
-                        if (encode)
-                            await AudioEncoder.EncodeMp3Async(file.FullPath, target, preset, progress, _cancellation.Token);
-                        else
-                            await AudioEncoder.DecodeAsync(file.FullPath, target, progress, _cancellation.Token);
-                        file.Status = "Done: " + Path.GetFileName(target);
-                        done++;
+                        await gate.WaitAsync(token);
                     }
                     catch (OperationCanceledException)
                     {
                         file.Status = "Cancelled";
-                        foreach (ConvertFile rest in queue.Skip(i + 1))
-                            rest.Status = "Cancelled";
-                        break;
+                        return;
+                    }
+                    try
+                    {
+                        file.Status = verb + "...";
+                        var progress = new Progress<int>(p => file.Status = string.Format("{0} {1}%", verb, p));
+                        if (encode)
+                            await AudioEncoder.EncodeMp3Async(file.FullPath, target, preset, progress, token);
+                        else
+                            await AudioEncoder.DecodeAsync(file.FullPath, target, progress, token);
+                        file.Status = "Done: " + Path.GetFileName(target);
+                        Interlocked.Increment(ref done);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        file.Status = "Cancelled";
                     }
                     catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is System.ComponentModel.Win32Exception)
                     {
                         file.Status = "Error: " + ex.Message;
-                        failed++;
+                        Interlocked.Increment(ref failed);
                     }
+                    finally
+                    {
+                        gate.Release();
+                        int count = Interlocked.Increment(ref finished);
+                        if (!token.IsCancellationRequested)
+                            StatusText = string.Format("{0}: {1} of {2} files finished ({3} at a time)", verb, count, work.Count, Math.Min(parallel, work.Count));
+                    }
+                }).ToList();
+
+                try
+                {
+                    await Task.WhenAll(tasks);
+                }
+                finally
+                {
+                    IsBusy = false;
+                    _cancellation.Dispose();
+                    _cancellation = null;
+                    CommandManager.InvalidateRequerySuggested();
                 }
             }
-            finally
-            {
-                IsBusy = false;
-                _cancellation.Dispose();
-                _cancellation = null;
-                CommandManager.InvalidateRequerySuggested();
-            }
+
 
             StatusText = string.Format("{0}: {1} done{2}{3}.", encode ? AudioEncoder.Describe(preset) : "Decode to WAV", done,
                                        skipped > 0 ? ", " + skipped + " skipped" : "", failed > 0 ? ", " + failed + " failed" : "");
