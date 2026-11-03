@@ -38,7 +38,7 @@ namespace CDTag.ViewModels.Tag
             ExitCommand = new DelegateCommand(() => Application.Current.MainWindow.Close());
             TagAlbumCommand = new DelegateCommand(TagAlbum);
             EditTagsCommand = new DelegateCommand(() => ShowWindow<IEditTagWindow>());
-            MassTagCommand = new DelegateCommand(() => ShowWindow<IMassTagWindow>());
+            MassTagCommand = new DelegateCommand(ShowMassTag);
             NewProfileCommand = new DelegateCommand(() => ShowWindow<INewProfileWindow>());
             EditProfileCommand = new DelegateCommand(() => ShowWindow<IEditProfileWindow>());
             SplitCueSheetCommand = new DelegateCommand(ShowSplitCue);
@@ -179,6 +179,27 @@ namespace CDTag.ViewModels.Tag
             split.Load(folder, cueFile);
             ShowWindow(window);
             if (split.HasSplit && DirectoryViewModel != null)
+                DirectoryViewModel.RefreshExplorer();
+        }
+
+        /// <summary>Mass Tag for the selected MP3/FLAC files, otherwise the files in the selected or current folder.</summary>
+        private void ShowMassTag()
+        {
+            var paths = new List<string>();
+            if (DirectoryViewModel != null && DirectoryViewModel.FileCollection != null)
+                paths.AddRange(DirectoryViewModel.FileCollection.Where(f => f.IsSelected && !f.IsDirectory && MassTagger.CanTag(f.FullName)).Select(f => f.FullName));
+            if (paths.Count == 0)
+            {
+                string folder = GetTagAlbumDirectory();
+                if (folder != null)
+                    paths.Add(folder);
+            }
+
+            IMassTagWindow window = IoC.Resolve<IMassTagWindow>();
+            var massTag = (CDTag.ViewModels.Tag.MassTag.IMassTagViewModel)window.DataContext;
+            massTag.AddFiles(paths);
+            ShowWindow(window);
+            if (massTag.HasSaved && DirectoryViewModel != null)
                 DirectoryViewModel.RefreshExplorer();
         }
 

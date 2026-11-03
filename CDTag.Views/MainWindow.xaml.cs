@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -95,8 +96,19 @@ namespace CDTag.Views
             AppOptionsData options = AppOptions.Current;
             bool useStartupFolder = options.StartupFolderMode == AppOptionsData.StartupSpecific &&
                                     !string.IsNullOrWhiteSpace(options.StartupFolder) && System.IO.Directory.Exists(options.StartupFolder);
-            if (useStartupFolder)
+            // A folder (or a file in it) on the command line wins: cdtag.exe "D:\Rips\Album".
+            string commandLineFolder = Environment.GetCommandLineArgs().Skip(1)
+                .Select(a => System.IO.Directory.Exists(a) ? a : System.IO.File.Exists(a) ? System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(a)) : null)
+                .FirstOrDefault(a => a != null);
+            if (commandLineFolder != null)
+            {
+                useStartupFolder = true;
+                tagView.FileExplorer.DirectoryController.InitialDirectory = System.IO.Path.GetFullPath(commandLineFolder);
+            }
+            else if (useStartupFolder)
+            {
                 tagView.FileExplorer.DirectoryController.InitialDirectory = options.StartupFolder;
+            }
 
             MainWindowSettings settings;
             if (SettingsFile.TryLoad("mainWindow.json", out settings))

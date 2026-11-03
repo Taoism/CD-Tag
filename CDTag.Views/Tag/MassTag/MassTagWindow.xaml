@@ -1,14 +1,92 @@
-﻿<Views:WindowViewBase 
+﻿<Views:WindowViewBase
     x:Class="CDTag.Views.Tag.MassTag.MassTagWindow"
     x:Name="massTagWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
-    xmlns:Views="clr-namespace:CDTag.Views" 
-    Title="Mass Tag" 
-    Height="300" 
-    Width="300"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:Views="clr-namespace:CDTag.Views"
+    Title="Mass Tag"
+    Width="1100"
+    Height="680"
+    MinWidth="760"
+    MinHeight="420"
+    WindowStartupLocation="CenterOwner"
 >
-    <Grid>
-        
+    <Window.Resources>
+        <Style x:Key="ChangedRow" TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsChanged}" Value="True">
+                    <Setter Property="FontWeight" Value="Bold" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="12" />
+            <ColumnDefinition Width="260" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Files and their tags (cells can be edited) -->
+        <DockPanel Grid.Column="0">
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,6,0,0">
+                <Button Content="Add..." Command="{Binding AddCommand}" MinWidth="70" Padding="7,2" />
+                <Button Content="Remove" Command="{Binding RemoveCommand}" MinWidth="70" Padding="7,2" Margin="6,0,0,0" ToolTip="Remove the selected files from the list" />
+                <Button Content="_Number tracks" Command="{Binding NumberCommand}" Padding="10,2" Margin="18,0,0,0" ToolTip="1, 2, 3... in list order (per folder), for the selected files or all" />
+                <Button Content="_Titles from file names" Command="{Binding TitlesFromNamesCommand}" Padding="10,2" Margin="6,0,0,0" ToolTip="Track number and title (and artist for 01-Artist-Title) from each file name" />
+            </StackPanel>
+            <DataGrid x:Name="RowsGrid" ItemsSource="{Binding Rows}" AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="FullRow"
+                      HeadersVisibility="Column" GridLinesVisibility="None" CanUserAddRows="False" CanUserDeleteRows="False" CanUserSortColumns="False"
+                      RowStyle="{StaticResource ChangedRow}" SelectionChanged="RowsGrid_SelectionChanged"
+                      AllowDrop="True" DragOver="RowsGrid_DragOver" Drop="RowsGrid_Drop">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="File" Binding="{Binding FileName}" IsReadOnly="True" Width="2*" />
+                    <DataGridTextColumn Header="#" Binding="{Binding TrackNumber, UpdateSourceTrigger=LostFocus}" Width="40" />
+                    <DataGridTextColumn Header="Artist" Binding="{Binding Artist, UpdateSourceTrigger=LostFocus}" Width="1.5*" />
+                    <DataGridTextColumn Header="Title" Binding="{Binding Title, UpdateSourceTrigger=LostFocus}" Width="2*" />
+                    <DataGridTextColumn Header="Album" Binding="{Binding Album, UpdateSourceTrigger=LostFocus}" Width="1.5*" />
+                    <DataGridTextColumn Header="Year" Binding="{Binding Year, UpdateSourceTrigger=LostFocus}" Width="55" />
+                    <DataGridTextColumn Header="Genre" Binding="{Binding Genre, UpdateSourceTrigger=LostFocus}" Width="*" />
+                    <DataGridTextColumn Header="Disc" Binding="{Binding DiscNumber, UpdateSourceTrigger=LostFocus}" Width="45" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" IsReadOnly="True" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+
+        <!-- Set fields on the selected files -->
+        <GroupBox Grid.Column="2" Header="Set on the selected files (or all)" VerticalAlignment="Top" Padding="8">
+            <StackPanel>
+                <ItemsControl ItemsSource="{Binding Setters}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="105" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox Content="{Binding Label}" IsChecked="{Binding IsEnabled, Mode=TwoWay}" VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="An empty value removes the field." Foreground="{DynamicResource Theme.ForegroundSecondary}" TextWrapping="Wrap" Margin="0,2,0,8" />
+                <Button Content="_Set" Command="{Binding ApplyCommand}" HorizontalAlignment="Right" MinWidth="80" Padding="7,2" />
+            </StackPanel>
+        </GroupBox>
+
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Margin="0,10,0,0" Text="{Binding StatusText}" TextTrimming="CharacterEllipsis" />
+
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="_Undo changes" Command="{Binding RevertCommand}" MinWidth="80" Padding="7,2" />
+            <Button Content="Sa_ve" Command="{Binding SaveCommand}" MinWidth="80" Padding="7,2" Margin="8,0,0,0" />
+            <Button Content="_Close" Command="{Binding CloseCommand}" IsCancel="True" MinWidth="80" Padding="7,2" Margin="8,0,0,0" />
+        </StackPanel>
     </Grid>
 </Views:WindowViewBase>
