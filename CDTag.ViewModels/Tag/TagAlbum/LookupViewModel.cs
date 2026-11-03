@@ -107,9 +107,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
                 RaisePropertyChanged("Tocs", null, null);
                 RaisePropertyChanged("HasManyTocs", null, null);
                 SelectedToc = _tocs.FirstOrDefault();
-                // A rip with a TOC is best matched by it.
-                if (_tocs.Count > 0)
-                    SelectedSource = Sources.First(s => s.Value == LookupSource.CueToolsDb);
+                RaisePropertyChanged("TocInfo", null, null);
             }
         }
 
