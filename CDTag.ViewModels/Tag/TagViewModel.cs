@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using CDTag.ViewModels.Tag.TagAlbum;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +6,7 @@ using CDTag.Model.Profile;
 using CDTag.Model.Tag;
 using CDTag.ViewModels.Profile.ChooseProfile;
 using CDTag.Views.Interfaces.Profile.ChooseProfile;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using CDTag.Common;
@@ -107,8 +108,20 @@ namespace CDTag.ViewModels.Tag
             ProfileSelector.ActiveProfile = chosen;
 
             ITagAlbumWindow tagAlbumWindow = IoC.Resolve<ITagAlbumWindow>();
-            ((ITagAlbumViewModel)tagAlbumWindow.DataContext).Load(directory, chosen);
+            var tagAlbum = (ITagAlbumViewModel)tagAlbumWindow.DataContext;
+            tagAlbum.Load(directory, chosen);
             ShowWindow(tagAlbumWindow);
+
+            // Show the result: follow the folder when it was renamed while open, otherwise refresh the list.
+            if (tagAlbum.FinishedDirectory != null && DirectoryViewModel != null)
+            {
+                string current = (DirectoryViewModel.CurrentDirectory ?? "").TrimEnd('\\');
+                string old = directory.TrimEnd('\\');
+                if (string.Equals(current, old, StringComparison.OrdinalIgnoreCase) && Directory.Exists(tagAlbum.FinishedDirectory))
+                    DirectoryViewModel.CurrentDirectory = tagAlbum.FinishedDirectory;
+                else
+                    DirectoryViewModel.RefreshExplorer();
+            }
         }
 
         /// <summary>The first folder selected in the file list, otherwise the current folder.</summary>

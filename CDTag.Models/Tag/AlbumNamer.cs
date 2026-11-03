@@ -115,7 +115,23 @@ namespace CDTag.Model.Tag
         }
 
         /// <summary>Name for a cue sheet, playlist, checksum file, NFO, image or log (with extension), or null.</summary>
-        public string GetFileName(NameKind kind, string imageText = null, string extension = null)
+        /// <param name="disc">Disc for &lt;Disc&gt; in per-disc names (playlists of multi-disc albums); 0 = none.</param>
+        public string GetFileName(NameKind kind, string imageText = null, string extension = null, int disc = 0)
+        {
+            _disc = disc;
+            try
+            {
+                return GetFileNameCore(kind, imageText, extension);
+            }
+            finally
+            {
+                _disc = 0;
+            }
+        }
+
+        private int _disc;
+
+        private string GetFileNameCore(NameKind kind, string imageText, string extension)
         {
             NamingFormat format = Format;
             if (format == null)
@@ -213,7 +229,7 @@ namespace CDTag.Model.Tag
                 case "TITLE": return track != null ? track.Title : null;
                 case "TRACK": return track != null ? FormatTrack(track.TrackNumber) : null;
                 case "TRACKS": return _album.Tracks.Count.ToString(CultureInfo.InvariantCulture);
-                case "DISC": return track != null ? FormatDisc(track.DiscNumber) : null;
+                case "DISC": return track != null ? FormatDisc(track.DiscNumber) : _disc > 0 ? FormatDisc(_disc.ToString(CultureInfo.InvariantCulture)) : null;
                 case "DISCS": return Discs.ToString(CultureInfo.InvariantCulture);
                 case "PROFILE": return _profile.ProfileName;
                 case "IMAGETEXT": return imageText;

@@ -267,14 +267,24 @@
                 <Button Content="_Look up" Command="{Binding LookupCommand}" Padding="10,3" Margin="8,0,0,0"
                         ToolTip="Look up this album (MusicBrainz, CUETools DB: track titles, date, label, catalog #, cover)" />
             </StackPanel>
-            <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="12,0" Foreground="{DynamicResource Theme.ForegroundSecondary}"
-                       Text="{Binding Profile.ProfileName, Mode=OneWay, StringFormat='Profile: {0}', FallbackValue='Profile: (none)', TargetNullValue='Profile: (none)'}" />
+            <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="12,0" Foreground="{DynamicResource Theme.ForegroundSecondary}" TextTrimming="CharacterEllipsis">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Text" Value="{Binding Profile.ProfileName, Mode=OneWay, StringFormat='Profile: {0}', FallbackValue='Profile: (none)', TargetNullValue='Profile: (none)'}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsFinishing}" Value="True">
+                                <Setter Property="Text" Value="{Binding FinishStatus}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
             <Button Grid.Column="2" Content="_Previous" Command="{Binding PreviousCommand}" MinWidth="86" Padding="10,3" Margin="8,0,0,0" />
             <Grid Grid.Column="3" Margin="8,0,0,0">
                 <Button Content="_Next" Command="{Binding NextCommand}" MinWidth="86" Padding="10,3" IsDefault="True"
                         Visibility="{Binding Page, Converter={StaticResource IsEqualToVisibilityConverter}, ConverterParameter=0}" />
                 <Button Content="_Finish" Command="{Binding FinishCommand}" MinWidth="86" Padding="10,3"
-                        ToolTip="Writing tags and renaming files is not available yet" ToolTipService.ShowOnDisabled="True"
+                        ToolTip="Write the tags and cover, rename the files and folder, create the NFO, playlist and checksum files"
                         Visibility="{Binding Page, Converter={StaticResource IsEqualToVisibilityConverter}, ConverterParameter=1}" />
             </Grid>
         </Grid>

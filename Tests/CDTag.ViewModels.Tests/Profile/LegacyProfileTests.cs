@@ -22,7 +22,10 @@ namespace CDTag.ViewModel.Tests.Profile
             "[NAMEOPT]\r\nCharLimit=128\r\nStdOnly=1\r\nForeign=0\r\nDirCharLimit=100\r\n\r\n" +
             "[SMARTCASE]\r\nAlpha=1\r\nCaps=0\r\n\r\n" +
             "[NFO_OPTIONS]\r\nShowReleaseScreen=1\r\nTemplate=GRP.nfo\r\nShowAvgVBR=0\r\nMultiCDHeader=Disc #Disc/#Discs&nl;\r\nDecChar=,\r\nAutoPreviewNFO=1\r\n\r\n" +
-            "[TAG_PROCESS]\r\nRenameDIR=1\r\nRenameMP3=1\r\nRenameCUE=0\r\nMakeM3U=1\r\nMakeSFV=1\r\nMakeNFO=1\r\nRenameNFO=0\r\nDeleteOld=1\r\nRemoveEmptyDirs=0\r\nRenameOrMakeNFO=0\r\n";
+            "[TAG_PROCESS]\r\nRenameDIR=1\r\nRenameMP3=1\r\nRenameCUE=0\r\nMakeM3U=1\r\nMakeSFV=1\r\nMakeNFO=1\r\nRenameNFO=0\r\nDeleteOld=1\r\nRemoveEmptyDirs=0\r\nRenameOrMakeNFO=0\r\n\r\n" +
+            "[TAGGING]\r\nID3V2=WriteAlways\r\nID3V1=WriteIfExists\r\nLongTRCK=1\r\nFLAC_ID3V2=Remove\r\nFLAC_ID3V1=Remove\r\nSeparateM3U=1\r\n\r\n" +
+            "[TAG_ID3V2]\r\nNoWriteID3v2Comments=1\r\n\r\n" +
+            "[SFVMD5]\r\nHideGeneratedBy=1\r\nHideFileInfo=0\r\n";
 
         private string _directory;
 
@@ -105,6 +108,15 @@ namespace CDTag.ViewModel.Tests.Profile
             Assert.That(profile.Finish.CreatePlaylist, Is.True);
             Assert.That(profile.Finish.DeleteEmptySubdirectories, Is.False);
             Assert.That(profile.Finish.NFO, Is.EqualTo(FinishNFO.CreateNew));
+
+            Assert.That(profile.Tagging.Id3v2, Is.EqualTo(TagAction.WriteAlways));
+            Assert.That(profile.Tagging.Id3v1, Is.EqualTo(TagAction.WriteIfExists));
+            Assert.That(profile.Tagging.FlacId3v2, Is.EqualTo(TagAction.Remove));
+            Assert.That(profile.Tagging.LongTrackNumbers, Is.True);
+            Assert.That(profile.Tagging.SeparatePlaylistPerDisc, Is.True);
+            Assert.That(profile.Tagging.NoId3v2Comment, Is.True);
+            Assert.That(profile.Tagging.ChecksumHideGeneratedBy, Is.True);
+            Assert.That(profile.Tagging.ChecksumHideFileInfo, Is.False);
         }
 
         [Test]

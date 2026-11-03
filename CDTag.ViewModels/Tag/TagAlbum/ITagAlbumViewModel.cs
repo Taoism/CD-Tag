@@ -16,6 +16,9 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         ICommand NextCommand { get; }
         ICommand LookupCommand { get; }
 
+        /// <summary>The album folder after Finish (it may have been renamed), or null.</summary>
+        string FinishedDirectory { get; }
+
         /// <summary>Changes the casing of every song name.</summary>
         void ApplyCasing(TitleCasing casing);
 

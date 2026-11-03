@@ -42,8 +42,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         public TagAlbumViewModel(IEventAggregator eventAggregator)
             : base(eventAggregator)
         {
-            // Writing tags and renaming is the next step; until then Finish stays disabled.
-            _finishCommand = new DelegateCommand(() => { }, () => false);
+            _finishCommand = new DelegateCommand(Finish, () => Album != null && Profile != null && Page == AlbumPage && !IsFinishing);
             _previewNFOCommand = new DelegateCommand(PreviewNFO, () => Album != null && Profile != null);
             _previousCommand = new DelegateCommand(() => Page = ReleasePage, () => Page == AlbumPage && HasReleasePage);
             _nextCommand = new DelegateCommand(() => Page = AlbumPage, () => Page == ReleasePage);
@@ -251,6 +250,74 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             for (int i = 0; i < titles.Count && i < tracks.Count; i++)
                 tracks[i].Title = titles[i];
             return titles.Count;
+        }
+
+        public bool IsFinishing
+        {
+            get { return Get<bool>("IsFinishing"); }
+            private set { Set("IsFinishing", value); System.Windows.Input.CommandManager.InvalidateRequerySuggested(); }
+        }
+
+        /// <summary>What Finish is doing ("Tagging 01.flac").</summary>
+        public string FinishStatus
+        {
+            get { return Get<string>("FinishStatus"); }
+            private set { Set("FinishStatus", value); }
+        }
+
+        /// <summary>The album folder after Finish (renamed), or null when Finish has not run.</summary>
+        public string FinishedDirectory { get; private set; }
+
+        private async void Finish()
+        {
+            string templatePath = NfoGenerator.ResolveTemplatePath(Profile, _pathService.ProfileDirectory);
+            string template = templatePath != null ? NfoGenerator.ReadTemplate(templatePath) : null;
+            var finisher = new AlbumFinisher(Profile, Album, Release, template);
+
+            FinishPlan plan;
+            try
+            {
+                plan = finisher.Plan();
+            }
+            catch (Exception ex)
+            {
+                MessageBox("Finish could not check the album:" + Environment.NewLine + Environment.NewLine + ex.Message, "Finish",
+                           System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return;
+            }
+
+            if (!plan.CanRun)
+            {
+                MessageBox("Nothing was changed. Fix these first:" + Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, plan.Problems.Distinct()),
+                           "Finish", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            if (MessageBox(plan.Describe() + Environment.NewLine + Environment.NewLine + "Continue?", "Finish",
+                           System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question) != System.Windows.MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            IsFinishing = true;
+            try
+            {
+                FinishedDirectory = await System.Threading.Tasks.Task.Run(() => finisher.Run(plan, status => BeginInvoke(() => FinishStatus = status)));
+                FinishStatus = null;
+                CloseWindow(true);
+            }
+            catch (Exception ex)
+            {
+                FinishStatus = null;
+                FinishedDirectory = Directory.Exists(plan.NewDirectory) ? plan.NewDirectory : plan.OldDirectory;
+                MessageBox("Finish stopped: " + ex.Message + Environment.NewLine + Environment.NewLine +
+                           "Some files may already be tagged or renamed. Check the folder before running Finish again.",
+                           "Finish", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsFinishing = false;
+            }
         }
 
         private void PreviewNFO()

@@ -155,8 +155,40 @@ namespace CDTag.Model.Profile
             ConvertExtInfo(ini, profile);
             ConvertReleaseInfo(ini, profile);
             profile.DeleteFiles = List(ini, "DELETE_LIST").Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
+            profile.Tagging = ConvertTagging(ini);
 
             return profile;
+        }
+
+        private static TaggingOptions ConvertTagging(Dictionary<string, Dictionary<string, string>> ini)
+        {
+            Dictionary<string, string> tagging = Section(ini, "TAGGING");
+            Dictionary<string, string> id3v2 = Section(ini, "TAG_ID3V2");
+            Dictionary<string, string> checksums = Section(ini, "SFVMD5");
+            var options = new TaggingOptions();
+            options.Id3v2 = Action(Get(tagging, "ID3V2"), options.Id3v2);
+            options.Id3v1 = Action(Get(tagging, "ID3V1"), options.Id3v1);
+            options.FlacId3v2 = Action(Get(tagging, "FLAC_ID3V2"), options.FlacId3v2);
+            options.FlacId3v1 = Action(Get(tagging, "FLAC_ID3V1"), options.FlacId3v1);
+            options.LongTrackNumbers = GetBool(tagging, "LongTRCK", options.LongTrackNumbers);
+            options.UseId3v1Comment = GetBool(tagging, "UseID3v1Comment");
+            options.SeparatePlaylistPerDisc = GetBool(tagging, "SeparateM3U", options.SeparatePlaylistPerDisc);
+            options.NoId3v2Comment = GetBool(id3v2, "NoWriteID3v2Comments");
+            options.ChecksumHideGeneratedBy = GetBool(checksums, "HideGeneratedBy");
+            options.ChecksumHideFileInfo = GetBool(checksums, "HideFileInfo");
+            return options;
+        }
+
+        private static TagAction Action(string value, TagAction fallback)
+        {
+            switch ((value ?? "").Trim().ToLowerInvariant())
+            {
+                case "writealways": return TagAction.WriteAlways;
+                case "writeifexists": return TagAction.WriteIfExists;
+                case "remove": return TagAction.Remove;
+                case "leave": case "none": case "ignore": return TagAction.Leave;
+                default: return fallback;
+            }
         }
 
         /// <summary>

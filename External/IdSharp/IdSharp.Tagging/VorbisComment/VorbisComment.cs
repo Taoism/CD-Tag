@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Text;
 using IdSharp.Common.Utils;
@@ -169,6 +170,24 @@ namespace IdSharp.Tagging.VorbisComment
                     result.Add(block.BlockData);
             }
             return result;
+        }
+
+        /// <summary>
+        /// Replaces the FLAC PICTURE metadata blocks written by <see cref="Save"/> (CD-Tag addition).
+        /// Each entry is a block body as defined by the FLAC format; an empty list removes all pictures.
+        /// </summary>
+        public void SetPictureBlocks(IEnumerable<byte[]> blocks)
+        {
+            var list = new List<FlacMetaDataBlock>();
+            if (_metaDataBlockList != null)
+                list.AddRange(_metaDataBlockList.Where(b => b.BlockType != FlacMetaDataBlockType.Picture));
+            foreach (byte[] data in blocks ?? new byte[0][])
+            {
+                var block = new FlacMetaDataBlock(FlacMetaDataBlockType.Picture);
+                block.SetBlockData(data);
+                list.Add(block);
+            }
+            _metaDataBlockList = list;
         }
 
         /// <summary>

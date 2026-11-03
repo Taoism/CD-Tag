@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Xml.Serialization;
 using CDTag.Common;
@@ -108,6 +108,13 @@ namespace CDTag.Model.Profile
         {
             get { return Get<ReleaseInfoOptions>("ReleaseInfo"); }
             set { Set("ReleaseInfo", value); }
+        }
+
+        /// <summary>Tag writing, playlist and checksum options (null = defaults).</summary>
+        public TaggingOptions Tagging
+        {
+            get { return Get<TaggingOptions>("Tagging"); }
+            set { Set("Tagging", value); }
         }
 
         /// <summary>File patterns deleted from the album folder on Finish (e.g. "*.m3u").</summary>

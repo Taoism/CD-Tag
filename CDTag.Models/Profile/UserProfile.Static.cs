@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text;
 using CDTag.Common;
@@ -47,7 +47,7 @@ namespace CDTag.Model.Profile
             // Profiles imported from CD-Tag 2.x before naming rules/release lists were converted:
             // convert again from the preserved original, keeping the choices made since.
             string original = Path.Combine(Path.GetDirectoryName(path), profile.ProfileName + LegacyProfile.BackupExtension);
-            if (profile.NamingRules == null && File.Exists(original))
+            if ((profile.NamingRules == null || profile.Tagging == null) && File.Exists(original))
             {
                 string fileTypes = profile.AudioFileTypes;
                 UserProfile upgraded = LegacyProfile.Import(original, Path.GetDirectoryName(path), profile.ProfileName);
