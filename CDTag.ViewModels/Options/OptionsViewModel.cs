@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -110,7 +110,7 @@ namespace CDTag.ViewModel.Options
 
         private static string EncoderInfo(string configured, string folder, string exe)
         {
-            string path = !string.IsNullOrWhiteSpace(configured) ? configured.Trim() : Path.Combine(AppContext.BaseDirectory, "Encoders", folder, exe);
+            string path = !string.IsNullOrWhiteSpace(configured) ? configured.Trim() : CDTag.Model.Encoders.AudioEncoder.BundledPath(folder, exe) ?? Path.Combine(AppContext.BaseDirectory, "Encoders", folder, exe);
             if (!File.Exists(path))
                 return string.IsNullOrWhiteSpace(configured) ? string.Format("Not found in Encoders\\{0}. Choose {1}.", folder, exe) : "File not found.";
             string version = CDTag.Model.Encoders.AudioEncoder.GetVersion(path);

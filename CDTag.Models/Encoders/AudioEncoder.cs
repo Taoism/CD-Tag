@@ -45,8 +45,8 @@ namespace CDTag.Model.Encoders
         {
             if (!string.IsNullOrWhiteSpace(configured) && File.Exists(configured))
                 return configured;
-            string bundled = Path.Combine(AppContext.BaseDirectory, "Encoders", folder, exe);
-            if (File.Exists(bundled))
+            string bundled = BundledPath(folder, exe);
+            if (bundled != null)
                 return bundled;
             foreach (string dir in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
             {
@@ -59,6 +59,21 @@ namespace CDTag.Model.Encoders
                 catch (ArgumentException)
                 {
                 }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// An encoder shipped with CD-Tag: bin\Encoders\&lt;folder&gt;\&lt;exe&gt; (release layout) or Encoders\&lt;folder&gt;\&lt;exe&gt;
+        /// next to cdtag.exe. Null when neither exists.
+        /// </summary>
+        public static string BundledPath(string folder, string exe)
+        {
+            foreach (string root in new[] { Path.Combine(AppContext.BaseDirectory, "bin"), AppContext.BaseDirectory })
+            {
+                string path = Path.Combine(root, "Encoders", folder, exe);
+                if (File.Exists(path))
+                    return path;
             }
             return null;
         }
