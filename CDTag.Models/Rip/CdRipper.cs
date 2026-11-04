@@ -86,15 +86,45 @@ namespace CDTag.Model.Rip
         /// <summary>Sectors per read: 26, or 24 with C2 data (the transfer must stay below 64 KB).</summary>
         private int Block { get { return UseC2 ? CdDrive.MaxSectorsPerC2Read : CdDrive.MaxSectorsPerRead; } }
 
+        public static readonly Cue.WavFormat CdFormat = new Cue.WavFormat { Channels = 2, SampleRate = 44100, BitsPerSample = 16, BlockAlign = 4 };
+
         /// <summary>Rips the audio track at <paramref name="index"/> (into the audio-track list) to <paramref name="wavPath"/>.</summary>
         public RipTrackResult RipTrack(int index, string wavPath, IProgress<RipProgress> progress, CancellationToken cancellation)
+        {
+            string temp = wavPath + ".~cdtag";
+            try
+            {
+                RipTrackResult result;
+                using (var output = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
+                {
+                    List<CdTrack> audio = _toc.Where(t => t.IsAudio).ToList();
+                    byte[] header = CdFormat.Header((long)audio[index].Sectors * CdDrive.SamplesPerSector * 4);
+                    output.Write(header, 0, header.Length);
+                    result = RipTrackTo(index, output, progress, cancellation);
+                }
+                result.WavPath = wavPath;
+                File.Move(temp, wavPath, true);
+                return result;
+            }
+            finally
+            {
+                if (File.Exists(temp))
+                    File.Delete(temp);
+            }
+        }
+
+        /// <summary>
+        /// Rips the audio track at <paramref name="index"/> and writes its samples (no header) to <paramref name="output"/>,
+        /// e.g. a whole-disc image.
+        /// </summary>
+        public RipTrackResult RipTrackTo(int index, Stream output, IProgress<RipProgress> progress, CancellationToken cancellation)
         {
             List<CdTrack> audio = _toc.Where(t => t.IsAudio).ToList();
             CdTrack track = audio[index];
             bool first = index == 0, last = index == audio.Count - 1;
             long firstSample = (long)track.StartSector * CdDrive.SamplesPerSector;
             long samples = (long)track.Sectors * CdDrive.SamplesPerSector;
-            var result = new RipTrackResult { Number = track.Number, WavPath = wavPath, Samples = samples, Tested = TestAndCopy };
+            var result = new RipTrackResult { Number = track.Number, Samples = samples, Tested = TestAndCopy };
 
             Dictionary<int, uint> testBlocks = null;
             if (TestAndCopy)
@@ -109,34 +139,19 @@ namespace CDTag.Model.Rip
             var ar = new AccurateRip.TrackCrc(samples, first, last);
             var ctdb = new Ctdb.TrackCrc(samples, first, last, (long)(_leadOut - _firstAudio) * CdDrive.SamplesPerSector);
             int peak = 0;
-            string temp = wavPath + ".~cdtag";
-            try
+            ReadRange(firstSample, samples, testBlocks, null, (b, o, c) =>
             {
-                using (var output = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
+                output.Write(b, o, c);
+                copyCrc.Add(b, o, c);
+                ar.Add(b, o, c);
+                ctdb.Add(b, o, c);
+                for (int i = o; i + 1 < o + c; i += 2)
                 {
-                    var format = new Cue.WavFormat { Channels = 2, SampleRate = 44100, BitsPerSample = 16, BlockAlign = 4 };
-                    byte[] header = format.Header(samples * 4);
-                    output.Write(header, 0, header.Length);
-                    ReadRange(firstSample, samples, testBlocks, null, (b, o, c) =>
-                    {
-                        output.Write(b, o, c);
-                        copyCrc.Add(b, o, c);
-                        ar.Add(b, o, c);
-                        ctdb.Add(b, o, c);
-                        for (int i = o; i + 1 < o + c; i += 2)
-                        {
-                            int v = Math.Abs((int)(short)(b[i] | (b[i + 1] << 8)));
-                            if (v > peak) peak = v;
-                        }
-                    }, index, "Copy", progress, cancellation, result);
+                    int v = Math.Abs((int)(short)(b[i] | (b[i + 1] << 8)));
+                    if (v > peak) peak = v;
                 }
-                File.Move(temp, wavPath, true);
-            }
-            finally
-            {
-                if (File.Exists(temp))
-                    File.Delete(temp);
-            }
+            }, index, "Copy", progress, cancellation, result);
+
             result.CopyCrc = copyCrc.Value;
             result.ArV1 = ar.V1;
             result.ArV2 = ar.V2;
@@ -146,13 +161,32 @@ namespace CDTag.Model.Rip
         }
 
         /// <summary>
+        /// Hidden track one audio: the sectors before track 1 (from LBA 0), test & copy, written to <paramref name="output"/>.
+        /// Nothing when track 1 starts at 0.
+        /// </summary>
+        public void RipBeforeFirstTrack(Stream output, CancellationToken cancellation)
+        {
+            if (_firstAudio <= 0)
+                return;
+            long samples = (long)_firstAudio * CdDrive.SamplesPerSector;
+            var dummy = new RipTrackResult();
+            Dictionary<int, uint> testBlocks = null;
+            if (TestAndCopy)
+            {
+                testBlocks = new Dictionary<int, uint>();
+                ReadRange(0, samples, null, testBlocks, (b, o, c) => { }, 0, "Test", null, cancellation, dummy, readFrom: 0);
+            }
+            ReadRange(0, samples, testBlocks, null, (b, o, c) => output.Write(b, o, c), 0, "Copy", null, cancellation, dummy, readFrom: 0);
+        }
+
+        /// <summary>
         /// Delivers samples [firstSample, firstSample + count) of the disc, offset-corrected, to <paramref name="sink"/>.
         /// Test pass: records each block's CRC in <paramref name="record"/>. Copy pass: compares with <paramref name="compare"/>
         /// and re-reads blocks that differ.
         /// </summary>
         private void ReadRange(long firstSample, long count, Dictionary<int, uint> compare, Dictionary<int, uint> record,
                                Action<byte[], int, int> sink, int index, string pass, IProgress<RipProgress> progress,
-                               CancellationToken cancellation, RipTrackResult result)
+                               CancellationToken cancellation, RipTrackResult result, int? readFrom = null)
         {
             long rawFirst = firstSample + _offset;           // where the wanted samples are in the drive's (uncorrected) data
             long rawEnd = rawFirst + count;
@@ -166,7 +200,7 @@ namespace CDTag.Model.Rip
             {
                 cancellation.ThrowIfCancellationRequested();
                 int n = Math.Min(Block, endSector - sector);
-                ReadBlock(sector, n, buffer, compare, record, result);
+                ReadBlock(sector, n, buffer, compare, record, result, readFrom ?? _firstAudio);
 
                 // slice of this block inside the wanted range
                 long blockFirst = (long)sector * CdDrive.SamplesPerSector;
@@ -201,9 +235,9 @@ namespace CDTag.Model.Rip
         /// Reads one block. Sectors outside the audio area are silence, unless <see cref="Overread"/> is on and the drive can
         /// read them (into the lead-in before track 1 / the lead-out after the last track).
         /// </summary>
-        private void ReadBlock(int sector, int n, byte[] buffer, Dictionary<int, uint> compare, Dictionary<int, uint> record, RipTrackResult result)
+        private void ReadBlock(int sector, int n, byte[] buffer, Dictionary<int, uint> compare, Dictionary<int, uint> record, RipTrackResult result, int lowerBound)
         {
-            int readFirst = Math.Max(sector, _firstAudio), readEnd = Math.Min(sector + n, _leadOut);
+            int readFirst = Math.Max(sector, lowerBound), readEnd = Math.Min(sector + n, _leadOut);
             Array.Clear(buffer, 0, n * CdDrive.SectorBytes);
             bool alreadyRead = false;
             if (Overread && (readFirst != sector || readEnd != sector + n) && !_overreadFailed)

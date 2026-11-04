@@ -43,5 +43,39 @@ namespace CDTag.ViewModels.Tests.Rip
                 "    INDEX 01 00:00:00\r\n";
             Assert.That(cue, Does.EndWith(expected));
         }
+
+        [Test]
+        public void ImageCue_AllTracksInOneFile()
+        {
+            var toc = new List<CdTrack>
+            {
+                new CdTrack { Number = 1, StartSector = 33, EndSector = 15000, IsAudio = true },   // 33 sectors of audio before track 1
+                new CdTrack { Number = 2, StartSector = 15000, EndSector = 30000, IsAudio = true }
+            };
+            var extras = new DiscExtras { GapsDetected = true };
+            extras.Pregaps[2] = 152;
+            extras.Isrc[1] = "USAAA2600001";
+            var job = new RipJob
+            {
+                Toc = toc, Extras = extras,
+                Album = new RipAlbum { Artist = "Artist", Title = "Album", Tracks = { new KeyValuePair<string, string>("One", ""), new KeyValuePair<string, string>("Two", "") } },
+                Settings = new RipSettings { Format = RipFormat.Flac, Image = true }
+            };
+            string cue = job.ImageCueText(@"C:\x\Artist - Album.flac");
+            string expected =
+                "FILE \"Artist - Album.flac\" WAVE\r\n" +
+                "  TRACK 01 AUDIO\r\n" +
+                "    TITLE \"One\"\r\n" +
+                "    PERFORMER \"Artist\"\r\n" +
+                "    ISRC USAAA2600001\r\n" +
+                "    INDEX 00 00:00:00\r\n" +
+                "    INDEX 01 00:00:33\r\n" +
+                "  TRACK 02 AUDIO\r\n" +
+                "    TITLE \"Two\"\r\n" +
+                "    PERFORMER \"Artist\"\r\n" +
+                "    INDEX 00 03:17:73\r\n" +
+                "    INDEX 01 03:20:00\r\n";
+            Assert.That(cue, Does.EndWith(expected));
+        }
     }
 }

@@ -149,6 +149,8 @@
                 </StackPanel>
                 <StackPanel Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,6,0,0">
                     <CheckBox Content="Test &amp; copy (read every track twice)" IsChecked="{Binding TestAndCopy, Mode=TwoWay}" Margin="0,0,20,0" />
+                    <CheckBox Content="Copy image + CUE (one file for the disc)" IsChecked="{Binding RipImage, Mode=TwoWay}" Margin="0,0,20,0"
+                              ToolTip="Like EAC's Copy Image &amp; Create CUE Sheet: the whole disc in one file (audio before track 1 included), with a CUE sheet of all tracks, gaps and ISRCs" />
                     <CheckBox Content="Eject when done" IsChecked="{Binding EjectWhenDone, Mode=TwoWay}" />
                 </StackPanel>
             </Grid>

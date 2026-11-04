@@ -137,6 +137,8 @@ namespace CDTag.ViewModels.Rip
         public bool C2Supported { get { return Get<bool>("C2Supported"); } private set { Set("C2Supported", value); } }
         /// <summary>Overread into the lead-in and lead-out (from EAC's drive setting).</summary>
         public bool Overread { get { return Get<bool>("Overread"); } set { Set("Overread", value); } }
+        /// <summary>Copy Image &amp; Create CUE Sheet: one file for the whole disc.</summary>
+        public bool RipImage { get { return Get<bool>("RipImage"); } set { Set("RipImage", value); } }
         public string SettingsSource { get { return Get<string>("SettingsSource"); } private set { Set("SettingsSource", value); } }
         private EacSettings _eac;
         private int? _databaseOffset;
@@ -523,7 +525,7 @@ namespace CDTag.ViewModels.Rip
             {
                 Eac = _eac, OutputFolder = OutputFolder, Naming = Naming, VariousNaming = VariousNaming, UseVariousNaming = _eac == null || _eac.UseVariousNaming,
                 Format = SelectedFormat.Format, Mp3Preset = SelectedFormat.Preset, TestAndCopy = TestAndCopy, EjectWhenDone = EjectWhenDone,
-                Speed = SelectedSpeed, UseC2 = UseC2, Overread = Overread
+                Speed = SelectedSpeed, UseC2 = UseC2, Overread = Overread, Image = RipImage
             };
             if (_vendor != null)
             {
@@ -535,7 +537,7 @@ namespace CDTag.ViewModels.Rip
                 });
             }
             var job = new RipJob { Toc = _toc, Album = CurrentAlbum(), Settings = settings, DriveName = _driveName, Offset = offset, OffsetSource = offsetSource, Extras = _extras };
-            List<string> paths = job.TrackPaths();
+            List<string> paths = job.OutputPaths();
             string existing = paths.FirstOrDefault(File.Exists);
             if (existing != null)
             {

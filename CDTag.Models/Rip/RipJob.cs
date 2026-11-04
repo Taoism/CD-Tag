@@ -31,6 +31,8 @@ namespace CDTag.Model.Rip
         /// <summary>Read offset in samples; null = from AccurateRip's drive database.</summary>
         public int? ReadOffset { get; set; }
         public bool TestAndCopy { get; set; } = true;
+        /// <summary>Copy Image &amp; Create CUE Sheet: one file for the whole disc instead of one per track.</summary>
+        public bool Image { get; set; }
         /// <summary>Read speed in "x"; 0 = maximum.</summary>
         public int Speed { get; set; }
         public bool UseC2 { get; set; }
@@ -145,6 +147,11 @@ namespace CDTag.Model.Rip
 
         public async Task RunAsync(CdDrive drive, IProgress<RipJobProgress> progress, CancellationToken cancellation)
         {
+            if (Settings.Image)
+            {
+                await RunImageAsync(drive, progress, cancellation).ConfigureAwait(false);
+                return;
+            }
             List<CdTrack> audio = Audio;
             List<string> paths = TrackPaths();
             foreach (string folder in paths.Select(Path.GetDirectoryName).Distinct(StringComparer.OrdinalIgnoreCase))
@@ -216,7 +223,13 @@ namespace CDTag.Model.Rip
                 });
             }
 
-            ar = await arTask.ConfigureAwait(false);
+            await FinishAsync(arTask, ctdbTask, paths, CueSheetText(paths)).ConfigureAwait(false);
+        }
+
+        /// <summary>The AccurateRip and CTDB results, then the CUE sheet and the log.</summary>
+        private async Task FinishAsync(Task<List<List<AccurateRipEntry>>> arTask, Task<List<CDTag.Model.Lookup.CtdbEntry>> ctdbTask, List<string> paths, string cueText)
+        {
+            List<List<AccurateRipEntry>> ar = await arTask.ConfigureAwait(false);
             AccurateRipLines.Clear();
             AccurateTracks = 0;
             for (int i = 0; i < Results.Count; i++)
@@ -238,15 +251,166 @@ namespace CDTag.Model.Rip
             }
             CtdbFound = ctdb != null && ctdb.Count > 0;
 
-            string albumFolder = Path.GetDirectoryName(paths[0]);
-            string baseName = Path.Combine(albumFolder, (Settings.Eac ?? EacSettings.Defaults()).Clean(Album.AlbumArtist + " - " + Album.Title).Trim());
+            string baseName = BaseName();
             if (Settings.WriteCue)
-                File.WriteAllText(baseName + ".cue", CueSheetText(paths), new UTF8Encoding(true));
+                File.WriteAllText(baseName + ".cue", cueText, new UTF8Encoding(true));
             if (Settings.WriteLog)
             {
                 LogPath = baseName + ".log";
                 File.WriteAllText(LogPath, LogText(paths), new UTF8Encoding(true));
             }
+        }
+
+        /// <summary>"…\Album folder\Artist - Album" (no extension): the image, CUE sheet and log file names.</summary>
+        private string BaseName()
+        {
+            string albumFolder = Path.GetDirectoryName(TrackPaths()[0]);
+            return Path.Combine(albumFolder, (Settings.Eac ?? EacSettings.Defaults()).Clean(Album.AlbumArtist + " - " + Album.Title).Trim());
+        }
+
+        /// <summary>The whole-disc image ("Artist - Album.flac" in the album folder).</summary>
+        public string ImagePath()
+        {
+            return BaseName() + Settings.Extension;
+        }
+
+        /// <summary>The files a rip will write: the image, or one file per track.</summary>
+        public List<string> OutputPaths()
+        {
+            return Settings.Image ? new List<string> { ImagePath() } : TrackPaths();
+        }
+
+        /// <summary>
+        /// Copy Image &amp; Create CUE Sheet: the whole disc (from sector 0, so audio before track 1 is included) as one file,
+        /// read track by track with test &amp; copy so each track still gets its CRCs, AccurateRip and CTDB results.
+        /// </summary>
+        private async Task RunImageAsync(CdDrive drive, IProgress<RipJobProgress> progress, CancellationToken cancellation)
+        {
+            List<CdTrack> audio = Audio;
+            string image = ImagePath();
+            Directory.CreateDirectory(Path.GetDirectoryName(image));
+
+            List<int> starts; int leadOut;
+            AccurateRip.AudioLayout(Toc, out starts, out leadOut);
+            Task<List<List<AccurateRipEntry>>> arTask = AccurateRip.LookupAsync(starts, leadOut, cancellation);
+            Task<List<CDTag.Model.Lookup.CtdbEntry>> ctdbTask = new CDTag.Model.Lookup.CueToolsDbClient().LookupRipsAsync(ToDiscToc(Toc), cancellation);
+
+            drive.SetReadSpeed(Settings.Speed);
+            C2Unsupported = Settings.UseC2 && audio.Count > 0 && !drive.SupportsC2(audio[0].StartSector + 75);
+            var ripper = new CdRipper(drive, Toc, Offset) { TestAndCopy = Settings.TestAndCopy, UseC2 = Settings.UseC2 && !C2Unsupported, Overread = Settings.Overread };
+            long totalSectors = audio.Sum(t => (long)t.Sectors) * (Settings.TestAndCopy ? 2 : 1);
+            long doneSectors = 0;
+
+            string wav = Settings.Format == RipFormat.Wav ? image + ".~cdtag" : Path.ChangeExtension(image, ".~rip.wav");
+            try
+            {
+                using (var output = new FileStream(wav, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
+                {
+                    byte[] header = CdRipper.CdFormat.Header((long)leadOut * CdDrive.SamplesPerSector * 4);
+                    output.Write(header, 0, header.Length);
+                    await Task.Run(() => ripper.RipBeforeFirstTrack(output, cancellation), cancellation).ConfigureAwait(false);
+                    for (int i = 0; i < audio.Count; i++)
+                    {
+                        cancellation.ThrowIfCancellationRequested();
+                        int index = i;
+                        long before = doneSectors;
+                        var trackProgress = new Progress<RipProgress>(p =>
+                        {
+                            long passBase = before + (p.Pass == "Copy" && Settings.TestAndCopy ? audio[index].Sectors : 0);
+                            progress?.Report(new RipJobProgress
+                            {
+                                TrackIndex = index, Total = 100.0 * (passBase + audio[index].Sectors * p.Percent / 100.0) / Math.Max(1, totalSectors),
+                                Status = string.Format(CultureInfo.InvariantCulture, "{0} {1}% ({2:0.0}x)", p.Pass == "Test" ? "Testing" : "Copying", p.Percent, p.Speed)
+                            });
+                        });
+                        RipTrackResult r = await Task.Run(() => ripper.RipTrackTo(index, output, trackProgress, cancellation), cancellation).ConfigureAwait(false);
+                        r.WavPath = image;
+                        Results.Add(r);
+                        doneSectors += audio[i].Sectors * (Settings.TestAndCopy ? 2 : 1);
+                        bool errors = !r.CrcsMatch || r.Suspicious.Count > 0;
+                        HadErrors |= errors;
+                        progress?.Report(new RipJobProgress
+                        {
+                            TrackIndex = i, Total = 100.0 * doneSectors / Math.Max(1, totalSectors),
+                            Status = errors ? (r.Suspicious.Count > 0 ? "Suspicious positions" : "CRC mismatch") : "OK"
+                        });
+                    }
+                }
+
+                if (Settings.Format == RipFormat.Wav)
+                {
+                    File.Move(wav, image, true);
+                }
+                else
+                {
+                    progress?.Report(new RipJobProgress { TrackIndex = audio.Count - 1, Total = 100, Status = "Encoding the image..." });
+                    await EncodeImageAsync(wav, image, cancellation).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                if (File.Exists(wav))
+                    File.Delete(wav);
+            }
+
+            await FinishAsync(arTask, ctdbTask, audio.Select(_ => image).ToList(), ImageCueText(image)).ConfigureAwait(false);
+        }
+
+        /// <summary>The image gets album tags only (track titles are in the CUE sheet).</summary>
+        private async Task EncodeImageAsync(string wav, string target, CancellationToken cancellation)
+        {
+            if (Settings.Format == RipFormat.Flac)
+            {
+                var tags = new List<KeyValuePair<string, string>>
+                {
+                    new KeyValuePair<string, string>("ARTIST", Album.AlbumArtist),
+                    new KeyValuePair<string, string>("ALBUM", Album.Title),
+                    new KeyValuePair<string, string>("DATE", Album.Year),
+                    new KeyValuePair<string, string>("GENRE", Album.Genre)
+                };
+                if (Extras != null && Extras.CatalogNumber != null)
+                    tags.Add(new KeyValuePair<string, string>("CATALOGNUMBER", Extras.CatalogNumber));
+                await AudioEncoder.EncodeFlacAsync(wav, target, tags, null, cancellation).ConfigureAwait(false);
+                return;
+            }
+            await AudioEncoder.EncodeMp3Async(wav, target, Settings.Mp3Preset, null, cancellation).ConfigureAwait(false);
+            var values = new TagValues();
+            values[TagField.Artist] = Album.AlbumArtist;
+            values[TagField.Album] = Album.Title;
+            values[TagField.Year] = Album.Year;
+            values[TagField.Genre] = Album.Genre;
+            MassTagger.Write(target, values, TagValues.Fields.Where(f => values[f].Length > 0).ToList());
+        }
+
+        /// <summary>
+        /// The CUE sheet of an image: one FILE, every track with INDEX 01 at its start and INDEX 00 where its pregap begins
+        /// (track 1: INDEX 00 at 00:00:00 when there is audio before it).
+        /// </summary>
+        public string ImageCueText(string imagePath)
+        {
+            var sb = new StringBuilder();
+            if (!string.IsNullOrWhiteSpace(Album.Genre)) sb.AppendFormat("REM GENRE \"{0}\"\r\n", Album.Genre.Trim());
+            if (!string.IsNullOrWhiteSpace(Album.Year)) sb.AppendFormat("REM DATE {0}\r\n", Album.Year.Trim());
+            sb.AppendFormat("REM COMMENT \"{0}\"\r\n", LogTitle.Replace(" extraction log", ""));
+            if (Extras != null && Extras.CatalogNumber != null) sb.AppendFormat("CATALOG {0}\r\n", Extras.CatalogNumber);
+            sb.AppendFormat("PERFORMER \"{0}\"\r\n", Album.AlbumArtist);
+            sb.AppendFormat("TITLE \"{0}\"\r\n", (Album.Title ?? "").Trim());
+            sb.AppendFormat("FILE \"{0}\" {1}\r\n", Path.GetFileName(imagePath), Settings.Format == RipFormat.Mp3 ? "MP3" : "WAVE");
+            List<CdTrack> audio = Audio;
+            for (int i = 0; i < audio.Count; i++)
+            {
+                sb.AppendFormat("  TRACK {0:00} AUDIO\r\n", audio[i].Number);
+                sb.AppendFormat("    TITLE \"{0}\"\r\n", Album.TrackTitle(i));
+                sb.AppendFormat("    PERFORMER \"{0}\"\r\n", Album.TrackArtist(i));
+                string isrc = IsrcOf(audio[i].Number);
+                if (isrc != null) sb.AppendFormat("    ISRC {0}\r\n", isrc);
+                if (audio[i].PreEmphasis) sb.Append("    FLAGS PRE\r\n");
+                int gap = i == 0 ? audio[0].StartSector : (Extras == null ? 0 : Extras.Pregap(audio[i].Number));
+                if (gap > 0)
+                    sb.AppendFormat("    INDEX 00 {0}\r\n", CueTime(audio[i].StartSector - gap));
+                sb.AppendFormat("    INDEX 01 {0}\r\n", CueTime(audio[i].StartSector));
+            }
+            return sb.ToString();
         }
 
         private async Task EncodeAsync(int i, string wav, string target, CancellationToken cancellation)
@@ -353,8 +517,9 @@ namespace CDTag.Model.Rip
             sb.AppendFormat(CultureInfo.InvariantCulture, "Read offset correction                      : {0} ({1})\r\n", Offset, OffsetSource);
             sb.AppendLine("Overread into Lead-In and Lead-Out          : " + (Settings.Overread ? "Yes" : "No"));
             sb.AppendLine("Fill up missing offset samples with silence : Yes");
-            sb.AppendLine(Extras != null && Extras.GapsDetected ? "Gap handling                                : Appended to previous track"
-                                                                 : "Gap handling                                : Not detected, thus appended to previous track");
+            sb.AppendLine(Settings.Image ? "Gap handling                                : Image (gaps in place, INDEX 00 in the CUE sheet)"
+                        : Extras != null && Extras.GapsDetected ? "Gap handling                                : Appended to previous track"
+                        : "Gap handling                                : Not detected, thus appended to previous track");
             sb.AppendFormat("Output format                               : {0}\r\n", Settings.Format == RipFormat.Flac ? (AudioEncoder.GetVersion(AudioEncoder.FlacPath) ?? "flac") + " -8" : Settings.Format == RipFormat.Mp3 ? AudioEncoder.Describe(Settings.Mp3Preset) : "WAV");
             sb.AppendLine("Sample format                               : 44.100 Hz; 16 Bit; Stereo");
             sb.AppendLine();
