@@ -51,6 +51,50 @@ namespace CDTag.Model.Lookup
             }
         }
 
+        /// <summary>
+        /// The rips of this disc stored in CTDB (for verifying a rip): per entry the number of submissions and a CRC per track.
+        /// Empty when the disc is not in CTDB; null when CTDB can't be reached.
+        /// </summary>
+        public async Task<List<CtdbEntry>> LookupRipsAsync(DiscToc toc, CancellationToken cancellation = default(CancellationToken))
+        {
+            try
+            {
+                string url = "http://db.cuetools.net/lookup2.php?version=3&ctdb=1&fuzzy=0&metadata=fast&toc=" + toc.CtdbToc;
+                using (HttpResponseMessage response = await Http.GetAsync(url, cancellation).ConfigureAwait(false))
+                {
+                    if (response.StatusCode == HttpStatusCode.NotFound)
+                        return new List<CtdbEntry>();
+                    if (!response.IsSuccessStatusCode)
+                        return null;
+                    return ParseRips(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                }
+            }
+            catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException && !cancellation.IsCancellationRequested || ex is System.Xml.XmlException)
+            {
+                return null;
+            }
+        }
+
+        public static List<CtdbEntry> ParseRips(string xml)
+        {
+            var result = new List<CtdbEntry>();
+            XDocument doc = XDocument.Parse(xml);
+            foreach (XElement e in doc.Descendants(Ns + "entry"))
+            {
+                int confidence;
+                int.TryParse((string)e.Attribute("confidence"), NumberStyles.Integer, CultureInfo.InvariantCulture, out confidence);
+                var crcs = new List<uint>();
+                foreach (string part in ((string)e.Attribute("trackcrcs") ?? "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    uint crc;
+                    if (uint.TryParse(part, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out crc))
+                        crcs.Add(crc);
+                }
+                result.Add(new CtdbEntry { Confidence = confidence, TrackCrcs = crcs, Id = (string)e.Attribute("id") });
+            }
+            return result;
+        }
+
         /// <summary>Downloads a cover image; null when it is not available.</summary>
         public static async Task<byte[]> GetImageAsync(string url, CancellationToken cancellation = default(CancellationToken))
         {
@@ -176,5 +220,16 @@ namespace CDTag.Model.Lookup
             int value;
             return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out value) ? value : 0;
         }
+    }
+}
+
+namespace CDTag.Model.Lookup
+{
+    /// <summary>One rip of a disc stored in the CUETools database: how many submitted it, and its CRC per track.</summary>
+    public class CtdbEntry
+    {
+        public string Id { get; set; }
+        public int Confidence { get; set; }
+        public System.Collections.Generic.List<uint> TrackCrcs { get; set; }
     }
 }

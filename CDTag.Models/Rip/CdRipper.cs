@@ -19,6 +19,8 @@ namespace CDTag.Model.Rip
         public bool Tested { get; set; }
         public uint ArV1 { get; set; }
         public uint ArV2 { get; set; }
+        /// <summary>The track's CUETools DB CRC (see <see cref="Ctdb"/>).</summary>
+        public uint CtdbCrc { get; set; }
         public double Peak { get; set; }
         /// <summary>Times (m:ss) of blocks that could not be read the same twice.</summary>
         public List<string> Suspicious { get; private set; }
@@ -105,6 +107,7 @@ namespace CDTag.Model.Rip
 
             var copyCrc = new Crc32Running();
             var ar = new AccurateRip.TrackCrc(samples, first, last);
+            var ctdb = new Ctdb.TrackCrc(samples, first, last, (long)(_leadOut - _firstAudio) * CdDrive.SamplesPerSector);
             int peak = 0;
             string temp = wavPath + ".~cdtag";
             try
@@ -119,6 +122,7 @@ namespace CDTag.Model.Rip
                         output.Write(b, o, c);
                         copyCrc.Add(b, o, c);
                         ar.Add(b, o, c);
+                        ctdb.Add(b, o, c);
                         for (int i = o; i + 1 < o + c; i += 2)
                         {
                             int v = Math.Abs((int)(short)(b[i] | (b[i + 1] << 8)));
@@ -136,6 +140,7 @@ namespace CDTag.Model.Rip
             result.CopyCrc = copyCrc.Value;
             result.ArV1 = ar.V1;
             result.ArV2 = ar.V2;
+            result.CtdbCrc = ctdb.Value;
             result.Peak = Math.Min(100.0, peak * 100.0 / 32767);
             return result;
         }

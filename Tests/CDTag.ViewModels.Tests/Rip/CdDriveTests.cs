@@ -46,8 +46,13 @@ namespace CDTag.ViewModels.Tests.Rip
                     string text = AccurateRip.Describe(ar[index], r.ArV1, r.ArV2, out accurate, out confidence);
                     TestContext.Out.WriteLine("Track {0}: test {1:X8} copy {2:X8} peak {3:0.0} retries {4} suspicious {5} | {6}",
                         r.Number, r.TestCrc, r.CopyCrc, r.Peak, r.Retries, r.Suspicious.Count, text);
+                    var ctdbEntries = new CDTag.Model.Lookup.CueToolsDbClient().LookupRipsAsync(CDTag.Model.Rip.RipJob.ToDiscToc(toc)).GetAwaiter().GetResult();
+                    bool ctdbOk; int ctdbConfidence;
+                    string ctdbText = Ctdb.Describe(ctdbEntries, index, r.CtdbCrc, out ctdbOk, out ctdbConfidence);
+                    TestContext.Out.WriteLine("  {0}", ctdbText);
                     Assert.That(r.CrcsMatch);
                     Assert.That(accurate, text);
+                    Assert.That(ctdbOk, ctdbText);
                 }
             }
         }

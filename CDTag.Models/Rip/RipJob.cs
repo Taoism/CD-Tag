@@ -114,6 +114,10 @@ namespace CDTag.Model.Rip
 
         public List<RipTrackResult> Results { get; private set; } = new List<RipTrackResult>();
         public List<string> AccurateRipLines { get; private set; } = new List<string>();
+        /// <summary>Per track: the CUETools DB result ("CTDB: accurately ripped (confidence 98/101)").</summary>
+        public List<string> CtdbLines { get; private set; } = new List<string>();
+        public int CtdbTracks { get; private set; }
+        public bool CtdbFound { get; private set; }
         public string LogPath { get; private set; }
         public int AccurateTracks { get; private set; }
         public bool HadErrors { get; private set; }
@@ -149,6 +153,7 @@ namespace CDTag.Model.Rip
             List<int> starts; int leadOut;
             AccurateRip.AudioLayout(Toc, out starts, out leadOut);
             Task<List<List<AccurateRipEntry>>> arTask = AccurateRip.LookupAsync(starts, leadOut, cancellation);
+            Task<List<CDTag.Model.Lookup.CtdbEntry>> ctdbTask = new CDTag.Model.Lookup.CueToolsDbClient().LookupRipsAsync(ToDiscToc(Toc), cancellation);
 
             drive.SetReadSpeed(Settings.Speed);
             List<CdTrack> audioTracks = Audio;
@@ -221,6 +226,17 @@ namespace CDTag.Model.Rip
                 if (ok) AccurateTracks++;
                 AccurateRipLines.Add(text);
             }
+
+            List<CDTag.Model.Lookup.CtdbEntry> ctdb = await ctdbTask.ConfigureAwait(false);
+            CtdbLines.Clear();
+            CtdbTracks = 0;
+            for (int i = 0; i < Results.Count; i++)
+            {
+                bool ok; int confidence;
+                CtdbLines.Add(Ctdb.Describe(ctdb, i, Results[i].CtdbCrc, out ok, out confidence));
+                if (ok) CtdbTracks++;
+            }
+            CtdbFound = ctdb != null && ctdb.Count > 0;
 
             string albumFolder = Path.GetDirectoryName(paths[0]);
             string baseName = Path.Combine(albumFolder, (Settings.Eac ?? EacSettings.Defaults()).Clean(Album.AlbumArtist + " - " + Album.Title).Trim());
@@ -366,6 +382,7 @@ namespace CDTag.Model.Rip
                 sb.AppendFormat("     Copy CRC {0:X8}\r\n", r.CopyCrc);
                 if (r.C2Errors > 0) sb.AppendFormat("     C2 errors reported by the drive in {0} sectors (re-read)\r\n", r.C2Errors);
                 if (i < AccurateRipLines.Count) sb.AppendFormat("     {0}\r\n", AccurateRipLines[i]);
+                if (i < CtdbLines.Count) sb.AppendFormat("     {0}\r\n", CtdbLines[i]);
                 foreach (string s in r.Suspicious.Distinct())
                     sb.AppendFormat("     Suspicious position {0}\r\n", s);
                 sb.AppendLine(r.CrcsMatch && r.Suspicious.Count == 0 ? "     Copy OK" : "     Copy finished");
@@ -375,6 +392,8 @@ namespace CDTag.Model.Rip
             sb.AppendLine();
             sb.AppendLine(AccurateTracks == Results.Count ? "All tracks accurately ripped"
                         : string.Format(CultureInfo.InvariantCulture, "{0} of {1} tracks accurately ripped", AccurateTracks, Results.Count));
+            if (CtdbFound)
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "CUETools DB: {0} of {1} tracks match", CtdbTracks, Results.Count));
             sb.AppendLine();
             sb.AppendLine("End of status report");
             return sb.ToString();

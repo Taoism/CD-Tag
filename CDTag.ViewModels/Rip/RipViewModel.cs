@@ -572,14 +572,18 @@ namespace CDTag.ViewModels.Rip
                     {
                         RipTrackResult r = job.Results[i];
                         string ar = job.AccurateRipLines[i];
+                        string ctdb = i < job.CtdbLines.Count ? job.CtdbLines[i] : "";
                         rows[i].Status = (!r.CrcsMatch ? "CRC mismatch. " : r.Suspicious.Count > 0 ? "Suspicious. " : "OK. ") +
-                                         (ar.StartsWith("Accurately", StringComparison.Ordinal) ? ar.Substring(0, ar.IndexOf(')') + 1) : ar.Split(new[] { "  " }, StringSplitOptions.None)[0]);
+                                         (ar.StartsWith("Accurately", StringComparison.Ordinal) ? "AR " + ar.Substring(ar.IndexOf('(') + 1, ar.IndexOf(')') - ar.IndexOf('(') - 1) : ar.Split(new[] { "  " }, StringSplitOptions.None)[0]) +
+                                         (ctdb.Contains("accurately") ? ", CTDB " + ctdb.Substring(ctdb.IndexOf('(') + 1, ctdb.IndexOf(')') - ctdb.IndexOf('(') - 1)
+                                          : ctdb.Length > 0 ? ", " + ctdb.Split(new[] { "  " }, StringSplitOptions.None)[0] : "");
                     }
                     if (EjectWhenDone)
                         drive.Eject();
                 }
                 Progress = 100;
-                StatusText = string.Format(CultureInfo.InvariantCulture, "Done: {0} of {1} tracks accurately ripped{2}. Log: {3}", job.AccurateTracks, rows.Count,
+                StatusText = string.Format(CultureInfo.InvariantCulture, "Done: {0} of {1} tracks accurately ripped (AccurateRip){2}{3}. Log: {4}", job.AccurateTracks, rows.Count,
+                                           job.CtdbFound ? string.Format(CultureInfo.InvariantCulture, ", {0} match CUETools DB", job.CtdbTracks) : "",
                                            job.HadErrors ? ", there were errors" : "", job.LogPath);
             }
             catch (OperationCanceledException)
