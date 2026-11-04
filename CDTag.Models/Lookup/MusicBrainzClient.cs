@@ -93,7 +93,7 @@ namespace CDTag.Model.Lookup
     {
         private const string BaseUrl = "https://musicbrainz.org/ws/2/";
         private const string CoverArtUrl = "https://coverartarchive.org/release/";
-        public const string UserAgent = "CD-Tag/3.1 ( https://github.com/Taoism/CD-Tag )";
+        public const string UserAgent = "CD-Tag/3.2 ( https://github.com/Taoism/CD-Tag )";
 
         private static readonly HttpClient Http = CreateClient();
         private static readonly SemaphoreSlim Gate = new SemaphoreSlim(1, 1);
