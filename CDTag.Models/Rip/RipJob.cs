@@ -31,6 +31,10 @@ namespace CDTag.Model.Rip
         /// <summary>Read offset in samples; null = from AccurateRip's drive database.</summary>
         public int? ReadOffset { get; set; }
         public bool TestAndCopy { get; set; } = true;
+        /// <summary>Read speed in "x"; 0 = maximum.</summary>
+        public int Speed { get; set; }
+        public bool UseC2 { get; set; }
+        public bool Overread { get; set; }
         public bool EjectWhenDone { get; set; }
         public bool WriteLog { get; set; } = true;
         public bool WriteCue { get; set; } = true;
@@ -113,6 +117,8 @@ namespace CDTag.Model.Rip
         public string LogPath { get; private set; }
         public int AccurateTracks { get; private set; }
         public bool HadErrors { get; private set; }
+        /// <summary>C2 was asked for but the drive doesn't return C2 data (ripped without it).</summary>
+        public bool C2Unsupported { get; private set; }
 
         private List<CdTrack> Audio { get { return Toc.Where(t => t.IsAudio).ToList(); } }
 
@@ -144,7 +150,10 @@ namespace CDTag.Model.Rip
             AccurateRip.AudioLayout(Toc, out starts, out leadOut);
             Task<List<List<AccurateRipEntry>>> arTask = AccurateRip.LookupAsync(starts, leadOut, cancellation);
 
-            var ripper = new CdRipper(drive, Toc, Offset) { TestAndCopy = Settings.TestAndCopy };
+            drive.SetReadSpeed(Settings.Speed);
+            List<CdTrack> audioTracks = Audio;
+            C2Unsupported = Settings.UseC2 && audioTracks.Count > 0 && !drive.SupportsC2(audioTracks[0].StartSector + 75);
+            var ripper = new CdRipper(drive, Toc, Offset) { TestAndCopy = Settings.TestAndCopy, UseC2 = Settings.UseC2 && !C2Unsupported, Overread = Settings.Overread };
             long totalSectors = audio.Sum(t => (long)t.Sectors) * (Settings.TestAndCopy ? 2 : 1);
             long doneSectors = 0;
             List<List<AccurateRipEntry>> ar = null;
@@ -322,9 +331,11 @@ namespace CDTag.Model.Rip
             sb.AppendFormat("Used drive  : {0}\r\n\r\n", DriveName);
             sb.AppendFormat("Read mode               : {0}\r\n", Settings.TestAndCopy ? "Secure (test & copy, up to 16 re-reads of mismatching blocks)" : "Secure (copy only)");
             sb.AppendLine("Defeat audio cache      : Yes (between passes and before every re-read)");
-            sb.AppendLine("Make use of C2 pointers : No");
+            sb.AppendLine("Make use of C2 pointers : " + (Settings.UseC2 && !C2Unsupported ? "Yes" : Settings.UseC2 ? "No (the drive does not return C2 data)" : "No"));
+            sb.AppendLine("Read speed              : " + (Settings.Speed <= 0 ? "Maximum" : Settings.Speed.ToString(CultureInfo.InvariantCulture) + "x"));
             sb.AppendLine();
             sb.AppendFormat(CultureInfo.InvariantCulture, "Read offset correction                      : {0} ({1})\r\n", Offset, OffsetSource);
+            sb.AppendLine("Overread into Lead-In and Lead-Out          : " + (Settings.Overread ? "Yes" : "No"));
             sb.AppendLine("Fill up missing offset samples with silence : Yes");
             sb.AppendLine(Extras != null && Extras.GapsDetected ? "Gap handling                                : Appended to previous track"
                                                                  : "Gap handling                                : Not detected, thus appended to previous track");
@@ -353,6 +364,7 @@ namespace CDTag.Model.Rip
                 if (trackIsrc != null) sb.AppendFormat("     ISRC {0}\r\n", trackIsrc);
                 if (r.Tested) sb.AppendFormat("     Test CRC {0:X8}\r\n", r.TestCrc);
                 sb.AppendFormat("     Copy CRC {0:X8}\r\n", r.CopyCrc);
+                if (r.C2Errors > 0) sb.AppendFormat("     C2 errors reported by the drive in {0} sectors (re-read)\r\n", r.C2Errors);
                 if (i < AccurateRipLines.Count) sb.AppendFormat("     {0}\r\n", AccurateRipLines[i]);
                 foreach (string s in r.Suspicious.Distinct())
                     sb.AppendFormat("     Suspicious position {0}\r\n", s);

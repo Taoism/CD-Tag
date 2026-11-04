@@ -97,6 +97,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,6">
                     <TextBlock Text="{Binding SettingsSource}" Foreground="{DynamicResource Theme.ForegroundSecondary}" />
@@ -125,6 +126,27 @@
                     <TextBlock Text="{Binding OffsetInfo}" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="{DynamicResource Theme.ForegroundSecondary}" />
                 </StackPanel>
 
+                <TextBlock Grid.Row="7" Text="Drive" VerticalAlignment="Center" Margin="0,6,12,2" />
+                <StackPanel Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,6,0,0">
+                    <TextBlock Text="Read speed" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <ComboBox Width="90" ItemsSource="{Binding Speeds}" SelectedItem="{Binding SelectedSpeed, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock x:Name="Speed" Text="{Binding StringFormat='{}{0}x'}" />
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding}" Value="0">
+                                        <Setter TargetName="Speed" Property="Text" Value="Maximum" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <CheckBox Content="Use C2 error pointers" IsChecked="{Binding UseC2, Mode=TwoWay}" Margin="20,0,0,0" VerticalAlignment="Center"
+                              IsEnabled="{Binding C2Supported}" ToolTipService.ShowOnDisabled="True"
+                              ToolTip="Re-read blocks the drive reports as damaged. Greyed out when the drive doesn't return C2 data." />
+                    <CheckBox Content="Overread into lead-in and lead-out" IsChecked="{Binding Overread, Mode=TwoWay}" Margin="20,0,0,0" VerticalAlignment="Center"
+                              ToolTip="With a read offset, read the samples past the disc's edges instead of filling them with silence (most drives can't)" />
+                </StackPanel>
                 <StackPanel Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,6,0,0">
                     <CheckBox Content="Test &amp; copy (read every track twice)" IsChecked="{Binding TestAndCopy, Mode=TwoWay}" Margin="0,0,20,0" />
                     <CheckBox Content="Eject when done" IsChecked="{Binding EjectWhenDone, Mode=TwoWay}" />

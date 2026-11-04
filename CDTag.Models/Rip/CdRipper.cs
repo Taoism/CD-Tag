@@ -23,6 +23,8 @@ namespace CDTag.Model.Rip
         /// <summary>Times (m:ss) of blocks that could not be read the same twice.</summary>
         public List<string> Suspicious { get; private set; }
         public int Retries { get; set; }
+        /// <summary>Sectors the drive flagged with C2 errors (C2 mode only).</summary>
+        public int C2Errors { get; set; }
 
         public RipTrackResult()
         {
@@ -49,7 +51,6 @@ namespace CDTag.Model.Rip
     /// </summary>
     public sealed class CdRipper
     {
-        private const int Block = CdDrive.MaxSectorsPerRead;
         private const int MaxRereads = 16;
 
         private readonly CdDrive _drive;
@@ -68,6 +69,20 @@ namespace CDTag.Model.Rip
         }
 
         public bool TestAndCopy { get; set; } = true;
+
+        /// <summary>Use the drive's C2 error pointers: flagged blocks are re-read (EAC "Make use of C2 pointers").</summary>
+        public bool UseC2 { get; set; }
+
+        /// <summary>Try to read into the lead-in/lead-out where the offset needs samples outside the audio area.</summary>
+        public bool Overread { get; set; }
+
+        private bool _overreadFailed;
+
+        /// <summary>True when the drive refused to read past the audio area (the missing samples were silence).</summary>
+        public bool OverreadFailed { get { return _overreadFailed; } }
+
+        /// <summary>Sectors per read: 26, or 24 with C2 data (the transfer must stay below 64 KB).</summary>
+        private int Block { get { return UseC2 ? CdDrive.MaxSectorsPerC2Read : CdDrive.MaxSectorsPerRead; } }
 
         /// <summary>Rips the audio track at <paramref name="index"/> (into the audio-track list) to <paramref name="wavPath"/>.</summary>
         public RipTrackResult RipTrack(int index, string wavPath, IProgress<RipProgress> progress, CancellationToken cancellation)
@@ -164,11 +179,43 @@ namespace CDTag.Model.Rip
             }
         }
 
-        /// <summary>Reads one block; sectors outside the audio area are silence.</summary>
+        /// <summary>One read, with C2 pointers when <see cref="UseC2"/> (a C2-flagged block counts as a failed read).</summary>
+        private bool Read(int first, int count, byte[] buffer, int at, RipTrackResult result)
+        {
+            if (!UseC2)
+                return _drive.ReadSectors(first, count, buffer, at);
+            int c2;
+            if (!_drive.ReadSectorsC2(first, count, buffer, at, out c2))
+                return false;
+            if (c2 > 0 && result != null)
+                result.C2Errors += c2;
+            return c2 == 0;
+        }
+
+        /// <summary>
+        /// Reads one block. Sectors outside the audio area are silence, unless <see cref="Overread"/> is on and the drive can
+        /// read them (into the lead-in before track 1 / the lead-out after the last track).
+        /// </summary>
         private void ReadBlock(int sector, int n, byte[] buffer, Dictionary<int, uint> compare, Dictionary<int, uint> record, RipTrackResult result)
         {
             int readFirst = Math.Max(sector, _firstAudio), readEnd = Math.Min(sector + n, _leadOut);
             Array.Clear(buffer, 0, n * CdDrive.SectorBytes);
+            bool alreadyRead = false;
+            if (Overread && (readFirst != sector || readEnd != sector + n) && !_overreadFailed)
+            {
+                int first = Math.Max(sector, -150), end = sector + n;   // -150..-1: track 1's pregap in the lead-in
+                if (end > first && Read(first, end - first, buffer, (first - sector) * CdDrive.SectorBytes, null))
+                {
+                    readFirst = first;
+                    readEnd = end;
+                    alreadyRead = true;
+                }
+                else
+                {
+                    _overreadFailed = true;   // the drive can't: silence, and don't ask again
+                    Array.Clear(buffer, 0, n * CdDrive.SectorBytes);
+                }
+            }
             if (readEnd <= readFirst)
             {
                 record?.Add(sector, 0);
@@ -176,7 +223,7 @@ namespace CDTag.Model.Rip
             }
             int at = (readFirst - sector) * CdDrive.SectorBytes;
             int count = readEnd - readFirst;
-            bool ok = _drive.ReadSectors(readFirst, count, buffer, at);
+            bool ok = alreadyRead || Read(readFirst, count, buffer, at, result);
             uint crc = Crc32Running.Compute(buffer, 0, n * CdDrive.SectorBytes);
 
             if (record != null)
@@ -199,8 +246,8 @@ namespace CDTag.Model.Rip
                 result.Retries++;
                 DefeatCache(sector);
                 Array.Clear(buffer, 0, n * CdDrive.SectorBytes);
-                if (!_drive.ReadSectors(readFirst, count, buffer, at))
-                    continue;
+                if (!Read(readFirst, count, buffer, at, null))
+                    continue;   // read error or C2-flagged: try again
                 crc = Crc32Running.Compute(buffer, 0, n * CdDrive.SectorBytes);
                 int times = seen.TryGetValue(crc, out int c) ? c + 1 : 1;
                 seen[crc] = times;

@@ -55,7 +55,7 @@ namespace CDTag.ViewModels.Rip
     public class RipViewModel : ViewModelBase
     {
         private List<CdTrack> _toc;
-        private string _driveName;
+        private string _driveName, _vendor, _product;
         private CancellationTokenSource _cancellation;
 
         public RipViewModel(IEventAggregator eventAggregator)
@@ -127,6 +127,16 @@ namespace CDTag.ViewModels.Rip
         public string OffsetInfo { get { return Get<string>("OffsetInfo"); } private set { Set("OffsetInfo", value); } }
         public bool TestAndCopy { get { return Get<bool>("TestAndCopy"); } set { Set("TestAndCopy", value); } }
         public bool EjectWhenDone { get { return Get<bool>("EjectWhenDone"); } set { Set("EjectWhenDone", value); } }
+
+        /// <summary>Read speeds offered: 0 = maximum.</summary>
+        public List<int> Speeds { get; } = new List<int> { 0, 48, 40, 32, 24, 16, 8, 4 };
+        public int SelectedSpeed { get { return Get<int>("SelectedSpeed"); } set { Set("SelectedSpeed", value); } }
+        /// <summary>Use the drive's C2 error pointers (from EAC's drive setting).</summary>
+        public bool UseC2 { get { return Get<bool>("UseC2"); } set { Set("UseC2", value); } }
+        /// <summary>False when the drive refused a C2 read in Find CD (the checkbox is then off and disabled).</summary>
+        public bool C2Supported { get { return Get<bool>("C2Supported"); } private set { Set("C2Supported", value); } }
+        /// <summary>Overread into the lead-in and lead-out (from EAC's drive setting).</summary>
+        public bool Overread { get { return Get<bool>("Overread"); } set { Set("Overread", value); } }
         public string SettingsSource { get { return Get<string>("SettingsSource"); } private set { Set("SettingsSource", value); } }
         private EacSettings _eac;
         private int? _databaseOffset;
@@ -240,6 +250,9 @@ namespace CDTag.ViewModels.Rip
                         });
                     }
 
+                    CdTrack firstAudio = toc.FirstOrDefault(t => t.IsAudio);
+                    C2Supported = firstAudio != null && await Task.Run(() => drive.SupportsC2(firstAudio.StartSector + 75));
+
                     // ISRCs, catalog number, CD-Text and pregaps (a few seconds, from the subchannel)
                     var steps = new Progress<string>(m => StatusText = m);
                     try
@@ -265,6 +278,25 @@ namespace CDTag.ViewModels.Rip
 
                 string typed = OffsetText;
                 LoadSettings(vendor, product, revision);
+                _vendor = vendor; _product = product;
+                // the drive's own settings: saved in CD-Tag for this drive, otherwise EAC's for it
+                DriveSettings saved = DriveSettingsStore.Load(vendor, product);
+                if (saved != null)
+                {
+                    OffsetText = saved.Offset.HasValue ? saved.Offset.Value.ToString(CultureInfo.InvariantCulture) : "";
+                    SelectedSpeed = Speeds.Contains(saved.Speed) ? saved.Speed : 0;
+                    UseC2 = saved.UseC2;
+                    Overread = saved.Overread;
+                    SettingsSource += "; drive settings saved in CD-Tag";
+                }
+                if (!C2Supported)
+                    UseC2 = false;
+                else
+                {
+                    SelectedSpeed = 0;
+                    UseC2 = _eac != null && _eac.UseC2 == true;
+                    Overread = _eac != null && _eac.OverreadLeadOut == true;
+                }
                 if (!string.IsNullOrWhiteSpace(typed))
                     OffsetText = typed;
                 StatusText = "Looking up the drive offset and the disc...";
@@ -490,8 +522,18 @@ namespace CDTag.ViewModels.Rip
             var settings = new RipSettings
             {
                 Eac = _eac, OutputFolder = OutputFolder, Naming = Naming, VariousNaming = VariousNaming, UseVariousNaming = _eac == null || _eac.UseVariousNaming,
-                Format = SelectedFormat.Format, Mp3Preset = SelectedFormat.Preset, TestAndCopy = TestAndCopy, EjectWhenDone = EjectWhenDone
+                Format = SelectedFormat.Format, Mp3Preset = SelectedFormat.Preset, TestAndCopy = TestAndCopy, EjectWhenDone = EjectWhenDone,
+                Speed = SelectedSpeed, UseC2 = UseC2, Overread = Overread
             };
+            if (_vendor != null)
+            {
+                int typedOffset;
+                DriveSettingsStore.Save(_vendor, _product, new DriveSettings
+                {
+                    Offset = int.TryParse((OffsetText ?? "").Trim().TrimStart('+'), NumberStyles.Integer, CultureInfo.InvariantCulture, out typedOffset) ? typedOffset : (int?)null,
+                    Speed = SelectedSpeed, UseC2 = UseC2, Overread = Overread
+                });
+            }
             var job = new RipJob { Toc = _toc, Album = CurrentAlbum(), Settings = settings, DriveName = _driveName, Offset = offset, OffsetSource = offsetSource, Extras = _extras };
             List<string> paths = job.TrackPaths();
             string existing = paths.FirstOrDefault(File.Exists);

@@ -38,6 +38,7 @@ namespace CDTag.Model.Rip
         public int? DriveOffset { get; set; }
         public bool? UseC2 { get; set; }
         public bool? UseAccurateRip { get; set; }
+        public bool? OverreadLeadOut { get; set; }
 
         public EacSettings()
         {
@@ -130,6 +131,7 @@ namespace CDTag.Model.Rip
                             s.DriveOffset = offset;
                             s.UseC2 = Flag(drive, "UseC2Correction");
                             s.UseAccurateRip = Flag(drive, "UseAccurateRip");
+                            s.OverreadLeadOut = Flag(drive, "OverReadLeadOut");
                         }
                     }
                 }

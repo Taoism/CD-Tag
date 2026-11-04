@@ -285,6 +285,72 @@ namespace CDTag.Model.Rip
             }
         }
 
+        private const uint IOCTL_CDROM_SET_SPEED = 0x00024060;
+        public const int C2Bytes = 294;
+        /// <summary>Sectors per read with C2 pointers (2,646 bytes each, below 64 KB).</summary>
+        public const int MaxSectorsPerC2Read = 24;
+
+        /// <summary>Sets the read speed in "x" (1x = 176 KB/s); 0 = the drive's maximum. False when the drive refuses.</summary>
+        public bool SetReadSpeed(int times)
+        {
+            // CDROM_SET_SPEED { RequestType = CdromSetSpeed (0), ReadSpeed (KB/s, 0xFFFF = max), WriteSpeed, RotationControl }
+            byte[] request = new byte[12];
+            BitConverter.GetBytes((ushort)(times <= 0 ? 0xFFFF : Math.Min(0xFFFE, times * 176))).CopyTo(request, 4);
+            BitConverter.GetBytes((ushort)0xFFFF).CopyTo(request, 6);
+            int returned;
+            return DeviceIoControl(_handle, IOCTL_CDROM_SET_SPEED, request, request.Length, null, 0, out returned, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// Like <see cref="ReadSectors"/>, with the drive's C2 error pointers: <paramref name="c2Errors"/> is the number of
+        /// sectors the drive flagged. False when the read fails (or the drive can't return C2 data).
+        /// </summary>
+        public bool ReadSectorsC2(int lba, int count, byte[] buffer, int offset, out int c2Errors)
+        {
+            c2Errors = 0;
+            if (count <= 0 || count > MaxSectorsPerC2Read || buffer.Length - offset < count * SectorBytes)
+                throw new ArgumentOutOfRangeException("count");
+            int per = SectorBytes + C2Bytes;
+            byte[] info = new byte[16];
+            BitConverter.GetBytes((long)lba * 2048).CopyTo(info, 0);
+            BitConverter.GetBytes(count).CopyTo(info, 8);
+            BitConverter.GetBytes(4).CopyTo(info, 12);   // RawWithC2
+            byte[] raw = new byte[per * count];
+            int returned;
+            if (!DeviceIoControl(_handle, IOCTL_CDROM_RAW_READ, info, info.Length, raw, raw.Length, out returned, IntPtr.Zero) || returned < raw.Length)
+            {
+                LastError = Marshal.GetLastWin32Error();
+                return false;
+            }
+            for (int i = 0; i < count; i++)
+            {
+                Buffer.BlockCopy(raw, i * per, buffer, offset + i * SectorBytes, SectorBytes);
+                for (int b = 0; b < C2Bytes; b++)
+                {
+                    if (raw[i * per + SectorBytes + b] != 0)
+                    {
+                        c2Errors++;
+                        break;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// True when the drive returns C2 error pointers (one test read at <paramref name="lba"/>). Windows' CD-ROM driver
+        /// refuses C2 reads ("The parameter is incorrect") for drives that don't report C2 support.
+        /// </summary>
+        public bool SupportsC2(int lba)
+        {
+            var buffer = new byte[SectorBytes];
+            int c2;
+            return ReadSectorsC2(lba, 1, buffer, 0, out c2);
+        }
+
+        /// <summary>The Windows error of the last failed C2 read (0 = none).</summary>
+        public int LastError { get; private set; }
+
         public void Eject()
         {
             int returned;
