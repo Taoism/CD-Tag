@@ -238,11 +238,18 @@ namespace CDTag.ViewModels.ConvertAudio
                     try
                     {
                         file.Status = verb + "...";
-                        var progress = new Progress<int>(p => file.Status = string.Format("{0} {1}%", verb, p));
+                        // a progress report can arrive after the file is finished: it must not overwrite "Done"
+                        int finishedFile = 0;
+                        var progress = new Progress<int>(p =>
+                        {
+                            if (Volatile.Read(ref finishedFile) == 0)
+                                file.Status = string.Format("{0} {1}%", verb, p);
+                        });
                         if (encode)
                             await AudioEncoder.EncodeMp3Async(file.FullPath, target, preset, progress, token);
                         else
                             await AudioEncoder.DecodeAsync(file.FullPath, target, progress, token);
+                        Volatile.Write(ref finishedFile, 1);
                         file.Status = "Done: " + Path.GetFileName(target);
                         Interlocked.Increment(ref done);
                     }

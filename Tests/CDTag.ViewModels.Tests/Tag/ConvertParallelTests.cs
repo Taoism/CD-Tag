@@ -45,6 +45,22 @@ namespace CDTag.ViewModels.Tests.Tag
                 string source = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "lame-v0.mp3");
                 string first = Path.Combine(dir, "00.wav");
                 await AudioEncoder.DecodeAsync(source, first, null, CancellationToken.None);
+                // 20 seconds per file (the test MP3 is 1 s): long enough that the encoders measurably overlap
+                byte[] pcm;
+                using (var stream = File.OpenRead(first))
+                {
+                    var format = CDTag.Model.Cue.WavFormat.Read(stream);
+                    pcm = new byte[format.DataLength];
+                    stream.Position = format.DataOffset;
+                    stream.ReadExactly(pcm, 0, pcm.Length);
+                }
+                using (var output = File.Create(first))
+                {
+                    byte[] header = CDTag.Model.Rip.CdRipper.CdFormat.Header(pcm.LongLength * 20);
+                    output.Write(header, 0, header.Length);
+                    for (int k = 0; k < 20; k++)
+                        output.Write(pcm, 0, pcm.Length);
+                }
                 for (int i = 1; i < 10; i++)
                     File.Copy(first, Path.Combine(dir, i.ToString("00") + ".wav"));
 
