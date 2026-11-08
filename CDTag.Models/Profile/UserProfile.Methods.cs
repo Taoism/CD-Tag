@@ -17,9 +17,9 @@ namespace CDTag.Model.Profile
             if (!ValidateProfileName(out message))
                 throw new Exception(message);
 
-            string path = GetProfileFileName();
-            string json = JsonSerializer.SerializeObject(this);
-            File.WriteAllText(path, json);
+            // Saved as a CD-Tag 2.x profile (settings 2.x doesn't have go in their own section), so both versions
+            // can use the same file; 2.x settings this version doesn't edit are kept from the existing file.
+            LegacyProfileExport.Export(this, _pathService.ProfileDirectory, _pathService.ProfileDirectory);
             LastModified = DateTime.Now;
 
             UpdateModelHash();

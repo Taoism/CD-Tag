@@ -49,13 +49,7 @@ namespace CDTag.Model.Encoders
         /// <summary>The folder with cdtag.exe (the starter, for a release build: the folder above bin\).</summary>
         public static string ProgramDirectory
         {
-            get
-            {
-                string baseDirectory = AppContext.BaseDirectory.TrimEnd('\\', '/');
-                return string.Equals(Path.GetFileName(baseDirectory), "bin", StringComparison.OrdinalIgnoreCase)
-                    ? Path.GetDirectoryName(baseDirectory)
-                    : baseDirectory;
-            }
+            get { return CDTag.Common.ApplicationServices.PathService.ProgramDirectory; }
         }
 
         /// <summary>Your own encoder: Encoders\mp3\lame.exe or Encoders\flac\flac.exe next to cdtag.exe. Null when not there.</summary>

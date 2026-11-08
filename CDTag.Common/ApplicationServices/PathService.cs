@@ -34,20 +34,69 @@ namespace CDTag.Common.ApplicationServices
             }
         }
 
-        /// <summary>Gets the profile directory.</summary>
+        /// <summary>
+        /// Gets the profile directory: like CD-Tag 2.x, the folder with cdtag.exe when it holds profiles (.cfg), otherwise
+        /// %LOCALAPPDATA%\CD-Tag\Profiles. CDTAG_PROFILES names another folder.
+        /// </summary>
         public string ProfileDirectory
         {
             get
             {
                 if (_profileDirectory == null)
                 {
-                    _profileDirectory = Path.Combine(LocalApplicationDirectory, "Profiles");
+                    string custom = Environment.GetEnvironmentVariable("CDTAG_PROFILES");
+                    if (!string.IsNullOrWhiteSpace(custom))
+                        _profileDirectory = Path.GetFullPath(custom);
+                    else if (HasProfiles(ProgramDirectory))
+                        _profileDirectory = ProgramDirectory;
+                    else
+                        _profileDirectory = Path.Combine(LocalApplicationDirectory, "Profiles");
                     if (!Directory.Exists(_profileDirectory))
                         Directory.CreateDirectory(_profileDirectory);
                 }
 
                 return _profileDirectory;
             }
+        }
+
+        /// <summary>The folder with cdtag.exe (the starter, for a release build: the folder above bin\).</summary>
+        public static string ProgramDirectory
+        {
+            get
+            {
+                string baseDirectory = AppContext.BaseDirectory.TrimEnd('\\', '/');
+                return string.Equals(Path.GetFileName(baseDirectory), "bin", StringComparison.OrdinalIgnoreCase)
+                    ? Path.GetDirectoryName(baseDirectory)
+                    : baseDirectory;
+            }
+        }
+
+        /// <summary>True when <paramref name="directory"/> has a .cfg that is a profile (2.x INI or JSON).</summary>
+        public static bool HasProfiles(string directory)
+        {
+            try
+            {
+                foreach (string file in Directory.EnumerateFiles(directory, "*.cfg"))
+                {
+                    using (var reader = new StreamReader(file))
+                    {
+                        string line;
+                        while ((line = reader.ReadLine()) != null)
+                        {
+                            line = line.Trim();
+                            if (line.Length == 0)
+                                continue;
+                            if (line[0] == '[' || line[0] == '{')
+                                return true;
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+            }
+            return false;
         }
 
         /// <summary>Determines whether a short file name is valid.</summary>

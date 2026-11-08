@@ -260,7 +260,7 @@ namespace CDTag.ViewModels.Profile.EditProfile
 
             if (string.Equals(Path.GetFullPath(folder).TrimEnd('\\'), Path.GetFullPath(_pathService.ProfileDirectory).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
             {
-                MessageBox("That is CD-Tag's own Profiles folder. Choose the folder of the old CD-Tag (or another folder).",
+                MessageBox("CD-Tag already uses the profiles in that folder (they are CD-Tag 2.x profiles). Choose another folder.",
                            "Export profile", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }

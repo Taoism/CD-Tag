@@ -156,7 +156,54 @@ namespace CDTag.Model.Profile
             ConvertReleaseInfo(ini, profile);
             profile.DeleteFiles = List(ini, "DELETE_LIST").Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
             profile.Tagging = ConvertTagging(ini);
+            ConvertExtras(ini, profile);
 
+            return profile;
+        }
+
+        /// <summary>
+        /// Section with the settings only this version has. CD-Tag 2.x ignores sections it doesn't know, so a profile
+        /// can be shared by both versions.
+        /// </summary>
+        public const string ExtraSection = "CDTAG3";
+
+        private static void ConvertExtras(Dictionary<string, Dictionary<string, string>> ini, UserProfile profile)
+        {
+            Dictionary<string, string> extra;
+            if (!ini.TryGetValue(ExtraSection, out extra))
+                return;
+            string fileTypes;
+            if (extra.TryGetValue("FileTypes", out fileTypes))
+                profile.AudioFileTypes = string.IsNullOrWhiteSpace(fileTypes) ? null : fileTypes.Trim();
+            profile.FileNaming.UseUnderscores = GetBool(extra, "Underscores", profile.FileNaming.UseUnderscores);
+            profile.Finish.WriteCUEFilesToPlaylist = GetBool(extra, "CueInM3U", profile.Finish.WriteCUEFilesToPlaylist);
+            profile.Finish.CreateMD5 = GetBool(extra, "MakeMD5", profile.Finish.CreateMD5);
+            profile.Finish.CreateSHA1 = GetBool(extra, "MakeSHA1", profile.Finish.CreateSHA1);
+            profile.Tagging.EmbedCoverInFlac = GetBool(extra, "EmbedFlacCover", profile.Tagging.EmbedCoverInFlac);
+            profile.Tagging.SkipSceneRules = GetBool(extra, "SkipSceneRules", profile.Tagging.SkipSceneRules);
+        }
+
+        /// <summary>
+        /// Reads a 2.x profile in place (nothing is written): the file stays usable by CD-Tag 2.x. The NFO template
+        /// is kept by name when it is next to the profile.
+        /// </summary>
+        public static UserProfile Read(string path)
+        {
+            string nfoTemplatePath;
+            UserProfile profile = Convert(path, Path.GetFileNameWithoutExtension(path), out nfoTemplatePath);
+            if (nfoTemplatePath != null)
+            {
+                bool sameFolder = string.Equals(Path.GetDirectoryName(Path.GetFullPath(nfoTemplatePath)),
+                                                Path.GetDirectoryName(Path.GetFullPath(path)), StringComparison.OrdinalIgnoreCase);
+                profile.NFOOptions.TemplatePath = sameFolder ? Path.GetFileName(nfoTemplatePath) : nfoTemplatePath;
+            }
+            else
+            {
+                // A template that isn't there (yet) keeps its name, as 2.x does
+                string template = Get(Section(ReadIni(File.ReadAllLines(path, DosEncoding)), "NFO_OPTIONS"), "Template");
+                if (!string.IsNullOrWhiteSpace(template))
+                    profile.NFOOptions.TemplatePath = template.Trim();
+            }
             return profile;
         }
 
@@ -192,36 +239,41 @@ namespace CDTag.Model.Profile
         }
 
         /// <summary>
-        /// Converts <paramref name="sourcePath"/> and saves it in <paramref name="profileDirectory"/> as
-        /// <paramref name="profileName"/>.cfg, together with its NFO template (as name.nfo) and a copy of the
-        /// original file (name<see cref="BackupExtension"/>).
+        /// Copies the 2.x profile <paramref name="sourcePath"/> into <paramref name="profileDirectory"/> as
+        /// <paramref name="profileName"/>.cfg (still a 2.x profile, every setting kept), together with its NFO template
+        /// (as name.nfo).
         /// </summary>
         public static UserProfile Import(string sourcePath, string profileDirectory, string profileName)
         {
             string nfoTemplatePath;
             UserProfile profile = Convert(sourcePath, profileName, out nfoTemplatePath);
-
-            string backupPath = Path.Combine(profileDirectory, profileName + BackupExtension);
-            if (!string.Equals(Path.GetFullPath(sourcePath), Path.GetFullPath(backupPath), StringComparison.OrdinalIgnoreCase))
-                File.Copy(sourcePath, backupPath, overwrite: true);
-
-            if (nfoTemplatePath != null)
-            {
-                string nfoFileName = profileName + ".nfo";
-                string target = Path.Combine(profileDirectory, nfoFileName);
-                if (!string.Equals(Path.GetFullPath(nfoTemplatePath), Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase))
-                    File.Copy(nfoTemplatePath, target, overwrite: true);
-                profile.NFOOptions.TemplatePath = nfoFileName;
-            }
+            profile.NFOOptions.TemplatePath = nfoTemplatePath;
 
             string message;
             if (!profile.ValidateProfileName(out message))
                 throw new InvalidDataException(message);
 
-            File.WriteAllText(Path.Combine(profileDirectory, profileName + ".cfg"), JsonSerializer.SerializeObject(profile));
-            profile.LastModified = DateTime.Now;
-            profile.UpdateModelHash();
-            return profile;
+            // Read the source first: it may be the file being replaced.
+            string[] source = File.ReadAllLines(sourcePath, DosEncoding);
+            string temp = Path.Combine(Path.GetTempPath(), "cdtag-import-" + Guid.NewGuid().ToString("N") + ".cfg");
+            try
+            {
+                File.WriteAllLines(temp, source, DosEncoding);
+                LegacyProfileExport.Export(profile, null, profileDirectory, temp);
+            }
+            finally
+            {
+                File.Delete(temp);
+            }
+
+            UserProfile imported = UserProfile.Load(Path.Combine(profileDirectory, profileName + ".cfg"));
+            if (nfoTemplatePath == null && imported.NFOOptions.TemplatePath != null)
+            {
+                // Its template wasn't found: say so (the file keeps the name, as 2.x does)
+                imported.NFOOptions.TemplatePath = null;
+                imported.UpdateModelHash();
+            }
+            return imported;
         }
 
         private static void ConvertNamingRules(Dictionary<string, Dictionary<string, string>> ini, UserProfile profile)

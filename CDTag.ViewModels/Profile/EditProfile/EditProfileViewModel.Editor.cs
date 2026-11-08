@@ -355,6 +355,8 @@ namespace CDTag.ViewModels.Profile.EditProfile
                 profile.NFOOptions.TemplatePath = newName + ".nfo";
             }
             MoveIfFree(Path.Combine(directory, oldName + LegacyProfile.BackupExtension), Path.Combine(directory, newName + LegacyProfile.BackupExtension));
+            // The .cfg itself too: saving starts from it, keeping the 2.x settings this version doesn't edit
+            MoveIfFree(oldFile, profile.GetProfileFileName());
 
             profile.Save();
             if (!string.Equals(oldFile, profile.GetProfileFileName(), StringComparison.OrdinalIgnoreCase) && File.Exists(oldFile))
@@ -387,6 +389,8 @@ namespace CDTag.ViewModels.Profile.EditProfile
                 File.Copy(Path.Combine(directory, copy.NFOOptions.TemplatePath), Path.Combine(directory, name + ".nfo"), true);
                 copy.NFOOptions.TemplatePath = name + ".nfo";
             }
+            if (LegacyProfile.IsLegacyFile(profile.GetProfileFileName()))
+                File.Copy(profile.GetProfileFileName(), copy.GetProfileFileName(), false);
             copy.Save();
             _profiles.Add(copy);
             Profile = copy;

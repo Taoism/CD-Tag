@@ -23,7 +23,9 @@ namespace CDTag.Model.Profile
         /// profile has an NFO template. Returns the paths written.
         /// </summary>
         /// <param name="profileDirectory">Folder of the profile (where its template and 2.x original are), or null.</param>
-        public static List<string> Export(UserProfile profile, string profileDirectory, string directory)
+        /// <param name="originalPath">2.x file to start from; by default the profile's own .cfg when it is a 2.x profile,
+        /// else its preserved original (name<see cref="LegacyProfile.BackupExtension"/>).</param>
+        public static List<string> Export(UserProfile profile, string profileDirectory, string directory, string originalPath = null)
         {
             if (profile == null)
                 throw new ArgumentNullException("profile");
@@ -34,20 +36,44 @@ namespace CDTag.Model.Profile
             Directory.CreateDirectory(directory);
             var written = new List<string>();
 
-            // NFO template next to the .cfg, as <name>.nfo
+            // NFO template next to the .cfg: kept by name when it is already there (2.x profiles can share one),
+            // otherwise copied as <name>.nfo
             string templateName = null;
             string template = TemplateFile(profile, profileDirectory);
-            if (template != null)
+            bool inPlace = profileDirectory != null &&
+                           string.Equals(Path.GetFullPath(profileDirectory).TrimEnd('\\'), Path.GetFullPath(directory).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase);
+            if (template == null && inPlace && profile.NFOOptions != null && !string.IsNullOrWhiteSpace(profile.NFOOptions.TemplatePath))
             {
-                templateName = name + ".nfo";
-                string target = Path.Combine(directory, templateName);
-                if (!string.Equals(Path.GetFullPath(template), Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase))
+                // Saving in place: a template that isn't there (yet) keeps its name
+                templateName = profile.NFOOptions.TemplatePath;
+            }
+            else if (template != null)
+            {
+                if (string.Equals(Path.GetDirectoryName(Path.GetFullPath(template)), Path.GetFullPath(directory).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
+                {
+                    templateName = Path.GetFileName(template);
+                }
+                else if (inPlace)
+                {
+                    // Saving in place: a template somewhere else stays where it is
+                    templateName = Path.GetFullPath(template);
+                }
+                else
+                {
+                    templateName = name + ".nfo";
+                    string target = Path.Combine(directory, templateName);
                     File.Copy(template, target, overwrite: true);
-                written.Add(target);
+                    written.Add(target);
+                }
             }
 
             // Start from the 2.x original when there is one
-            string original = profileDirectory != null ? Path.Combine(profileDirectory, name + LegacyProfile.BackupExtension) : null;
+            string original = originalPath;
+            if (original == null && profileDirectory != null)
+            {
+                original = new[] { Path.Combine(profileDirectory, name + ".cfg"), Path.Combine(profileDirectory, name + LegacyProfile.BackupExtension) }
+                    .FirstOrDefault(LegacyProfile.IsLegacyFile);
+            }
             IniDocument ini;
             UserProfile before = null;
             if (original != null && File.Exists(original))
@@ -188,6 +214,16 @@ namespace CDTag.Model.Profile
                 set("RELEASE_INFO", "LockID3Comment", b(release.LockComment));
                 set("NFO_OPTIONS", "DateFormat", release.NfoDateFormat);
             }
+
+            // Settings 2.x doesn't have
+            string extra = LegacyProfile.ExtraSection;
+            set(extra, "FileTypes", p.AudioFileTypes);
+            set(extra, "Underscores", b(p.FileNaming.UseUnderscores));
+            set(extra, "CueInM3U", b(finish.WriteCUEFilesToPlaylist));
+            set(extra, "MakeMD5", b(finish.CreateMD5));
+            set(extra, "MakeSHA1", b(finish.CreateSHA1));
+            set(extra, "EmbedFlacCover", b(tagging.EmbedCoverInFlac));
+            set(extra, "SkipSceneRules", b(tagging.SkipSceneRules));
 
             ExtInfoDefinition[] ext = p.ExtInfo ?? new ExtInfoDefinition[0];
             for (int n = 1; n <= ext.Length && n <= 8; n++)

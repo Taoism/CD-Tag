@@ -130,12 +130,10 @@ namespace CDTag.ViewModel.Tests.Profile
 
             Assert.That(profile.NFOOptions.TemplatePath, Is.EqualTo("GRP.nfo"));
             Assert.That(File.Exists(Path.Combine(profiles, "GRP.nfo")), Is.True);
-            Assert.That(File.Exists(Path.Combine(profiles, "GRP" + LegacyProfile.BackupExtension)), Is.True);
 
             string saved = Path.Combine(profiles, "GRP.cfg");
-            Assert.That(LegacyProfile.IsLegacyFile(saved), Is.False, "the imported profile is saved in the new JSON format");
-            Assert.That(System.Text.Json.JsonDocument.Parse(File.ReadAllText(saved)).RootElement.GetProperty("NFOOptions").GetProperty("MultiCDHeader").GetString(),
-                        Is.EqualTo("Disc #Disc/#Discs" + Environment.NewLine), "saved file is standard JSON");
+            Assert.That(LegacyProfile.IsLegacyFile(saved), Is.True, "the imported profile stays a CD-Tag 2.x profile");
+            Assert.That(File.ReadAllText(saved, LegacyProfile.DosEncoding), Does.Contain("MultiCDHeader=Disc #Disc/#Discs&nl;\r\n"));
 
             UserProfile reloaded = UserProfile.Load(saved);
             Assert.That(reloaded.FileNaming.SingleCD.SingleArtist.Directory, Is.EqualTo("<SC><Artist>-<Album>-<Year></SC>-GRP"));
@@ -215,18 +213,63 @@ namespace CDTag.ViewModel.Tests.Profile
         }
 
         [Test]
-        public void LoadConvertsLegacyFileInPlaceAndKeepsOriginal()
+        public void LoadReadsLegacyFileWithoutChangingIt()
         {
             string profiles = Path.Combine(_directory, "Profiles");
             Directory.CreateDirectory(profiles);
             string cfg = Path.Combine(profiles, "GRP.cfg");
             File.WriteAllText(cfg, SampleProfile, Encoding.Latin1);
+            File.WriteAllText(Path.Combine(profiles, "GRP.nfo"), "nfo");
 
             UserProfile profile = UserProfile.Load(cfg);
 
             Assert.That(profile.ProfileName, Is.EqualTo("GRP"));
-            Assert.That(LegacyProfile.IsLegacyFile(cfg), Is.False);
-            ClassicAssert.AreEqual(SampleProfile, File.ReadAllText(Path.Combine(profiles, "GRP" + LegacyProfile.BackupExtension), Encoding.Latin1));
+            Assert.That(profile.NFOOptions.TemplatePath, Is.EqualTo("GRP.nfo"));
+            Assert.That(profile.FileNaming.SingleCD.SingleArtist.Directory, Is.EqualTo("<SC><Artist>-<Album>-<Year></SC>-GRP"));
+            ClassicAssert.AreEqual(SampleProfile, File.ReadAllText(cfg, Encoding.Latin1), "CD-Tag 2.x can keep using the file");
+            Assert.That(Directory.GetFiles(profiles).Length, Is.EqualTo(2), "nothing else written");
+        }
+
+        [Test]
+        public void SaveInPlaceKeepsTwoXSettingsAndAddsOwnSection()
+        {
+            string profiles = Path.Combine(_directory, "Profiles");
+            Directory.CreateDirectory(profiles);
+            string cfg = Path.Combine(profiles, "GRP.cfg");
+            // A 2.x setting this version doesn't use, and a template shared by several 2.x profiles
+            File.WriteAllText(cfg, SampleProfile.Replace("Template=GRP.nfo", "Template=group.nfo") + "\r\n[TAGGING2]\r\nAPE_APEV2=Remove\r\n", Encoding.Latin1);
+            File.WriteAllText(Path.Combine(profiles, "group.nfo"), "nfo");
+
+            UserProfile profile = UserProfile.Load(cfg);
+            Assert.That(profile.NFOOptions.TemplatePath, Is.EqualTo("group.nfo"));
+            profile.Tagging.EmbedCoverInFlac = true;
+            profile.Finish.CreateMD5 = true;
+            profile.AudioFileTypes = "mp3,flac";
+            profile.FileNaming.SingleCD.SingleArtist.Directory = "<Artist>-<Album>-GRP";
+            LegacyProfileExport.Export(profile, profiles, profiles);
+
+            string text = File.ReadAllText(cfg, LegacyProfile.DosEncoding);
+            Assert.That(text, Does.Contain("[TAGGING2]\r\nAPE_APEV2=Remove\r\n"));
+            Assert.That(text, Does.Contain("Template=group.nfo\r\n"), "the shared template keeps its name");
+            Assert.That(text, Does.Contain("[" + LegacyProfile.ExtraSection + "]"));
+            Assert.That(File.Exists(Path.Combine(profiles, "GRP.nfo")), Is.False, "no copy of the template");
+
+            UserProfile back = UserProfile.Load(cfg);
+            Assert.That(back.Tagging.EmbedCoverInFlac, Is.True);
+            Assert.That(back.Finish.CreateMD5, Is.True);
+            Assert.That(back.AudioFileTypes, Is.EqualTo("mp3,flac"));
+            Assert.That(back.FileNaming.SingleCD.SingleArtist.Directory, Is.EqualTo("<Artist>-<Album>-GRP"));
+            Assert.That(back.Tagging.Id3v2, Is.EqualTo(TagAction.WriteAlways));
+        }
+
+        [Test]
+        public void ProfilesNextToTheProgramOnlyCountWhenThereAreProfiles()
+        {
+            Assert.That(PathService.HasProfiles(_directory), Is.False);
+            File.WriteAllText(Path.Combine(_directory, "notes.cfg"), "speed = 4");
+            Assert.That(PathService.HasProfiles(_directory), Is.False, "a .cfg that isn't a profile");
+            File.WriteAllText(Path.Combine(_directory, "GRP.cfg"), SampleProfile, Encoding.Latin1);
+            Assert.That(PathService.HasProfiles(_directory), Is.True);
         }
     }
 }

@@ -138,6 +138,9 @@ namespace CDTag
             if (!System.IO.Directory.Exists(defaults))
                 return;
             IPathService paths = IoC.Resolve<IPathService>();
+            // A folder that already has profiles (e.g. a CD-Tag 2.x folder) is left as it is
+            if (PathService.HasProfiles(paths.ProfileDirectory))
+                return;
             CopyIfMissing(System.IO.Path.Combine(defaults, "blank.nfo"), System.IO.Path.Combine(paths.ProfileDirectory, "blank.nfo"));
         }
 

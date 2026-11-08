@@ -27,16 +27,11 @@ namespace CDTag.Model.Profile
 
             if (LegacyProfile.IsLegacyFile(path))
             {
-                // A CD-Tag 2.x profile copied into the Profiles folder: convert it in place,
-                // keeping the original as name.cdtag2.ini.
-                string name = Path.GetFileNameWithoutExtension(path);
-                string directory = Path.GetDirectoryName(path);
-                string backup = Path.Combine(directory, name + LegacyProfile.BackupExtension);
-                if (!File.Exists(backup))
-                    File.Copy(path, backup);
-                UserProfile converted = LegacyProfile.Import(backup, directory, name);
-                converted.LastModified = File.GetLastWriteTime(path);
-                return converted;
+                // A CD-Tag 2.x profile: read as it is, so CD-Tag 2.x can keep using the same file.
+                UserProfile legacy = LegacyProfile.Read(path);
+                legacy.LastModified = File.GetLastWriteTime(path);
+                legacy.UpdateModelHash();
+                return legacy;
             }
 
             string json = File.ReadAllText(path);
