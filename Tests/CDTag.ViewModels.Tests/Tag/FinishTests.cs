@@ -311,6 +311,40 @@ namespace CDTag.ViewModel.Tests.Tag
                 Assert.That(File.ReadAllLines(Path.Combine(result, m3u)).All(l => !l.Contains("\\")), Is.True, "playlist entries are in the album folder");
         }
 
+        [TestCase("CD")]
+        [TestCase("cd")]
+        public void ZeroPaddedDiscFoldersCd01ToCd10AreEmptiedInOrder(string prefix)
+        {
+            // CD01 ... CD09, then CD10
+            string[] files = Enumerable.Range(1, 10).Select(d => prefix + d.ToString("00") + @"\01.flac").ToArray();
+            string folder = MakeFolder("padded (src)", "untagged.flac", files);
+            Album album = Load(folder, "Ween", "Box", Enumerable.Range(1, 10).Select(d => "Song " + d).ToArray());
+
+            Assert.That(album.Tracks.Select(t => t.DiscNumber), Is.EqualTo(Enumerable.Range(1, 10).Select(d => d.ToString())));
+
+            string result = Finish(album, Profile());
+
+            Assert.That(Directory.GetDirectories(result), Is.Empty, "CD01 ... CD10 are deleted");
+            string[] audio = Directory.GetFiles(result, "*.flac").Select(Path.GetFileName).OrderBy(n => n, StringComparer.Ordinal).ToArray();
+            Assert.That(audio, Is.EqualTo(Enumerable.Range(1, 10).Select(d => d.ToString("00") + "01-ween-song_" + d + "-grp.flac")));
+            string sfv = Directory.GetFiles(result, "*.sfv").Single();
+            Assert.That(File.ReadAllLines(sfv).Select(l => l.Split(' ')[0]), Is.EqualTo(audio), "disc order: 01 ... 09, then 10");
+        }
+
+        [TestCase("cd")]
+        [TestCase("CD")]
+        public void ThreePaddedDiscFoldersGive101_201_301(string prefix)
+        {
+            string folder = MakeFolder("three (src)", "untagged.flac", prefix + @"01\01.flac", prefix + @"02\01.flac", prefix + @"03\01.flac");
+            Album album = Load(folder, "Ween", "Three", "One", "Two", "Three");
+
+            string result = Finish(album, Profile());
+
+            Assert.That(Directory.GetDirectories(result), Is.Empty);
+            Assert.That(Directory.GetFiles(result, "*.flac").Select(Path.GetFileName).OrderBy(n => n, StringComparer.Ordinal),
+                        Is.EqualTo(new[] { "101-ween-one-grp.flac", "201-ween-two-grp.flac", "301-ween-three-grp.flac" }));
+        }
+
         [Test]
         public void DifferentFilesWithTheSameNameInTwoDiscFoldersStopFinish()
         {
