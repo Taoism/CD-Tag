@@ -48,7 +48,7 @@
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
-            <ComboBox Grid.Column="3" ItemsSource="{Binding Tocs}" SelectedItem="{Binding SelectedToc, Mode=TwoWay}" MinWidth="80"
+            <ComboBox Grid.Column="3" ItemsSource="{Binding TocChoices}" SelectedItem="{Binding SelectedToc, Mode=TwoWay}" MinWidth="80"
                       DisplayMemberPath="Disc">
                 <ComboBox.Style>
                     <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">

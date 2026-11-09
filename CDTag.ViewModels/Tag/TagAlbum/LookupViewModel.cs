@@ -104,16 +104,47 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             set
             {
                 _tocs = value ?? new List<DiscToc>();
+                var choices = new List<DiscToc>();
+                if (_tocs.Count > 1)
+                    choices.Add(new AllDiscsToc(_tocs.Count));
+                choices.AddRange(_tocs);
+                TocChoices = choices;
                 RaisePropertyChanged("Tocs", null, null);
+                RaisePropertyChanged("TocChoices", null, null);
                 RaisePropertyChanged("HasManyTocs", null, null);
-                SelectedToc = _tocs.FirstOrDefault();
+                SelectedToc = choices.FirstOrDefault();
                 RaisePropertyChanged("TocInfo", null, null);
             }
         }
 
+        /// <summary>The disc list: "All discs" first when the album has several, then each disc.</summary>
+        public IList<DiscToc> TocChoices { get; private set; } = new List<DiscToc>();
+
         public bool HasManyTocs
         {
             get { return _tocs.Count > 1; }
+        }
+
+        /// <summary>The "All discs" entry of the disc list: every disc is looked up and the results are joined.</summary>
+        public class AllDiscsToc : DiscToc
+        {
+            private readonly int _discs;
+
+            public AllDiscsToc(int discs)
+            {
+                _discs = discs;
+                Source = "all discs";
+            }
+
+            public override string ToString()
+            {
+                return string.Format("All {0} discs", _discs);
+            }
+        }
+
+        private bool IsAllDiscs
+        {
+            get { return SelectedToc is AllDiscsToc; }
         }
 
         public DiscToc SelectedToc { get { return Get<DiscToc>("SelectedToc"); } set { Set("SelectedToc", value); } }
@@ -136,6 +167,15 @@ namespace CDTag.ViewModels.Tag.TagAlbum
                     return null;
                 if (_tocs.Count == 0)
                     return "No disc TOC: needs the rip log (EAC/XLD) in the album folder, or FLAC files ripped from CD.";
+                if (IsAllDiscs)
+                {
+                    string info = string.Format("{0} tracks on {1} discs, TOCs from {2}", _tocs.Sum(t => t.AudioTrackCount), _tocs.Count,
+                                                string.Join(", ", _tocs.Select(t => t.Source).Distinct()));
+                    var missing = Enumerable.Range(1, Math.Max(DiscCount, 0)).Where(d => _tocs.All(t => t.Disc != d)).ToList();
+                    if (missing.Count > 0)
+                        info += string.Format(" (no TOC for disc {0})", string.Join(", ", missing));
+                    return info;
+                }
                 DiscToc toc = SelectedToc ?? _tocs[0];
                 return string.Format("{0} tracks, TOC from {1}", toc.AudioTrackCount, toc.Source);
             }
@@ -261,6 +301,11 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             }
 
             string name = source == LookupSource.CueToolsDb ? "CUETools DB" : "MusicBrainz";
+            if (IsAllDiscs)
+            {
+                await AllDiscsSearchAsync(source, name, version);
+                return;
+            }
             Status = string.Format("Looking up disc {0} in {1}...", toc.Disc, name);
             List<ReleaseDetails> releases = source == LookupSource.CueToolsDb
                 ? await _ctdb.LookupAsync(toc)
@@ -284,6 +329,52 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             }
             var bySource = releases.GroupBy(r => r.Source).Select(g => g.Count() + " " + g.Key);
             Status = string.Format("{0} matches for disc {1} ({2}).", releases.Count, toc.Disc, string.Join(", ", bySource));
+            SelectedResult = Results.FirstOrDefault(r => r.MatchesTrackCount) ?? Results[0];
+        }
+
+        /// <summary>Looks up every disc (CD1, CD2, CD3...) and lists the releases they have in common first.</summary>
+        private async Task AllDiscsSearchAsync(LookupSource source, string name, int version)
+        {
+            var perDisc = new List<List<ReleaseDetails>>();
+            foreach (DiscToc disc in _tocs)
+            {
+                Status = string.Format("Looking up disc {0} of {1} in {2}...", disc.Disc, _tocs.Count, name);
+                perDisc.Add(source == LookupSource.CueToolsDb
+                    ? await _ctdb.LookupAsync(disc)
+                    : await _client.LookupDiscAsync(disc));
+                if (version != _searchVersion)
+                    return;
+            }
+
+            int all;
+            List<ReleaseDetails> releases;
+            if (source == LookupSource.CueToolsDb)
+            {
+                releases = MultiDiscLookup.CombineCtdb(_tocs, perDisc);
+                all = releases.Count(r => r.OnlyDisc == 0 && MultiDiscLookup.DiscsFound(r) == _tocs.Count);
+            }
+            else
+            {
+                releases = MultiDiscLookup.CombineMusicBrainz(perDisc, out all);
+            }
+
+            foreach (ReleaseDetails release in releases)
+            {
+                DiscToc only = release.OnlyDisc > 0 ? _tocs.FirstOrDefault(t => t.Disc == release.OnlyDisc) : null;
+                ReleaseSearchResult row = release.ToSearchResult(only != null ? only.AudioTrackCount : TrackCount);
+                _loaded[row.Id] = release;
+                Results.Add(row);
+            }
+
+            if (releases.Count == 0)
+            {
+                Status = string.Format("None of the {0} discs is in {1}. Try another source or MusicBrainz (search).", _tocs.Count, name);
+                return;
+            }
+            Status = all > 0
+                ? string.Format("{0} releases match all {1} discs{2}.", all, _tocs.Count,
+                                releases.Count > all ? string.Format(" (listed first), {0} only some", releases.Count - all) : "")
+                : string.Format("No release matches all {0} discs; {1} match some. Pick one disc in the Disc list to look it up alone.", _tocs.Count, releases.Count);
             SelectedResult = Results.FirstOrDefault(r => r.MatchesTrackCount) ?? Results[0];
         }
 
