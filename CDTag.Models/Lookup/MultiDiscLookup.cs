@@ -106,6 +106,8 @@ namespace CDTag.Model.Lookup
         {
             if (!string.IsNullOrEmpty(release.MusicBrainzId))
                 return "mb|" + release.MusicBrainzId.ToLowerInvariant();
+            if (!string.IsNullOrEmpty(release.DiscogsId))
+                return "discogs|" + release.DiscogsId;
             return (release.Source ?? "") + "|" + Normalize(release.Artist) + "|" + Normalize(StripDiscNumber(release.Title));
         }
 
@@ -138,6 +140,7 @@ namespace CDTag.Model.Lookup
                 Format = first.Format,
                 Discs = Math.Max(albumDiscs, parts.Max(p => p.Discs)),
                 MusicBrainzId = first.MusicBrainzId,
+                DiscogsId = parts.Select(p => p.DiscogsId).FirstOrDefault(v => v != null),
                 CoverUrl = parts.Select(p => p.CoverUrl).FirstOrDefault(v => v != null),
                 OnlyDisc = 0,
                 Tracks = parts.SelectMany(p => p.Tracks).OrderBy(t => t.Disc).ThenBy(t => t.Position).ToList()

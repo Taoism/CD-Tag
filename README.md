@@ -10,7 +10,7 @@ an unfinished project. The fork brings it up to date:
   is vendored as a git subtree under `External/IdSharp`.
 - **Dark mode**: *View → Theme* offers *Use Windows setting* (default), *Light* and *Dark*, switchable
   at runtime. Dark title bars and, on Windows 11, a Mica backdrop.
-- **Tag Album** in the CD-Tag 2.x style: release page, lookup (MusicBrainz, CUETools DB), track preview,
+- **Tag Album** in the CD-Tag 2.x style: release page, lookup (MusicBrainz, CUETools DB, Discogs), track preview,
   NFO/M3U/SFV creation, renaming and FLAC/MP3 tagging on *Finish*.
 - **Rip**: reads the disc and looks it up (MusicBrainz disc ID, CUETools DB), then rips in test & copy mode with read
   offset correction (AccurateRip drive database), re-reads of mismatching blocks and an AccurateRip check per track;

@@ -53,6 +53,13 @@ namespace CDTag.Common.Settings
         public string GnudbEmail { get; set; }
 
         /// <summary>
+        /// Discogs personal access token (discogs.com > Settings > Developers). Needed for the Discogs search and covers;
+        /// release links work without it.
+        /// </summary>
+        [DataMember]
+        public string DiscogsToken { get; set; }
+
+        /// <summary>
         /// Scene-style tagging, "true" or "false" ("enabled" in options.json). On: Finish checks the scene rules, release names
         /// get the bit depth / fix tags, Tag Album shows Bit/kHz and Fix, genres follow the scene list, and the rules are
         /// checked for updates at startup. Missing = on.

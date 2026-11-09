@@ -15,6 +15,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="2*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="3*" />
@@ -49,7 +50,7 @@
                 </TextBlock.Style>
             </TextBlock>
             <ComboBox Grid.Column="3" ItemsSource="{Binding TocChoices}" SelectedItem="{Binding SelectedToc, Mode=TwoWay}" MinWidth="80"
-                      DisplayMemberPath="Disc">
+                      DisplayMemberPath="DisplayName">
                 <ComboBox.Style>
                     <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
                         <Setter Property="Visibility" Value="Collapsed" />
@@ -90,11 +91,45 @@
             </Grid.ColumnDefinitions>
             <TextBlock Text="or release link" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource Theme.ForegroundSecondary}" />
             <TextBox Grid.Column="1" Text="{Binding ReleaseLink, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center" Padding="2"
-                     ToolTip="Paste a musicbrainz.org/release/... link or release ID, then press Search" />
+                     ToolTip="Paste a musicbrainz.org/release/... or discogs.com/release/... link, then press Search" />
         </Grid>
 
+        <!-- Discogs token (only while Discogs is the source and none is saved) -->
+        <Border Grid.Row="3" Margin="0,8,0,0" Padding="8,6" BorderThickness="1"
+                BorderBrush="{DynamicResource Theme.Divider}" Background="{DynamicResource Theme.PanelBackground}">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding NeedsDiscogsToken}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.ColumnSpan="4" TextWrapping="Wrap" Margin="0,0,0,6"
+                           Text="No Discogs personal access token yet. Discogs asks programs to use one for searching (and allows more lookups with it). Click Get a token (sign in at discogs.com, Settings > Developers, Generate new token), copy it, paste it here and click Save. It is kept in Tools > Options." />
+                <TextBlock Grid.Row="1" Text="Token" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding DiscogsTokenInput, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center" Padding="2" />
+                <Button Grid.Row="1" Grid.Column="2" Content="Get a token..." Command="{Binding GetDiscogsTokenCommand}" Padding="10,3" Margin="8,0,0,0"
+                        ToolTip="Opens discogs.com > Settings > Developers in your browser" />
+                <Button Grid.Row="1" Grid.Column="3" Content="Save" Command="{Binding SaveDiscogsTokenCommand}" MinWidth="70" Padding="10,3" Margin="8,0,0,0" />
+            </Grid>
+        </Border>
+
         <!-- Results -->
-        <DataGrid Grid.Row="3" Margin="0,8,0,0" ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedResult, Mode=TwoWay}"
+        <DataGrid Grid.Row="4" Margin="0,8,0,0" ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedResult, Mode=TwoWay}"
                   AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="None"
                   CanUserAddRows="False">
             <DataGrid.RowStyle>
@@ -112,17 +147,17 @@
                 <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="82" />
                 <DataGridTextColumn Header="Country" Binding="{Binding Country}" Width="56" />
                 <DataGridTextColumn Header="Format" Binding="{Binding Format}" Width="90" />
-                <DataGridTextColumn Header="Tracks" Binding="{Binding TrackCount}" Width="52" />
+                <DataGridTextColumn Header="Tracks" Binding="{Binding TrackCount, StringFormat={}{0:#}}" Width="52" />
                 <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="*" />
                 <DataGridTextColumn Header="Cat #" Binding="{Binding CatalogNumber}" Width="90" />
                 <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="96" />
             </DataGrid.Columns>
         </DataGrid>
 
-        <TextBlock Grid.Row="4" Margin="0,8,0,4" Text="{Binding Summary}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+        <TextBlock Grid.Row="5" Margin="0,8,0,4" Text="{Binding Summary}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
 
         <!-- Track list of the selected release -->
-        <DataGrid Grid.Row="5" ItemsSource="{Binding Tracks}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+        <DataGrid Grid.Row="6" ItemsSource="{Binding Tracks}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
                   GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Disc" Binding="{Binding Disc}" Width="44" />
@@ -134,7 +169,7 @@
         </DataGrid>
 
         <!-- Status / buttons -->
-        <Grid Grid.Row="6" Margin="0,10,0,0">
+        <Grid Grid.Row="7" Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />

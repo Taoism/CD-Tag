@@ -139,6 +139,7 @@ namespace CDTag.Model.Lookup
                     Format = "CD",
                     Discs = Math.Max(1, ParseInt((string)meta.Attribute("disccount"))),
                     MusicBrainzId = source == "MusicBrainz" ? id : null,
+                    DiscogsId = source == "Discogs" && id != null && id.All(char.IsDigit) ? id : null,
                     CoverUrl = CoverUrl(meta),
                     OnlyDisc = toc != null ? toc.Disc : 0,
                     Tracks = new List<ReleaseTrack>()

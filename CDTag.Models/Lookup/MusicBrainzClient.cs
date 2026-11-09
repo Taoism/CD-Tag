@@ -66,6 +66,8 @@ namespace CDTag.Model.Lookup
         public string Source { get; set; }
         /// <summary>MusicBrainz release ID (for the Cover Art Archive); null for other sources.</summary>
         public string MusicBrainzId { get; set; }
+        /// <summary>Discogs release ID (CUETools DB Discogs entries, Discogs lookups); null for other sources.</summary>
+        public string DiscogsId { get; set; }
         /// <summary>Cover image to download instead of the Cover Art Archive front cover.</summary>
         public string CoverUrl { get; set; }
         /// <summary>When the data covers one disc of the album only (disc-ID lookups): that disc; otherwise 0.</summary>

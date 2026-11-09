@@ -29,6 +29,8 @@ namespace CDTag.ViewModel.Options
             LamePath = options.LamePath;
             FlacPath = options.FlacPath;
             GnudbEmail = options.GnudbEmail;
+            DiscogsToken = options.DiscogsToken;
+            GetDiscogsTokenCommand = new DelegateCommand(() => OpenPage(CDTag.Model.Lookup.DiscogsClient.TokenPage));
 
             BrowseStartupFolderCommand = new DelegateCommand(BrowseStartupFolder);
             BrowseLameCommand = new DelegateCommand(() => BrowseExe("lame.exe", "LamePath"));
@@ -88,6 +90,27 @@ namespace CDTag.ViewModel.Options
         {
             get { return Get<string>("GnudbEmail"); }
             set { Set("GnudbEmail", value); }
+        }
+
+        /// <summary>Discogs personal access token; empty = Discogs search is off (release links still work).</summary>
+        public string DiscogsToken
+        {
+            get { return Get<string>("DiscogsToken"); }
+            set { Set("DiscogsToken", value); }
+        }
+
+        /// <summary>Opens discogs.com's developer settings, where the personal access token is made.</summary>
+        public ICommand GetDiscogsTokenCommand { get; private set; }
+
+        private static void OpenPage(string url)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+            }
         }
 
         public string FlacPath
@@ -193,6 +216,7 @@ namespace CDTag.ViewModel.Options
             options.LamePath = string.IsNullOrWhiteSpace(LamePath) ? null : LamePath.Trim();
             options.FlacPath = string.IsNullOrWhiteSpace(FlacPath) ? null : FlacPath.Trim();
             options.GnudbEmail = string.IsNullOrWhiteSpace(GnudbEmail) ? null : GnudbEmail.Trim();
+            options.DiscogsToken = string.IsNullOrWhiteSpace(DiscogsToken) ? null : DiscogsToken.Trim();
             AppOptions.Save(options);
 
             if (!string.IsNullOrEmpty(Theme))

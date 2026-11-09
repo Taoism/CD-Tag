@@ -19,7 +19,9 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         /// <summary>MusicBrainz by disc ID / TOC.</summary>
         MusicBrainzDisc,
         /// <summary>CUETools Database by TOC (MusicBrainz, Discogs and freedb data).</summary>
-        CueToolsDb
+        CueToolsDb,
+        /// <summary>Discogs search by artist / album (needs a personal access token), or a pasted Discogs release link.</summary>
+        DiscogsSearch
     }
 
     public class LookupSourceOption
@@ -75,10 +77,13 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             {
                 new LookupSourceOption { Value = LookupSource.MusicBrainzSearch, Name = "MusicBrainz (search)" },
                 new LookupSourceOption { Value = LookupSource.CueToolsDb, Name = "CUETools DB (disc TOC)", NeedsToc = true },
-                new LookupSourceOption { Value = LookupSource.MusicBrainzDisc, Name = "MusicBrainz (disc ID)", NeedsToc = true }
+                new LookupSourceOption { Value = LookupSource.MusicBrainzDisc, Name = "MusicBrainz (disc ID)", NeedsToc = true },
+                new LookupSourceOption { Value = LookupSource.DiscogsSearch, Name = "Discogs (search)" }
             };
             SelectedSource = Sources[0];
             SearchCommand = new DelegateCommand(() => Search(), () => !IsBusy);
+            GetDiscogsTokenCommand = new DelegateCommand(() => OpenPage(DiscogsClient.TokenPage));
+            SaveDiscogsTokenCommand = new DelegateCommand(SaveDiscogsToken, () => !string.IsNullOrWhiteSpace(DiscogsTokenInput));
             ApplyCommand = new DelegateCommand(Apply, () => SelectedDetails != null && !IsBusy);
             PropertyChanged += (s, e) =>
             {
@@ -138,7 +143,12 @@ namespace CDTag.ViewModels.Tag.TagAlbum
 
             public override string ToString()
             {
-                return string.Format("All {0} discs", _discs);
+                return DisplayName;
+            }
+
+            public override string DisplayName
+            {
+                get { return string.Format("All {0}", _discs); }
             }
         }
 
@@ -194,6 +204,55 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         public ICommand SearchCommand { get; private set; }
         public ICommand ApplyCommand { get; private set; }
 
+        // ------------------------------------------------------------------ Discogs token
+
+        private static DiscogsClient Discogs
+        {
+            get { return new DiscogsClient(CDTag.Common.Settings.AppOptions.Current.DiscogsToken); }
+        }
+
+        private bool IsDiscogs
+        {
+            get { return SelectedSource != null && SelectedSource.Value == LookupSource.DiscogsSearch; }
+        }
+
+        /// <summary>Discogs is the source and there is no token yet: the window shows where to get one.</summary>
+        public bool NeedsDiscogsToken
+        {
+            get { return IsDiscogs && !Discogs.HasToken; }
+        }
+
+        /// <summary>The token typed or pasted in the Look up window (saved to Tools > Options).</summary>
+        public string DiscogsTokenInput
+        {
+            get { return Get<string>("DiscogsTokenInput"); }
+            set { Set("DiscogsTokenInput", value); CommandManager.InvalidateRequerySuggested(); }
+        }
+
+        public ICommand GetDiscogsTokenCommand { get; private set; }
+        public ICommand SaveDiscogsTokenCommand { get; private set; }
+
+        private void SaveDiscogsToken()
+        {
+            CDTag.Common.Settings.AppOptionsData options = CDTag.Common.Settings.AppOptions.Current.Clone();
+            options.DiscogsToken = DiscogsTokenInput.Trim();
+            CDTag.Common.Settings.AppOptions.Save(options);
+            DiscogsTokenInput = null;
+            RaisePropertyChanged("NeedsDiscogsToken", null, null);
+            Search();
+        }
+
+        private static void OpenPage(string url)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+            }
+        }
+
         public string Summary
         {
             get
@@ -218,6 +277,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         {
             RaisePropertyChanged("IsTextSearch", null, null);
             RaisePropertyChanged("TocInfo", null, null);
+            RaisePropertyChanged("NeedsDiscogsToken", null, null);
             if (_started)
                 Search();
         }
@@ -236,8 +296,8 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             try
             {
                 LookupSource source = SelectedSource != null ? SelectedSource.Value : LookupSource.MusicBrainzSearch;
-                if (source == LookupSource.MusicBrainzSearch)
-                    await TextSearchAsync(version);
+                if (source == LookupSource.MusicBrainzSearch || source == LookupSource.DiscogsSearch)
+                    await TextSearchAsync(source, version);
                 else
                     await DiscSearchAsync(source, version);
             }
@@ -253,13 +313,19 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             }
         }
 
-        private async Task TextSearchAsync(int version)
+        private async Task TextSearchAsync(LookupSource source, int version)
         {
-            Match id = ReleaseId.Match(ReleaseLink ?? "");
-            if (id.Success)
+            string link = ReleaseLink ?? "";
+            string discogsId = DiscogsClient.ReleaseIdFromLink(link);
+            if (discogsId == null && source == LookupSource.DiscogsSearch && Regex.IsMatch(link.Trim(), @"^\d+$"))
+                discogsId = link.Trim();
+            Match id = ReleaseId.Match(link);
+            if (discogsId != null || id.Success)
             {
-                Status = "Loading release from MusicBrainz...";
-                ReleaseDetails details = await _client.GetReleaseAsync(id.Value.ToLowerInvariant());
+                Status = discogsId != null ? "Loading release from Discogs..." : "Loading release from MusicBrainz...";
+                ReleaseDetails details = discogsId != null
+                    ? await Discogs.GetReleaseAsync(discogsId)
+                    : await _client.GetReleaseAsync(id.Value.ToLowerInvariant());
                 if (version != _searchVersion)
                     return;
                 ReleaseSearchResult row = details.ToSearchResult(TrackCount);
@@ -270,14 +336,19 @@ namespace CDTag.ViewModels.Tag.TagAlbum
                 return;
             }
 
+            bool discogs = source == LookupSource.DiscogsSearch;
             if (string.IsNullOrWhiteSpace(Artist) && string.IsNullOrWhiteSpace(Album))
             {
-                Status = "Enter an artist and/or album, or paste a MusicBrainz release link.";
+                Status = discogs
+                    ? "Enter an artist and/or album, or paste a Discogs release link."
+                    : "Enter an artist and/or album, or paste a MusicBrainz or Discogs release link.";
                 return;
             }
 
-            Status = "Searching MusicBrainz...";
-            var results = await _client.SearchReleasesAsync(Artist, Album, TrackCount);
+            Status = discogs ? "Searching Discogs..." : "Searching MusicBrainz...";
+            var results = discogs
+                ? await Discogs.SearchReleasesAsync(Artist, Album, DiscCount)
+                : await _client.SearchReleasesAsync(Artist, Album, TrackCount);
             if (version != _searchVersion)
                 return;
             foreach (ReleaseSearchResult result in results)
@@ -285,7 +356,8 @@ namespace CDTag.ViewModels.Tag.TagAlbum
 
             int matching = results.Count(r => r.MatchesTrackCount);
             Status = results.Count == 0
-                ? "No releases found. Try a shorter title, or paste the release link from musicbrainz.org."
+                ? (discogs ? "No releases found. Try a shorter title, or paste the release link from discogs.com."
+                           : "No releases found. Try a shorter title, or paste the release link from musicbrainz.org.")
                 : string.Format("{0} releases found{1}.", results.Count, matching > 0 ? string.Format(", {0} with {1} tracks (listed first)", matching, TrackCount) : "");
             if (results.Count > 0)
                 SelectedResult = results[0];
@@ -398,12 +470,18 @@ namespace CDTag.ViewModels.Tag.TagAlbum
                 if (!_loaded.TryGetValue(selected.Id, out details))
                 {
                     Status = "Loading track list...";
-                    details = await _client.GetReleaseAsync(selected.Id, cancellation.Token);
+                    details = selected.Id.StartsWith("discogs:", StringComparison.Ordinal)
+                        ? await Discogs.GetReleaseAsync(selected.Id.Substring("discogs:".Length), cancellation.Token)
+                        : await _client.GetReleaseAsync(selected.Id, cancellation.Token);
                     if (cancellation.IsCancellationRequested)
                         return;
+                    _loaded[selected.Id] = details;
                     Status = null;
                 }
                 ShowDetails(details);
+                await FillFromDiscogsAsync(details, cancellation);
+                if (cancellation.IsCancellationRequested)
+                    return;
                 await LoadCoverAsync(details);
             }
             catch (OperationCanceledException)
@@ -413,6 +491,48 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             {
                 if (!cancellation.IsCancellationRequested)
                     Status = "Could not load the release: " + Unwrap(ex).Message;
+            }
+        }
+
+        private readonly HashSet<ReleaseDetails> _filled = new HashSet<ReleaseDetails>();
+
+        /// <summary>
+        /// A CUETools DB Discogs match often has no label, catalog # or cover: they come from the full Discogs release
+        /// (the track list stays, its lengths are from the disc's TOC).
+        /// </summary>
+        private async Task FillFromDiscogsAsync(ReleaseDetails details, CancellationTokenSource cancellation)
+        {
+            if (details.DiscogsId == null || details.Id.StartsWith("discogs:", StringComparison.Ordinal) || !_filled.Add(details))
+                return;
+            try
+            {
+                Status = "Loading label, catalog # and cover from Discogs...";
+                ReleaseDetails full = await Discogs.GetReleaseAsync(details.DiscogsId, cancellation.Token);
+                if (cancellation.IsCancellationRequested)
+                    return;
+                if (DiscogsClient.FillMissing(details, full) && SelectedDetails == details)
+                {
+                    RaisePropertyChanged("Summary", null, null);
+                    ReleaseSearchResult row = Results.FirstOrDefault(r => r.Id == details.Id);
+                    if (row != null)
+                    {
+                        // The results grid shows the new label / catalog #.
+                        int index = Results.IndexOf(row);
+                        ReleaseSearchResult updated = details.ToSearchResult(row.MatchesTrackCount ? row.TrackCount : -1);
+                        updated.MatchesTrackCount = row.MatchesTrackCount;
+                        Results[index] = updated;
+                        SelectedResult = updated;
+                    }
+                }
+                Status = null;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception)
+            {
+                if (!cancellation.IsCancellationRequested)
+                    Status = null; // the CUETools DB data is still usable
             }
         }
 

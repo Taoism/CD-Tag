@@ -142,6 +142,12 @@ namespace CDTag.Model.Lookup
             return string.Format("Disc {0}: {1} tracks ({2})", Disc, AudioTrackCount, Source);
         }
 
+        /// <summary>The name in Look up's disc list ("1", "2"...).</summary>
+        public virtual string DisplayName
+        {
+            get { return Disc.ToString(CultureInfo.InvariantCulture); }
+        }
+
         // ------------------------------------------------------------------ rip logs
 
         private static readonly Regex TocRow = new Regex(

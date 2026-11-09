@@ -293,7 +293,7 @@
             <StackPanel Grid.Column="0" Orientation="Horizontal">
                 <Button Content="Preview _NFO" Command="{Binding PreviewNFOCommand}" Padding="10,3" />
                 <Button Content="_Look up" Command="{Binding LookupCommand}" Padding="10,3" Margin="8,0,0,0"
-                        ToolTip="Look up this album (MusicBrainz, CUETools DB: track titles, date, label, catalog #, cover)" />
+                        ToolTip="Look up this album (MusicBrainz, CUETools DB, Discogs: track titles, date, label, catalog #, cover)" />
             </StackPanel>
             <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="12,0" Foreground="{DynamicResource Theme.ForegroundSecondary}" TextTrimming="CharacterEllipsis">
                 <TextBlock.Style>
