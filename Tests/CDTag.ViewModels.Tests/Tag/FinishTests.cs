@@ -232,7 +232,9 @@ namespace CDTag.ViewModel.Tests.Tag
             string folder = MakeFolder("set (src)", "untagged.flac", @"CD1\01.flac", @"CD1\02.flac", @"CD2\01.flac");
             Album album = Load(folder, "Ween", "Live", "One", "Two", "Three");
             album.SetDiscName(1, "McCabe's");
-            string result = Finish(album, Profile());
+            UserProfile profile = Profile();
+            profile.Finish.MoveOutOfDiscFolders = false;
+            string result = Finish(album, profile);
 
             Assert.That(Path.GetFileName(result), Is.EqualTo("Ween-Live-2CD-1994-GRP"));
             Assert.That(File.ReadAllLines(Path.Combine(result, "CD1", "100-ween-live-1994-grp.m3u")),
@@ -256,8 +258,71 @@ namespace CDTag.ViewModel.Tests.Tag
 
             string result = Finish(album, Profile());
 
-            Assert.That(File.Exists(Path.Combine(result, "CD1", "0101-ween-song_1-grp.flac")), Is.True);
-            Assert.That(File.Exists(Path.Combine(result, "CD10", "1001-ween-song_10-grp.flac")), Is.True);
+            Assert.That(File.Exists(Path.Combine(result, "0101-ween-song_1-grp.flac")), Is.True);
+            Assert.That(File.Exists(Path.Combine(result, "1001-ween-song_10-grp.flac")), Is.True);
+            Assert.That(Directory.GetDirectories(result), Is.Empty);
+        }
+
+        [Test]
+        public void DiscFoldersAreEmptiedIntoTheAlbumFolder()
+        {
+            string folder = MakeFolder("set (src)", "untagged.flac", @"CD1\01.flac", @"CD1\02.flac", @"CD2\01.flac");
+            byte[] cover = Cover();
+            foreach (string disc in new[] { "CD1", "CD2" })
+            {
+                File.WriteAllBytes(Path.Combine(folder, disc, "folder.jpg"), cover); // the same cover in both
+                File.WriteAllText(Path.Combine(folder, disc, "rip.cue"), "cue " + disc);
+                File.WriteAllText(Path.Combine(folder, disc, "rip.log"), "log " + disc);
+                File.WriteAllText(Path.Combine(folder, disc, "old.m3u"), "x"); // on the delete list
+            }
+            File.WriteAllText(Path.Combine(folder, "CD2", "notes.txt"), "notes");
+            Album album = Load(folder, "Ween", "Live", "One", "Two", "Three");
+            UserProfile profile = Profile();
+            profile.Finish.RenameEACLogFiles = true; // log format has no <Disc>
+            profile.FileNaming.MultiCD.SingleArtist.CUE = "<LC><Disc>01-<Artist>-<Album>-<Year></LC>-grp";
+            var finisher = new AlbumFinisher(profile, album, Release(), null);
+
+            FinishPlan plan = finisher.Plan();
+            Assert.That(plan.Problems, Is.Empty);
+            Assert.That(plan.Describe(), Does.Contain("Move the files out of CD1, CD2 into the album folder"));
+            string result = finisher.Run(plan);
+
+            Assert.That(Directory.GetDirectories(result), Is.Empty, "CD1 and CD2 are deleted");
+            string[] names = Directory.GetFiles(result).Select(Path.GetFileName).OrderBy(n => n, StringComparer.Ordinal).ToArray();
+            TestContext.Out.WriteLine(string.Join(Environment.NewLine, names));
+            Assert.That(names, Does.Contain("101-ween-one-grp.flac"));
+            Assert.That(names, Does.Contain("102-ween-two-grp.flac"));
+            Assert.That(names, Does.Contain("201-ween-three-grp.flac"));
+            Assert.That(names, Does.Contain("101-ween-live-1994-grp.cue"));
+            Assert.That(names, Does.Contain("201-ween-live-1994-grp.cue"));
+            Assert.That(names, Does.Contain("0000-ween-live-1994-grp-cd1.log"));
+            Assert.That(names, Does.Contain("0000-ween-live-1994-grp-cd2.log"));
+            Assert.That(names, Does.Contain("0000-ween-live-1994-front-grp.jpg"), "one cover; the identical second copy is deleted");
+            Assert.That(names, Does.Contain("notes.txt"));
+            Assert.That(names.Count(n => n.EndsWith(".jpg")), Is.EqualTo(1));
+            Assert.That(names.Count(n => n.EndsWith(".sfv")), Is.EqualTo(1), "one checksum file for the album");
+            Assert.That(names.Any(n => n == "old.m3u"), Is.False);
+            Assert.That(File.ReadAllText(Path.Combine(result, "201-ween-live-1994-grp.cue")), Is.EqualTo("cue CD2"));
+
+            string sfv = names.Single(n => n.EndsWith(".sfv"));
+            Assert.That(File.ReadAllLines(Path.Combine(result, sfv)).Select(l => l.Split(' ')[0]),
+                        Is.EqualTo(new[] { "101-ween-one-grp.flac", "102-ween-two-grp.flac", "201-ween-three-grp.flac" }));
+            foreach (string m3u in names.Where(n => n.EndsWith(".m3u")))
+                Assert.That(File.ReadAllLines(Path.Combine(result, m3u)).All(l => !l.Contains("\\")), Is.True, "playlist entries are in the album folder");
+        }
+
+        [Test]
+        public void DifferentFilesWithTheSameNameInTwoDiscFoldersStopFinish()
+        {
+            string folder = MakeFolder("clash (src)", "untagged.flac", @"CD1\01.flac", @"CD2\01.flac");
+            File.WriteAllText(Path.Combine(folder, "CD1", "info.txt"), "one");
+            File.WriteAllText(Path.Combine(folder, "CD2", "info.txt"), "two");
+            Album album = Load(folder, "Ween", "Two", "One", "Two");
+            var finisher = new AlbumFinisher(Profile(), album, Release(), null);
+
+            FinishPlan plan = finisher.Plan();
+
+            Assert.That(plan.Problems, Has.Some.Contains("info.txt"));
         }
 
         [Test]
@@ -270,8 +335,8 @@ namespace CDTag.ViewModel.Tests.Tag
 
             string result = Finish(album, profile);
 
-            Assert.That(File.Exists(Path.Combine(result, "CD1", "101-ween-one-grp.flac")), Is.True);
-            Assert.That(File.Exists(Path.Combine(result, "CD2", "201-ween-two-grp.flac")), Is.True);
+            Assert.That(File.Exists(Path.Combine(result, "101-ween-one-grp.flac")), Is.True);
+            Assert.That(File.Exists(Path.Combine(result, "201-ween-two-grp.flac")), Is.True);
         }
 
         [Test]

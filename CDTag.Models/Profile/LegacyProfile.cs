@@ -179,6 +179,7 @@ namespace CDTag.Model.Profile
             profile.Finish.WriteCUEFilesToPlaylist = GetBool(extra, "CueInM3U", profile.Finish.WriteCUEFilesToPlaylist);
             profile.Finish.CreateMD5 = GetBool(extra, "MakeMD5", profile.Finish.CreateMD5);
             profile.Finish.CreateSHA1 = GetBool(extra, "MakeSHA1", profile.Finish.CreateSHA1);
+            profile.Finish.MoveOutOfDiscFolders = GetBool(extra, "FlattenDiscs", profile.Finish.MoveOutOfDiscFolders);
             profile.Tagging.EmbedCoverInFlac = GetBool(extra, "EmbedFlacCover", profile.Tagging.EmbedCoverInFlac);
             profile.Tagging.SkipSceneRules = GetBool(extra, "SkipSceneRules", profile.Tagging.SkipSceneRules);
         }

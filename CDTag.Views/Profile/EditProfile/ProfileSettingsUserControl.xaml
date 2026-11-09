@@ -213,6 +213,7 @@
                 <CheckBox Style="{StaticResource Check}" Content="Create a SHA1" IsChecked="{Binding Profile.Finish.CreateSHA1}" />
                 <CheckBox Style="{StaticResource Check}" Content="Delete old files (the list on the Naming rules page)" IsChecked="{Binding Profile.Finish.DeleteOldFiles}" />
                 <CheckBox Style="{StaticResource Check}" Content="Delete empty subfolders" IsChecked="{Binding Profile.Finish.DeleteEmptySubdirectories}" />
+                <CheckBox Style="{StaticResource Check}" Content="Move files out of CD1, CD2... folders (101, 201...) and delete them" IsChecked="{Binding Profile.Finish.MoveOutOfDiscFolders}" />
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                     <TextBlock Text="NFO" Style="{StaticResource Label}" />
                     <ComboBox Width="260" ItemsSource="{Binding FinishNFOChoices}" SelectedItem="{Binding Profile.Finish.NFO}" />

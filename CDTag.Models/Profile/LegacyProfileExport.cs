@@ -222,6 +222,7 @@ namespace CDTag.Model.Profile
             set(extra, "CueInM3U", b(finish.WriteCUEFilesToPlaylist));
             set(extra, "MakeMD5", b(finish.CreateMD5));
             set(extra, "MakeSHA1", b(finish.CreateSHA1));
+            set(extra, "FlattenDiscs", b(finish.MoveOutOfDiscFolders));
             set(extra, "EmbedFlacCover", b(tagging.EmbedCoverInFlac));
             set(extra, "SkipSceneRules", b(tagging.SkipSceneRules));
 

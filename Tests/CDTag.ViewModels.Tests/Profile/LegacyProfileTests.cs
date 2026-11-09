@@ -244,6 +244,7 @@ namespace CDTag.ViewModel.Tests.Profile
             Assert.That(profile.NFOOptions.TemplatePath, Is.EqualTo("group.nfo"));
             profile.Tagging.EmbedCoverInFlac = true;
             profile.Finish.CreateMD5 = true;
+            profile.Finish.MoveOutOfDiscFolders = false;
             profile.AudioFileTypes = "mp3,flac";
             profile.FileNaming.SingleCD.SingleArtist.Directory = "<Artist>-<Album>-GRP";
             LegacyProfileExport.Export(profile, profiles, profiles);
@@ -257,6 +258,8 @@ namespace CDTag.ViewModel.Tests.Profile
             UserProfile back = UserProfile.Load(cfg);
             Assert.That(back.Tagging.EmbedCoverInFlac, Is.True);
             Assert.That(back.Finish.CreateMD5, Is.True);
+            Assert.That(back.Finish.MoveOutOfDiscFolders, Is.False);
+            Assert.That(UserProfile.Load(Path.Combine(profiles, "GRP.cfg")).Finish.MoveOutOfDiscFolders, Is.False);
             Assert.That(back.AudioFileTypes, Is.EqualTo("mp3,flac"));
             Assert.That(back.FileNaming.SingleCD.SingleArtist.Directory, Is.EqualTo("<Artist>-<Album>-GRP"));
             Assert.That(back.Tagging.Id3v2, Is.EqualTo(TagAction.WriteAlways));

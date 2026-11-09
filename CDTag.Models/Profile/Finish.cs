@@ -16,6 +16,7 @@ namespace CDTag.Model.Profile
             NFO = FinishNFO.RenameExisting;
             WriteCUEFilesToPlaylist = true;
             DeleteOldFiles = true;
+            MoveOutOfDiscFolders = true;
         }
 
         public bool RenameDirectory
@@ -94,6 +95,16 @@ namespace CDTag.Model.Profile
         {
             get { return Get<bool>("DeleteEmptySubdirectories"); }
             set { Set("DeleteEmptySubdirectories", value); }
+        }
+
+        /// <summary>
+        /// Multi-disc albums with CD1 / CD2 / ... folders: move every file into the album folder (the disc number
+        /// goes into the names, 101, 201, ...) and delete the disc folders.
+        /// </summary>
+        public bool MoveOutOfDiscFolders
+        {
+            get { return Get<bool>("MoveOutOfDiscFolders"); }
+            set { Set("MoveOutOfDiscFolders", value); }
         }
     }
 }

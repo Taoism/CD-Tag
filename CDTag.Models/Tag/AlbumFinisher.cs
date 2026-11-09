@@ -43,7 +43,11 @@ namespace CDTag.Model.Tag
             Deletes = new List<string>();
             Moves = new List<FileMove>();
             Creates = new List<FileCreate>();
+            RemovedFolders = new List<string>();
         }
+
+        /// <summary>CD1 / CD2 / ... folders whose files move into the album folder; deleted afterwards.</summary>
+        public List<string> RemovedFolders { get; private set; }
 
         /// <summary>Scene rules findings (Finish can still run).</summary>
         public List<string> RuleIssues { get; private set; } = new List<string>();
@@ -76,6 +80,9 @@ namespace CDTag.Model.Tag
             int renamed = Moves.Count(m => !string.Equals(m.Source, m.Target, StringComparison.Ordinal));
             if (renamed > 0)
                 sb.AppendFormat("Rename {0} files.", renamed).AppendLine();
+            if (RemovedFolders.Count > 0)
+                sb.AppendFormat("Move the files out of {0} into the album folder and delete {1}.",
+                                string.Join(", ", RemovedFolders.Select(System.IO.Path.GetFileName)), RemovedFolders.Count == 1 ? "it" : "those folders").AppendLine();
             foreach (FileCreate create in Creates)
                 sb.AppendFormat("Create {0}", Relative(create.Path)).AppendLine();
             if (Deletes.Count > 0)
@@ -131,6 +138,7 @@ namespace CDTag.Model.Tag
         private readonly AlbumNamer _namer;
         private readonly TaggingOptions _tagging;
         private readonly Finish _finish;
+        private HashSet<string> _flattened = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         /// <param name="nfoTemplate">The NFO template text, or null when the profile has none.</param>
         public AlbumFinisher(UserProfile profile, Album album, ReleaseInfo release, string nfoTemplate)
@@ -167,6 +175,19 @@ namespace CDTag.Model.Tag
             var plan = new FinishPlan { OldDirectory = Folder, NewDirectory = Folder, TaggedFiles = _album.Tracks.Count };
             List<AlbumTrack> tracks = OrderedTracks();
             var audio = new HashSet<string>(tracks.Select(t => t.OriginalFileName), StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, int> discByFolder = DiscFolders(tracks);
+
+            // CD1 / CD2 / ... folders (directly in the album folder, one disc each) whose files move up
+            _flattened = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (_finish.MoveOutOfDiscFolders)
+            {
+                foreach (string folder in discByFolder.Keys)
+                {
+                    if (string.Equals(Path.GetDirectoryName(folder), Folder, StringComparison.OrdinalIgnoreCase) && Album.IsDiscFolderName(Path.GetFileName(folder)))
+                        _flattened.Add(folder);
+                }
+            }
+            plan.RemovedFolders.AddRange(_flattened.OrderBy(f => f, StringComparer.OrdinalIgnoreCase));
 
             foreach (AlbumTrack track in tracks)
             {
@@ -213,12 +234,11 @@ namespace CDTag.Model.Tag
                         plan.Problems.Add("The profile has no audio file name format.");
                         break;
                     }
-                    plan.Moves.Add(new FileMove { Source = track.OriginalFileName, Target = Path.Combine(Path.GetDirectoryName(track.OriginalFileName), newName) });
+                    plan.Moves.Add(new FileMove { Source = track.OriginalFileName, Target = Path.Combine(FolderAfter(track.OriginalFileName), newName) });
                 }
             }
 
             List<string> remaining = AlbumFiles().Where(f => !deleted.Contains(f) && !audio.Contains(f)).ToList();
-            Dictionary<string, int> discByFolder = DiscFolders(tracks);
 
             // Cue sheets, logs: one per disc folder (or per disc when the name says which disc)
             if (_finish.RenameCUEFiles)
@@ -233,7 +253,7 @@ namespace CDTag.Model.Tag
                 {
                     string target = _namer.GetFileName(NameKind.Images, ImageText(image), Path.GetExtension(image).ToLowerInvariant());
                     if (target != null)
-                        plan.Moves.Add(new FileMove { Source = image, Target = Path.Combine(Path.GetDirectoryName(image), target) });
+                        plan.Moves.Add(new FileMove { Source = image, Target = Path.Combine(FolderAfter(image), target) });
                 }
             }
 
@@ -262,6 +282,7 @@ namespace CDTag.Model.Tag
                 }
             }
 
+            PlanFlattening(plan, deleted);
             PlanPlaylistsAndChecksums(plan, tracks, remaining);
 
             // Folder
@@ -318,6 +339,7 @@ namespace CDTag.Model.Tag
         {
             var files = remaining.Where(f => Path.GetExtension(f).Equals(extension, StringComparison.OrdinalIgnoreCase)).ToList();
             bool multi = _namer.Discs > 1;
+            var planned = new List<KeyValuePair<FileMove, int>>();
             foreach (var group in files.GroupBy(f => Path.GetDirectoryName(f), StringComparer.OrdinalIgnoreCase))
             {
                 List<string> inFolder = group.OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList();
@@ -333,8 +355,26 @@ namespace CDTag.Model.Tag
                     }
                     string target = _namer.GetFileName(kind, null, extension, disc);
                     if (target != null)
-                        plan.Moves.Add(new FileMove { Source = inFolder[i], Target = Path.Combine(group.Key, target) });
+                    {
+                        var move = new FileMove { Source = inFolder[i], Target = Path.Combine(FolderAfter(inFolder[i]), target) };
+                        plan.Moves.Add(move);
+                        planned.Add(new KeyValuePair<FileMove, int>(move, disc));
+                    }
                 }
+            }
+
+            // Moved out of CD1 / CD2 / ... with a name format without <Disc>: the discs would share one name
+            foreach (var same in planned.Where(p => _flattened.Contains(Path.GetDirectoryName(p.Key.Source)))
+                                        .GroupBy(p => p.Key.Target, StringComparer.OrdinalIgnoreCase).Where(g => g.Select(p => p.Value).Distinct().Count() > 1))
+            {
+                foreach (var item in same)
+                {
+                    string target = item.Key.Target;
+                    item.Key.Target = Path.Combine(Path.GetDirectoryName(target),
+                        Path.GetFileNameWithoutExtension(target) + "-cd" + item.Value.ToString(CultureInfo.InvariantCulture) + Path.GetExtension(target));
+                }
+                plan.Warnings.Add(string.Format("The {0} name format has no <Disc>, so \"-cd1\", \"-cd2\"... is added to {1}.", kind == NameKind.CUE ? "CUE" : "log",
+                                                Path.GetFileName(same.Key)));
             }
         }
 
@@ -348,7 +388,7 @@ namespace CDTag.Model.Tag
             };
 
             // Tracks live in the album folder or in disc folders; playlists/checksums go next to them.
-            var folders = tracks.GroupBy(t => Path.GetDirectoryName(t.OriginalFileName), StringComparer.OrdinalIgnoreCase).ToList();
+            var folders = tracks.GroupBy(t => FolderAfter(t.OriginalFileName), StringComparer.OrdinalIgnoreCase).ToList();
 
             if (_finish.CreatePlaylist)
             {
@@ -365,7 +405,7 @@ namespace CDTag.Model.Tag
                 var playlists = new List<FileCreate>();
                 foreach (var group in groups)
                 {
-                    string folder = Path.GetDirectoryName(group.Tracks[0].OriginalFileName);
+                    string folder = FolderAfter(group.Tracks[0].OriginalFileName);
                     string name = _namer.GetFileName(NameKind.Playlist, null, null, group.Disc);
                     if (name == null)
                         break;
@@ -414,6 +454,70 @@ namespace CDTag.Model.Tag
                     });
                 }
             }
+        }
+
+        /// <summary>Folder <paramref name="file"/> ends up in: the album folder for files in CD1 / CD2 / ... folders that move up.</summary>
+        private string FolderAfter(string file)
+        {
+            string folder = Path.GetDirectoryName(file);
+            return _flattened.Contains(folder) ? Folder : folder;
+        }
+
+        /// <summary>
+        /// Files in the CD1 / CD2 / ... folders that nothing else moves or deletes go into the album folder as they are.
+        /// A file that would land on an identical file (the same cover in every disc folder) is deleted instead.
+        /// </summary>
+        private void PlanFlattening(FinishPlan plan, HashSet<string> deleted)
+        {
+            if (_flattened.Count == 0)
+                return;
+
+            var sources = new HashSet<string>(plan.Moves.Select(m => m.Source), StringComparer.OrdinalIgnoreCase);
+            foreach (string folder in _flattened.OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+            {
+                foreach (string file in Directory.GetFiles(folder).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+                {
+                    if (!sources.Contains(file) && !deleted.Contains(file))
+                        plan.Moves.Add(new FileMove { Source = file, Target = Path.Combine(Folder, Path.GetFileName(file)) });
+                }
+                if (Directory.GetDirectories(folder).Length > 0)
+                    plan.Warnings.Add(string.Format("{0} has subfolders; they stay where they are, so {0} is not deleted.", Path.GetFileName(folder)));
+            }
+
+            // Duplicates: identical files from several disc folders, or identical to a file already in the album folder
+            var keep = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); // target -> source kept
+            var movingAway = new HashSet<string>(plan.Moves.Select(m => m.Source), StringComparer.OrdinalIgnoreCase);
+            foreach (FileMove move in plan.Moves.ToList())
+            {
+                if (!_flattened.Contains(Path.GetDirectoryName(move.Source)))
+                {
+                    keep[move.Target] = move.Source;
+                    continue;
+                }
+                string kept;
+                bool duplicate = keep.TryGetValue(move.Target, out kept)
+                    ? SameContent(kept, move.Source)
+                    : File.Exists(move.Target) && !movingAway.Contains(move.Target) && !deleted.Contains(move.Target) && SameContent(move.Target, move.Source);
+                if (duplicate)
+                {
+                    plan.Moves.Remove(move);
+                    plan.Deletes.Add(move.Source);
+                    deleted.Add(move.Source);
+                }
+                else if (!keep.ContainsKey(move.Target))
+                {
+                    keep[move.Target] = move.Source;
+                }
+            }
+        }
+
+        private static bool SameContent(string a, string b)
+        {
+            var infoA = new FileInfo(a);
+            var infoB = new FileInfo(b);
+            if (!infoA.Exists || !infoB.Exists || infoA.Length != infoB.Length)
+                return false;
+            return File.ReadAllBytes(a).AsSpan().SequenceEqual(File.ReadAllBytes(b));
         }
 
         /// <summary>Two moves to one name, or a move onto a file that stays: stop before touching anything.</summary>
@@ -487,6 +591,19 @@ namespace CDTag.Model.Tag
 
             if (_finish.DeleteEmptySubdirectories)
                 DeleteEmptyFolders(Folder);
+
+            // The emptied CD1 / CD2 / ... folders
+            foreach (string folder in plan.RemovedFolders)
+            {
+                if (!Directory.Exists(folder))
+                    continue;
+                DeleteEmptyFolders(folder);
+                if (!Directory.EnumerateFileSystemEntries(folder).Any())
+                {
+                    progress("Deleting " + Path.GetFileName(folder));
+                    Directory.Delete(folder);
+                }
+            }
 
             string result = Folder;
             if (!string.Equals(plan.NewDirectory, Folder, StringComparison.Ordinal))
