@@ -26,6 +26,8 @@ namespace CDTag.ViewModel.Options
             StartupFolder = options.StartupFolder;
             ShowHiddenFiles = options.ShowHiddenFiles;
             NewTagID3v2Version = options.NewTagID3v2Version == "ID3v24" ? "ID3v24" : "ID3v23";
+            TagBothFormats = options.TagBothFormats;
+            KeepRipLogs = options.KeepRipLogs;
             LamePath = options.LamePath;
             FlacPath = options.FlacPath;
             GnudbEmail = options.GnudbEmail;
@@ -66,6 +68,20 @@ namespace CDTag.ViewModel.Options
         {
             get { return Get<bool>("ShowHiddenFiles"); }
             set { Set("ShowHiddenFiles", value); }
+        }
+
+        /// <summary>Tag Album also tags the same album in the other format (FLAC and MP3 folders next to each other).</summary>
+        /// <summary>Finish keeps (and renames) the rip logs; off = they are deleted.</summary>
+        public bool KeepRipLogs
+        {
+            get { return Get<bool>("KeepRipLogs"); }
+            set { Set("KeepRipLogs", value); }
+        }
+
+        public bool TagBothFormats
+        {
+            get { return Get<bool>("TagBothFormats"); }
+            set { Set("TagBothFormats", value); }
         }
 
         public string NewTagID3v2Version
@@ -213,6 +229,8 @@ namespace CDTag.ViewModel.Options
             options.StartupFolder = string.IsNullOrWhiteSpace(StartupFolder) ? null : StartupFolder.Trim();
             options.ShowHiddenFiles = ShowHiddenFiles;
             options.NewTagID3v2Version = NewTagID3v2Version;
+            options.TagBothFormats = TagBothFormats;
+            options.KeepRipLogs = KeepRipLogs;
             options.LamePath = string.IsNullOrWhiteSpace(LamePath) ? null : LamePath.Trim();
             options.FlacPath = string.IsNullOrWhiteSpace(FlacPath) ? null : FlacPath.Trim();
             options.GnudbEmail = string.IsNullOrWhiteSpace(GnudbEmail) ? null : GnudbEmail.Trim();

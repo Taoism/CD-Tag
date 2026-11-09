@@ -155,7 +155,11 @@ namespace CDTag.Model.Tag
             _namer = new AlbumNamer(profile, album, _release);
             _tagging = profile.Tagging ?? new TaggingOptions();
             _finish = profile.Finish ?? new Finish();
+            KeepLogs = CDTag.Common.Settings.AppOptions.Current.KeepRipLogs;
         }
+
+        /// <summary>Keep and rename the rip logs (.log); false = delete them (Tools > Options).</summary>
+        public bool KeepLogs { get; set; }
 
         /// <summary>Source tag from the release page ("CD", "WEB"...).</summary>
         private string SourceTag
@@ -223,6 +227,16 @@ namespace CDTag.Model.Tag
                 }
             }
 
+            // Rip logs: deleted unless kept in Tools > Options.
+            if (!KeepLogs)
+            {
+                foreach (string file in AlbumFiles().Where(f => IsLog(f) && !deleted.Contains(f)))
+                {
+                    plan.Deletes.Add(file);
+                    deleted.Add(file);
+                }
+            }
+
             // Audio files
             if (_finish.RenameAudioFiles)
             {
@@ -244,7 +258,10 @@ namespace CDTag.Model.Tag
             if (_finish.RenameCUEFiles)
                 PlanPerDisc(plan, remaining, ".cue", NameKind.CUE, discByFolder);
             if (_finish.RenameEACLogFiles)
+            {
                 PlanPerDisc(plan, remaining, ".log", NameKind.EACLog, discByFolder);
+                PlanPerDisc(plan, remaining, ".txt", NameKind.EACLog, discByFolder, AuCdtectEnding, "-aucdtect");
+            }
 
             // Images
             if (_finish.RenameImageFiles)
@@ -335,9 +352,23 @@ namespace CDTag.Model.Tag
             plan.RuleIssues.AddRange(SceneRules.Check(rules, release));
         }
 
-        private void PlanPerDisc(FinishPlan plan, List<string> remaining, string extension, NameKind kind, Dictionary<string, int> discByFolder)
+        /// <summary>auCDtect Task Manager (y-soft.org) reports: a rip log, "Folder.auCDtect.txt".</summary>
+        public const string AuCdtectEnding = ".auCDtect.txt";
+
+        private static bool IsLog(string file)
         {
-            var files = remaining.Where(f => Path.GetExtension(f).Equals(extension, StringComparison.OrdinalIgnoreCase)).ToList();
+            return Path.GetExtension(file).Equals(".log", StringComparison.OrdinalIgnoreCase)
+                   || file.EndsWith(AuCdtectEnding, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <param name="ending">Files to rename: names ending in this (default: <paramref name="extension"/>).</param>
+        /// <param name="suffix">Added to the new name before the extension ("-aucdtect").</param>
+        private void PlanPerDisc(FinishPlan plan, List<string> remaining, string extension, NameKind kind, Dictionary<string, int> discByFolder,
+                                 string ending = null, string suffix = "")
+        {
+            var files = ending != null
+                ? remaining.Where(f => f.EndsWith(ending, StringComparison.OrdinalIgnoreCase)).ToList()
+                : remaining.Where(f => Path.GetExtension(f).Equals(extension, StringComparison.OrdinalIgnoreCase)).ToList();
             bool multi = _namer.Discs > 1;
             var planned = new List<KeyValuePair<FileMove, int>>();
             foreach (var group in files.GroupBy(f => Path.GetDirectoryName(f), StringComparer.OrdinalIgnoreCase))
@@ -375,6 +406,15 @@ namespace CDTag.Model.Tag
                 }
                 plan.Warnings.Add(string.Format("The {0} name format has no <Disc>, so \"-cd1\", \"-cd2\"... is added to {1}.", kind == NameKind.CUE ? "CUE" : "log",
                                                 Path.GetFileName(same.Key)));
+            }
+
+            if (suffix.Length > 0)
+            {
+                foreach (var item in planned)
+                {
+                    string target = item.Key.Target;
+                    item.Key.Target = Path.Combine(Path.GetDirectoryName(target), Path.GetFileNameWithoutExtension(target) + suffix + Path.GetExtension(target));
+                }
             }
         }
 
@@ -424,6 +464,13 @@ namespace CDTag.Model.Tag
                     string name = _namer.GetFileName(NameKind.Playlist);
                     playlists.Clear();
                     playlists.Add(new FileCreate { Path = Path.Combine(Folder, name), Content = Playlist(tracks.Select(t => RelativeTo(Folder, finalPath(t)))) });
+                }
+                else if (playlists.Count > 1)
+                {
+                    // Master playlist of the whole album in disc order, next to the disc playlists: 000- (0000- from 10 discs).
+                    string master = _namer.GetFileName(NameKind.Playlist, null, null, AlbumNamer.AllDiscs);
+                    if (master != null && !names.Contains(Path.Combine(Folder, master)))
+                        playlists.Insert(0, new FileCreate { Path = Path.Combine(Folder, master), Content = Playlist(tracks.Select(t => RelativeTo(Folder, finalPath(t)))) });
                 }
                 plan.Creates.AddRange(playlists);
             }
@@ -509,6 +556,29 @@ namespace CDTag.Model.Tag
                     keep[move.Target] = move.Source;
                 }
             }
+
+            // Different files with one name in several disc folders (Folder.auCDtect.txt per disc): each keeps its disc in
+            // the name ("Folder.auCDtect-cd2.txt"), so nothing is lost.
+            var targets = plan.Moves.GroupBy(m => m.Target, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+            foreach (FileMove move in plan.Moves.Where(m => _flattened.Contains(Path.GetDirectoryName(m.Source))).ToList())
+            {
+                bool clash = targets[move.Target] > 1
+                             || (File.Exists(move.Target) && !movingAway.Contains(move.Target) && !deleted.Contains(move.Target));
+                if (!clash)
+                    continue;
+                string disc = DiscTag(Path.GetFileName(Path.GetDirectoryName(move.Source)));
+                string name = Path.GetFileNameWithoutExtension(move.Target) + "-" + disc + Path.GetExtension(move.Target);
+                move.Target = Path.Combine(Folder, name);
+            }
+        }
+
+        /// <summary>"cd2" for CD2 / Disc 2 / Disk_2 folders; otherwise the folder name in lowercase with underscores.</summary>
+        private static string DiscTag(string folderName)
+        {
+            var number = System.Text.RegularExpressions.Regex.Match(folderName ?? "", @"\d+");
+            if (number.Success)
+                return "cd" + int.Parse(number.Value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
+            return System.Text.RegularExpressions.Regex.Replace((folderName ?? "disc").Trim().ToLowerInvariant(), @"[^a-z0-9]+", "_");
         }
 
         private static bool SameContent(string a, string b)
@@ -923,27 +993,63 @@ namespace CDTag.Model.Tag
             return match.Success ? int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture) : fallback;
         }
 
-        /// <summary>"front" from "folder.jpg" style names; "cover" when the name says nothing.</summary>
+        /// <summary>
+        /// The image text of an image: "front" for folder.jpg; for an image an earlier Finish named
+        /// ("000-pink_floyd-album-2020-front-grp.jpg") the part it added is taken off again, even when the name was
+        /// shortened to the length limit or got the ending more than once ("-grp-grp").
+        /// </summary>
         private string ImageText(string image)
         {
             string name = Path.GetFileNameWithoutExtension(image).Trim();
-            // Already renamed by an earlier Finish: keep the image text at the end ("...-front-grp").
-            string probe = _namer.GetFileName(NameKind.Images, "\u0001\u0001", Path.GetExtension(image).ToLowerInvariant());
-            if (probe != null)
-            {
-                string bare = Path.GetFileNameWithoutExtension(probe);
-                int marker = bare.IndexOf('\u0001');
-                if (marker >= 0)
-                {
-                    string head = bare.Substring(0, marker);
-                    string tail = bare.Substring(bare.LastIndexOf('\u0001') + 1);
-                    if (name.Length > head.Length + tail.Length && name.StartsWith(head, StringComparison.OrdinalIgnoreCase) && name.EndsWith(tail, StringComparison.OrdinalIgnoreCase))
-                        name = name.Substring(head.Length, name.Length - head.Length - tail.Length);
-                }
-            }
+            string head, tail;
+            if (_namer.TryGetImageNameParts(Path.GetExtension(image).ToLowerInvariant(), out head, out tail))
+                name = StripImageName(name, head, tail);
             if (name.Equals("folder", StringComparison.OrdinalIgnoreCase) || name.Length == 0)
                 return "front";
             return name;
+        }
+
+        /// <summary>Takes <paramref name="head"/> (or the shortened start of it) and every <paramref name="tail"/> off <paramref name="name"/>.</summary>
+        public static string StripImageName(string name, string head, string tail)
+        {
+            char[] separators = { '_', '-', ' ', '.' };
+            string original = name;
+
+            // The ending, as often as an earlier Finish added it.
+            if (!string.IsNullOrEmpty(tail.Trim(separators)))
+            {
+                while (name.Length > tail.Length && name.EndsWith(tail, StringComparison.OrdinalIgnoreCase))
+                    name = name.Substring(0, name.Length - tail.Length);
+            }
+
+            // The start: the whole head, or the part of it kept before the length limit cut it. 0000 and 000 both count.
+            if (head.Length > 0)
+            {
+                int best = 0;
+                foreach (string candidate in new[] { head, SwapDiscZeros(head) })
+                {
+                    int common = 0;
+                    while (common < candidate.Length && common < name.Length && char.ToLowerInvariant(candidate[common]) == char.ToLowerInvariant(name[common]))
+                        common++;
+                    // Only when it is clearly the same name: the whole head, or most of it (at least 12 characters).
+                    if (common == candidate.Length || common >= Math.Min(candidate.Length, Math.Max(12, candidate.Length / 2)))
+                        best = Math.Max(best, common);
+                }
+                if (best > 0)
+                    name = name.Substring(best);
+            }
+
+            name = name.Trim(separators);
+            return name.Length > 0 ? name : original;
+        }
+
+        private static string SwapDiscZeros(string head)
+        {
+            if (head.StartsWith("0000", StringComparison.Ordinal))
+                return head.Substring(1);
+            if (head.StartsWith("000", StringComparison.Ordinal))
+                return "0" + head;
+            return head;
         }
 
         private static string RelativeTo(string folder, string path)

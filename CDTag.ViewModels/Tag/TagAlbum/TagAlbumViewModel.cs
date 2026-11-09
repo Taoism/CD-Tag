@@ -126,7 +126,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         public QualityChoice[] QualityChoices { get { return Get<QualityChoice[]>("QualityChoices"); } private set { Set("QualityChoices", value); } }
 
         /// <summary>Loads the album in <paramref name="path"/> to be tagged with <paramref name="profile"/>.</summary>
-        public void Load(string path, UserProfile profile)
+        public void Load(string path, UserProfile profile, IEnumerable<string> otherFolders = null)
         {
             Profile = profile;
 
@@ -182,6 +182,176 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             SelectedTrackIndex = 0;
             SelectedTrack = Album.Tracks.FirstOrDefault();
             UpdateNames();
+
+            Twin = null;
+            TagTwin = false;
+            _twinSearch = null;
+            if (CDTag.Common.Settings.AppOptions.Current.TagBothFormats && TwinAlbum.FormatOf(album) != null)
+                _twinSearch = FindTwinAsync(album, otherFolders != null ? otherFolders.ToList() : null);
+        }
+
+        // ------------------------------------------------------------------ FLAC and MP3 together
+
+        private System.Threading.Tasks.Task _twinSearch;
+
+        private async System.Threading.Tasks.Task FindTwinAsync(Album album, List<string> otherFolders)
+        {
+            Album twin = null;
+            try
+            {
+                twin = await System.Threading.Tasks.Task.Run(() => TwinAlbum.Find(album, otherFolders));
+            }
+            catch (Exception)
+            {
+            }
+            if (twin == null || Album != album)
+                return;
+            Twin = twin;
+            TagTwin = true;
+        }
+
+        /// <summary>The same rip in the other format (Tools > Options: tag the FLAC and MP3 albums together), or null.</summary>
+        public Album Twin
+        {
+            get { return Get<Album>("Twin"); }
+            private set
+            {
+                Set("Twin", value);
+                RaisePropertyChanged("HasTwin", null, null);
+                RaisePropertyChanged("TwinText", null, null);
+                RaisePropertyChanged("TwinFormatName", null, null);
+            }
+        }
+
+        public bool HasTwin { get { return Twin != null; } }
+
+        /// <summary>Finish also tags <see cref="Twin"/>.</summary>
+        public bool TagTwin
+        {
+            get { return Get<bool>("TagTwin"); }
+            set { Set("TagTwin", value); }
+        }
+
+        /// <summary>"MP3" or "FLAC": the format of <see cref="Twin"/>.</summary>
+        public string TwinFormatName
+        {
+            get { return Twin != null ? TwinAlbum.FormatName(TwinAlbum.FormatOf(Twin)) : null; }
+        }
+
+        /// <summary>"Also tag the MP3 album: Ween-Chocolate And Cheese-2CD-1994".</summary>
+        public string TwinText
+        {
+            get { return Twin != null ? string.Format("Also tag the {0} album: {1}", TwinFormatName, FolderName(Twin)) : null; }
+        }
+
+        private static string FolderName(Album album)
+        {
+            return Path.GetFileName(album.OldDirectoryName.TrimEnd('\\', '/'));
+        }
+
+        private static string NameKey(string profileName)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(profileName ?? "", "flac|mp3", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+                         .Trim(' ', '-', '_', '.').ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// The profile for the other-format album: this profile when it is made for that type too, else the only fitting
+        /// profile, else the one named like this one ("GRP" / "GRPFLAC"); otherwise the user picks. Null = cancelled.
+        /// </summary>
+        private UserProfile PickTwinProfile(string format)
+        {
+            List<UserProfile> profiles = ProfileSelector.LoadAll(_pathService.ProfileDirectory);
+            IList<UserProfile> candidates = ProfileSelector.FindCandidates(profiles, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { format });
+            if (candidates.Count == 0)
+                return null;
+
+            if (Profile != null)
+            {
+                UserProfile same = candidates.FirstOrDefault(p => string.Equals(p.ProfileName, Profile.ProfileName, StringComparison.OrdinalIgnoreCase));
+                if (same != null && ProfileSelector.GetFileTypes(same).Contains(format))
+                    return same;
+            }
+            if (candidates.Count == 1)
+                return candidates[0];
+            if (Profile != null)
+            {
+                List<UserProfile> named = candidates.Where(p => NameKey(p.ProfileName) == NameKey(Profile.ProfileName)).ToList();
+                if (named.Count == 1)
+                    return named[0];
+            }
+
+            var window = IoC.Resolve<CDTag.Views.Interfaces.Profile.ChooseProfile.IChooseProfileWindow>();
+            var chooser = (CDTag.ViewModels.Profile.ChooseProfile.IChooseProfileViewModel)window.DataContext;
+            chooser.Message = string.Format("Several profiles fit {0} files. Which profile do you want to use for the {0} album?", TwinAlbum.FormatName(format));
+            chooser.SetProfiles(candidates, null);
+            return ShowWindow(window) == true ? chooser.SelectedProfile : null;
+        }
+
+        private static ReleaseListItem Map(ReleaseListItem item, ReleaseListItem[] list)
+        {
+            if (list == null || list.Length == 0)
+                return item;
+            if (item == null)
+                return list[0];
+            return list.FirstOrDefault(i => string.Equals((i.Nfo ?? "").Trim(), (item.Nfo ?? "").Trim(), StringComparison.OrdinalIgnoreCase))
+                   ?? list.FirstOrDefault(i => !string.IsNullOrWhiteSpace(item.Dir) && string.Equals((i.Dir ?? "").Trim(), item.Dir.Trim(), StringComparison.OrdinalIgnoreCase))
+                   ?? item;
+        }
+
+        /// <summary>
+        /// Release information for the other-format album: this album's, with the other profile's choices (its list
+        /// entries, locked ripper/supplier/comment, its encoder or the one in the files), WEB / WEB-FLAC swapped and
+        /// Bit/kHz for FLAC only.
+        /// </summary>
+        public ReleaseInfo CreateTwinRelease(UserProfile twinProfile, Album twin)
+        {
+            ReleaseInfo from = Release;
+            ReleaseInfo info = ReleaseInfo.FromProfile(twinProfile);
+            ReleaseInfoOptions options = twinProfile != null ? twinProfile.ReleaseInfo : null;
+
+            info.Label = from.Label;
+            info.RipDate = from.RipDate;
+            info.RetailDate = from.RetailDate;
+            info.Url = from.Url;
+            info.IsOst = from.IsOst;
+            info.IsInternal = from.IsInternal;
+            info.CatalogNumber = from.CatalogNumber;
+            info.LiveDate = from.LiveDate;
+            info.Fix = from.Fix;
+            info.Notes = from.Notes;
+            info.LongComment = from.LongComment;
+            info.RippingTool = from.RippingTool;
+            if (options == null || !options.LockRipper)
+                info.Ripper = from.Ripper;
+            if (options == null || !options.LockSupplier)
+                info.Supplier = from.Supplier;
+            if (options == null || !options.LockComment)
+                info.Comment = from.Comment;
+            if ((options == null || !options.LockEncoder) && string.IsNullOrWhiteSpace(info.Encoder))
+                info.Encoder = TwinAlbum.EncoderOf(twin) ?? "";
+
+            ReleaseListItem[] types = (options != null ? options.ReleaseTypes : null) ?? DefaultTypes;
+            info.ReleaseType = Map(from.ReleaseType, SceneTagging ? TypesFor(types) : types);
+            info.Language = Map(from.Language, (options != null ? options.Languages : null) ?? DefaultLanguages);
+            info.LimitedEdition = Map(from.LimitedEdition, (options != null ? options.LimitedEdition : null) ?? NoYes);
+            info.WhiteLabel = Map(from.WhiteLabel, (options != null ? options.WhiteLabel : null) ?? NoYes);
+            info.CleanExplicit = Map(from.CleanExplicit, (options != null ? options.CleanExplicit : null) ?? DefaultCleanExplicit);
+
+            // WEB-FLAC is the FLAC name of WEB.
+            ReleaseListItem[] sources = SourcesFor((options != null ? options.Sources : null) ?? DefaultSources, twin);
+            string source = from.Source != null ? SourceName(from.Source) : null;
+            bool flac = TwinAlbum.FormatOf(twin) == "flac";
+            if (!flac && string.Equals(source, "WEB-FLAC", StringComparison.OrdinalIgnoreCase))
+                source = "WEB";
+            else if (flac && string.Equals(source, "WEB", StringComparison.OrdinalIgnoreCase) && sources.Any(s => string.Equals(SourceName(s), "WEB-FLAC", StringComparison.OrdinalIgnoreCase)))
+                source = "WEB-FLAC";
+            info.Source = sources.FirstOrDefault(s => string.Equals(SourceName(s), source, StringComparison.OrdinalIgnoreCase)) ?? Map(from.Source, sources);
+
+            info.Quality = "";
+            if (flac && SceneTagging && SceneRules.HasBitKhzChoice(twin, info.Source != null ? SourceName(info.Source) : null))
+                info.Quality = !string.IsNullOrEmpty(from.Quality) ? from.Quality : SceneRules.FilesQualityTag(twin) ?? "";
+            return info;
         }
 
         /// <summary>Tag year ("2014", "2014-05-01") as a 2.x retail date (yyyy-MM-dd, unknown parts 00).</summary>
@@ -436,6 +606,25 @@ namespace CDTag.ViewModels.Tag.TagAlbum
 
         private async void Finish()
         {
+            // Still looking for the other-format album.
+            if (_twinSearch != null && !_twinSearch.IsCompleted)
+            {
+                IsFinishing = true;
+                FinishStatus = "Looking for the same album in the other format...";
+                try
+                {
+                    await _twinSearch;
+                }
+                catch (Exception)
+                {
+                }
+                finally
+                {
+                    FinishStatus = null;
+                    IsFinishing = false;
+                }
+            }
+
             string templatePath = NfoGenerator.ResolveTemplatePath(Profile, _pathService.ProfileDirectory);
             string template = templatePath != null ? NfoGenerator.ReadTemplate(templatePath) : null;
             var finisher = new AlbumFinisher(Profile, Album, Release, template);
@@ -459,7 +648,66 @@ namespace CDTag.ViewModels.Tag.TagAlbum
                 return;
             }
 
-            if (MessageBox(plan.Describe() + Environment.NewLine + Environment.NewLine + "Continue?", "Finish",
+            // The same album in the other format: same tags and release information, its own profile and maybe its own notes.
+            Album twin = TagTwin ? Twin : null;
+            AlbumFinisher twinFinisher = null;
+            FinishPlan twinPlan = null;
+            UserProfile twinProfile = null;
+            string format = twin != null ? TwinFormatName : null;
+            if (twin != null)
+            {
+                twinProfile = PickTwinProfile(TwinAlbum.FormatOf(twin));
+                if (twinProfile == null)
+                    return;
+
+                TwinAlbum.CopyTags(Album, twin);
+                ReleaseInfo twinRelease = CreateTwinRelease(twinProfile, twin);
+
+                System.Windows.MessageBoxResult different = MessageBox(
+                    string.Format("Are the NFO notes different for the {0} release ({1})?{2}{2}Yes: enter its notes next.{2}No: both releases get the same notes.",
+                                  format, FolderName(twin), Environment.NewLine),
+                    "Finish", System.Windows.MessageBoxButton.YesNoCancel, System.Windows.MessageBoxImage.Question);
+                if (different == System.Windows.MessageBoxResult.Cancel)
+                    return;
+                if (different == System.Windows.MessageBoxResult.Yes)
+                {
+                    IReleaseNotesWindow notesWindow = IoC.Resolve<IReleaseNotesWindow>();
+                    var notes = (IReleaseNotesViewModel)notesWindow.DataContext;
+                    notes.Title = "NFO notes - " + format + " release";
+                    notes.Message = string.Format("NFO notes for the {0} release ({1}). They start as this release's notes:", format, FolderName(twin));
+                    notes.Notes = Release.Notes;
+                    if (ShowWindow(notesWindow) != true)
+                        return;
+                    twinRelease.Notes = notes.Notes;
+                }
+
+                string twinTemplatePath = NfoGenerator.ResolveTemplatePath(twinProfile, _pathService.ProfileDirectory);
+                twinFinisher = new AlbumFinisher(twinProfile, twin, twinRelease, twinTemplatePath != null ? NfoGenerator.ReadTemplate(twinTemplatePath) : null);
+                string problem = null;
+                try
+                {
+                    twinPlan = twinFinisher.Plan();
+                    if (!twinPlan.CanRun)
+                        problem = string.Join(Environment.NewLine, twinPlan.Problems.Distinct());
+                }
+                catch (Exception ex)
+                {
+                    problem = ex.Message;
+                }
+                if (problem != null)
+                {
+                    if (MessageBox(string.Format("The {0} album cannot be finished:{1}{1}{2}{1}{1}Finish only this album?", format, Environment.NewLine, problem),
+                                   "Finish", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning) != System.Windows.MessageBoxResult.Yes)
+                        return;
+                    twin = null;
+                }
+            }
+
+            string describe = plan.Describe();
+            if (twin != null)
+                describe += Environment.NewLine + Environment.NewLine + string.Format("Then the {0} album (profile {1}):", format, twinProfile.ProfileName)
+                            + Environment.NewLine + twinPlan.Describe();
+            if (MessageBox(describe + Environment.NewLine + Environment.NewLine + "Continue?", "Finish",
                            System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question) != System.Windows.MessageBoxResult.Yes)
             {
                 return;
@@ -470,20 +718,38 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             {
                 FinishedDirectory = await System.Threading.Tasks.Task.Run(() => finisher.Run(plan, status => BeginInvoke(() => FinishStatus = status)));
                 FinishStatus = null;
-                CloseWindow(true);
             }
             catch (Exception ex)
             {
                 FinishStatus = null;
+                IsFinishing = false;
                 FinishedDirectory = Directory.Exists(plan.NewDirectory) ? plan.NewDirectory : plan.OldDirectory;
                 MessageBox("Finish stopped: " + ex.Message + Environment.NewLine + Environment.NewLine +
-                           "Some files may already be tagged or renamed. Check the folder before running Finish again.",
+                           "Some files may already be tagged or renamed. Check the folder before running Finish again." +
+                           (twin != null ? Environment.NewLine + Environment.NewLine + "The " + format + " album was not changed." : ""),
                            "Finish", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return;
             }
-            finally
+
+            if (twin != null)
             {
-                IsFinishing = false;
+                try
+                {
+                    await System.Threading.Tasks.Task.Run(() => twinFinisher.Run(twinPlan, status => BeginInvoke(() => FinishStatus = format + ": " + status)));
+                    FinishStatus = null;
+                }
+                catch (Exception ex)
+                {
+                    FinishStatus = null;
+                    MessageBox("This album is finished, but the " + format + " album stopped: " + ex.Message + Environment.NewLine + Environment.NewLine +
+                               "Some of its files may already be tagged or renamed. Check " + (Directory.Exists(twinPlan.NewDirectory) ? twinPlan.NewDirectory : twinPlan.OldDirectory) +
+                               " before running Finish on it again.",
+                               "Finish", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
             }
+
+            IsFinishing = false;
+            CloseWindow(true);
         }
 
         private void PreviewNFO()

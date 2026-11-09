@@ -109,7 +109,11 @@ namespace CDTag.ViewModels.Tag
 
             ITagAlbumWindow tagAlbumWindow = IoC.Resolve<ITagAlbumWindow>();
             var tagAlbum = (ITagAlbumViewModel)tagAlbumWindow.DataContext;
-            tagAlbum.Load(directory, chosen);
+            List<string> otherFolders = DirectoryViewModel != null && DirectoryViewModel.FileCollection != null
+                ? DirectoryViewModel.FileCollection.Where(f => f.IsSelected && f.IsDirectory).Select(f => f.FullName)
+                                     .Where(f => !string.Equals(f, directory, StringComparison.OrdinalIgnoreCase)).ToList()
+                : null;
+            tagAlbum.Load(directory, chosen, otherFolders);
             ShowWindow(tagAlbumWindow);
 
             // Show the result: follow the folder when it was renamed while open, otherwise refresh the list.

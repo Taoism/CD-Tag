@@ -89,6 +89,12 @@
                     </ComboBox>
                 </Grid>
                 <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0" Text="Used when a file has no ID3v2 tag yet. Existing tags keep their version." />
+                <CheckBox Content="Tag the _FLAC and MP3 albums together" IsChecked="{Binding TagBothFormats, Mode=TwoWay}" Margin="0,10,0,0" />
+                <TextBlock Style="{StaticResource Hint}"
+                           Text="When the same rip is in a folder next to the album in the other format (same discs, tracks and lengths), Finish tags both: the same tags and release information, each with its own profile. Finish asks whether the NFO notes are different for the second release." />
+                <CheckBox Content="_Keep the rip logs (.log) when finishing" IsChecked="{Binding KeepRipLogs, Mode=TwoWay}" Margin="0,10,0,0" />
+                <TextBlock Style="{StaticResource Hint}"
+                           Text="Off: Finish deletes the rip logs in the album folder (EAC / XLD .log files and auCDtect reports). On: they are kept and named like the profile names logs." />
             </StackPanel>
 
             <!-- Encoders -->

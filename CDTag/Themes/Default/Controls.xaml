@@ -41,7 +41,20 @@
     </Style>
 
     <!-- ===================== TextBox ===================== -->
+    <!-- WPF's own Cut/Copy/Paste menu is a private ContextMenu type that the themed ContextMenu style does not reach,
+         so text boxes get this one (same commands, themed). -->
+    <ContextMenu x:Key="TextBoxContextMenu" x:Shared="False">
+        <MenuItem Command="ApplicationCommands.Undo" CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+        <Separator />
+        <MenuItem Command="ApplicationCommands.Cut" CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+        <MenuItem Command="ApplicationCommands.Copy" CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+        <MenuItem Command="ApplicationCommands.Paste" CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+        <Separator />
+        <MenuItem Command="ApplicationCommands.SelectAll" CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+    </ContextMenu>
+
     <Style TargetType="{x:Type TextBox}">
+        <Setter Property="ContextMenu" Value="{StaticResource TextBoxContextMenu}" />
         <Setter Property="Foreground" Value="{DynamicResource Theme.Foreground}" />
         <Setter Property="Background" Value="{DynamicResource Theme.InputBackground}" />
         <Setter Property="BorderBrush" Value="{DynamicResource Theme.InputBorder}" />

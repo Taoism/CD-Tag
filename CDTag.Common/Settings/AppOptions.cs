@@ -60,6 +60,17 @@ namespace CDTag.Common.Settings
         public string DiscogsToken { get; set; }
 
         /// <summary>
+        /// Tag Album also tags the same rip in the other format (the FLAC album and its MP3 encode in folders next to
+        /// each other): Finish gives both the same tags and release information, each with its own profile.
+        /// </summary>
+        [DataMember]
+        public bool TagBothFormats { get; set; }
+
+        /// <summary>Finish keeps the rip logs (.log) and renames them; off = Finish deletes them.</summary>
+        [DataMember]
+        public bool KeepRipLogs { get; set; }
+
+        /// <summary>
         /// Scene-style tagging, "true" or "false" ("enabled" in options.json). On: Finish checks the scene rules, release names
         /// get the bit depth / fix tags, Tag Album shows Bit/kHz and Fix, genres follow the scene list, and the rules are
         /// checked for updates at startup. Missing = on.

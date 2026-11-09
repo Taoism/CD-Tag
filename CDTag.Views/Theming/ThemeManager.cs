@@ -130,6 +130,7 @@ namespace CDTag.Views.Theming
             _application = application;
 
             _preference = Load();
+            CDTag.Common.ThemedMessageBox.IsDark = () => _isDark;
 
             // Dark title bars for every window as soon as it gets an HWND / when it loads.
             EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnWindowLoaded));

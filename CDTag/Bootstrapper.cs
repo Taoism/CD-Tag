@@ -75,6 +75,7 @@ namespace CDTag
             IoC.RegisterType<IChooseProfileWindow, ChooseProfileWindow>();
             IoC.RegisterType<CDTag.Views.Interfaces.Tag.TagAlbum.IPreviewNfoWindow, CDTag.Views.Tag.TagAlbum.PreviewNfoWindow>();
             IoC.RegisterType<CDTag.Views.Interfaces.Tag.TagAlbum.ILookupWindow, CDTag.Views.Tag.TagAlbum.LookupWindow>();
+            IoC.RegisterType<CDTag.Views.Interfaces.Tag.TagAlbum.IReleaseNotesWindow, CDTag.Views.Tag.TagAlbum.ReleaseNotesWindow>();
             IoC.RegisterType<ISplitCueWindow, SplitCueWindow>();
             IoC.RegisterType<IEncodingInspectorWindow, EncodingInspectorWindow>();
             IoC.RegisterType<IOptionsWindow, OptionsWindow>();
@@ -92,6 +93,7 @@ namespace CDTag
             IoC.RegisterType<IChooseProfileViewModel, ChooseProfileViewModel>();
             IoC.RegisterType<CDTag.ViewModels.Tag.TagAlbum.IPreviewNfoViewModel, CDTag.ViewModels.Tag.TagAlbum.PreviewNfoViewModel>();
             IoC.RegisterType<CDTag.ViewModels.Tag.TagAlbum.ILookupViewModel, CDTag.ViewModels.Tag.TagAlbum.LookupViewModel>();
+            IoC.RegisterType<CDTag.ViewModels.Tag.TagAlbum.IReleaseNotesViewModel, CDTag.ViewModels.Tag.TagAlbum.ReleaseNotesViewModel>();
             IoC.RegisterType<ISplitCueViewModel, SplitCueViewModel>();
             IoC.RegisterType<IEncodingInspectorViewModel, EncodingInspectorViewModel>();
             IoC.RegisterType<IOptionsViewModel, OptionsViewModel>();
@@ -104,13 +106,8 @@ namespace CDTag
 
         private static void ShowMessageBox(MessageBoxEvent messageBox)
         {
-            var result = MessageBox.Show(
-                owner: messageBox.Owner as Window,
-                messageBoxText: messageBox.MessageBoxText,
-                caption: messageBox.Caption,
-                button: messageBox.MessageBoxButton,
-                icon: messageBox.MessageBoxImage
-            );
+            var result = CDTag.Common.ThemedMessageBox.Show(messageBox.Owner as Window, messageBox.MessageBoxText, messageBox.Caption,
+                                                            messageBox.MessageBoxButton, messageBox.MessageBoxImage);
 
             messageBox.Result = result;
         }
@@ -187,7 +184,7 @@ namespace CDTag
                                   string.Join(Environment.NewLine, changes.Select(c => "- " + c)) + Environment.NewLine + Environment.NewLine +
                                   "The new rule files are saved in" + Environment.NewLine + directory;
                     shell.Dispatcher.BeginInvoke(new Action(() =>
-                        System.Windows.MessageBox.Show(shell, text, "Scene rules", MessageBoxButton.OK, MessageBoxImage.Information)));
+                        CDTag.Common.ThemedMessageBox.Show(shell, text, "Scene rules", MessageBoxButton.OK, MessageBoxImage.Information)));
                 }
                 catch (Exception)
                 {

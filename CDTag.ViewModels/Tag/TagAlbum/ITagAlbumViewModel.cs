@@ -34,7 +34,10 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         /// <summary>Song names from a pasted track list, in track order; returns how many lines were found.</summary>
         int PasteTracklist(string text);
 
-        /// <summary>Loads the album in <paramref name="path"/> to be tagged with <paramref name="profile"/>.</summary>
-        void Load(string path, CDTag.Model.Profile.UserProfile profile);
+        /// <summary>
+        /// Loads the album in <paramref name="path"/> to be tagged with <paramref name="profile"/>. <paramref name="otherFolders"/>:
+        /// other folders selected in the file list, looked at first for the same album in the other format.
+        /// </summary>
+        void Load(string path, CDTag.Model.Profile.UserProfile profile, System.Collections.Generic.IEnumerable<string> otherFolders = null);
     }
 }

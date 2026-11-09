@@ -30,6 +30,8 @@ namespace CDTag.Model.Tag
     public class AlbumNamer
     {
         private const char SuffixMark = '\u0001';
+        /// <summary>Marks where &lt;ImageText&gt; starts and ends, so the length limit shortens the rest of the name instead.</summary>
+        private const char ImageMark = '\u0002';
         private static readonly Regex TokenPattern = new Regex(@"<(/?)([A-Za-z]+[0-9]?)>", RegexOptions.CultureInvariant);
         private static readonly string Punctuation = "'.,!?()&";
 
@@ -216,7 +218,13 @@ namespace CDTag.Model.Tag
             _disc = disc;
             try
             {
-                return GetFileNameCore(kind, imageText, extension);
+                string name = GetFileNameCore(kind, imageText, extension);
+                // Up to 9 discs the tracks are 101, 102...: the NFO, playlist, checksum file, images and logs get 000 so they sort first
+                // with the same width ("0000-..." in the profile is for 10 discs or more).
+                if (name != null && Discs > 1 && Discs <= 9 && (kind == NameKind.NFO || kind == NameKind.Playlist || kind == NameKind.Checksum || kind == NameKind.Images || kind == NameKind.EACLog)
+                    && Regex.IsMatch(name, @"^0000(?!\d)"))
+                    name = name.Substring(1);
+                return name;
             }
             finally
             {
@@ -225,6 +233,40 @@ namespace CDTag.Model.Tag
         }
 
         private int _disc;
+
+        /// <summary>Disc for <see cref="GetFileName"/> meaning the whole album: &lt;Disc&gt; is 0 ("000-" up to 9 discs, "0000-" from 10).</summary>
+        public const int AllDiscs = -1;
+
+        private bool _noLimit;
+
+        /// <summary>
+        /// The image name around &lt;ImageText&gt;, without the length limit: "000-pink_floyd-album-2020-" and "-grp".
+        /// Used to take the image text back out of a name an earlier Finish made. False when the profile names no images.
+        /// </summary>
+        public bool TryGetImageNameParts(string extension, out string head, out string tail)
+        {
+            const string Probe = "qzcdtagimagetextqz";
+            head = tail = null;
+            _noLimit = true;
+            string name;
+            try
+            {
+                name = GetFileName(NameKind.Images, Probe, extension);
+            }
+            finally
+            {
+                _noLimit = false;
+            }
+            if (name == null)
+                return false;
+            name = System.IO.Path.GetFileNameWithoutExtension(name);
+            int at = name.IndexOf(Probe, StringComparison.OrdinalIgnoreCase);
+            if (at < 0)
+                return false;
+            head = name.Substring(0, at);
+            tail = name.Substring(at + Probe.Length);
+            return true;
+        }
 
         private string GetFileNameCore(NameKind kind, string imageText, string extension)
         {
@@ -260,7 +302,36 @@ namespace CDTag.Model.Tag
             string head = suffixAt >= 0 ? name.Substring(0, suffixAt) : name;
             string tail = suffixAt >= 0 ? name.Substring(suffixAt + 1).Replace(SuffixMark.ToString(), "") : "";
 
-            int max = (limit ?? 0) > 0 ? limit.Value - (extension ?? "").Length : int.MaxValue;
+            int max = (limit ?? 0) > 0 && !_noLimit ? limit.Value - (extension ?? "").Length : int.MaxValue;
+            // The image text tells images apart ("front", "back", "cd1"): when the name is too long, the part before it
+            // is shortened, so two images never end up with the same name.
+            int imageAt = head.IndexOf(ImageMark);
+            if (imageAt >= 0 && head.Replace(ImageMark.ToString(), "").Length + tail.Length > max)
+            {
+                string kept = head.Substring(imageAt).Replace(ImageMark.ToString(), "");
+                int room = max - tail.Length - kept.Length;
+                char[] separators = { '_', '-', ' ', '.' };
+                string before = head.Substring(0, imageAt);
+                string separator = before.Length > 0 && Array.IndexOf(separators, before[before.Length - 1]) >= 0 ? before.Substring(before.Length - 1) : "";
+                room -= separator.Length;
+                if (room > 0)
+                {
+                    head = before.Substring(0, Math.Min(before.Length, room)).TrimEnd(separators) + separator + kept;
+                }
+                else
+                {
+                    // The image text alone is too long ("a_momentary_lapse_of_reason-the_high_resolution_remasters-back"):
+                    // half for the start of the name, the rest for the end of the image text, where "front" / "back" is.
+                    int available = max - tail.Length;
+                    string start = head.Substring(0, Math.Min(imageAt, available / 2)).TrimEnd(separators);
+                    string joint = start.Length > 0 ? "-" : "";
+                    int left = available - start.Length - joint.Length;
+                    string end = left > 0 ? kept.Substring(Math.Max(0, kept.Length - left)).TrimStart(separators) : "";
+                    head = start + joint + end;
+                }
+            }
+            head = head.Replace(ImageMark.ToString(), "");
+            tail = tail.Replace(ImageMark.ToString(), "");
             if (head.Length + tail.Length > max)
                 head = head.Substring(0, Math.Max(0, max - tail.Length)).TrimEnd('_', '-', ' ', '.');
 
@@ -301,6 +372,12 @@ namespace CDTag.Model.Tag
                     continue;
                 }
 
+                if (upper == "IMAGETEXT")
+                {
+                    region.Append(ImageMark).Append(CleanValue(Value(name, track, imageText))).Append(ImageMark);
+                    continue;
+                }
+
                 region.Append(CleanValue(Value(name, track, imageText)));
             }
 
@@ -324,7 +401,7 @@ namespace CDTag.Model.Tag
                 case "TITLE": return track != null ? track.Title : null;
                 case "TRACK": return track != null ? FormatTrack(track.TrackNumber) : null;
                 case "TRACKS": return _album.Tracks.Count.ToString(CultureInfo.InvariantCulture);
-                case "DISC": return track != null ? FormatDisc(track.DiscNumber) : _disc > 0 ? FormatDisc(_disc.ToString(CultureInfo.InvariantCulture)) : null;
+                case "DISC": return track != null ? FormatDisc(track.DiscNumber) : _disc > 0 ? FormatDisc(_disc.ToString(CultureInfo.InvariantCulture)) : _disc == AllDiscs ? new string('0', Discs.ToString(CultureInfo.InvariantCulture).Length) : null;
                 case "DISCS": return Discs.ToString(CultureInfo.InvariantCulture);
                 case "PROFILE": return _profile.ProfileName;
                 case "BITDEPTH": return QualityTag;
@@ -462,7 +539,7 @@ namespace CDTag.Model.Tag
             var sb = new StringBuilder(name.Length);
             foreach (char c in name)
             {
-                if (c == SuffixMark)
+                if (c == SuffixMark || c == ImageMark)
                 {
                     sb.Append(c);
                     continue;
@@ -477,6 +554,9 @@ namespace CDTag.Model.Tag
 
             // Collapse runs of the same separator ("__", "--") and trim them from the ends.
             name = Regex.Replace(name, @"([_\-. ])\1+", "$1");
+            // "Reason_-_The_High" (a " - " in a title, after spaces became underscores): just "-".
+            name = Regex.Replace(name, @"_+-_*|-_+", "-");
+            name = Regex.Replace(name, @"-{2,}", "-");
             name = name.Trim('_', '-', ' ', '.');
             return name;
         }
@@ -594,7 +674,7 @@ namespace CDTag.Model.Tag
 
             foreach (char c in text)
             {
-                if (c == SuffixMark || wordSeparators.Contains(c) || fieldSeparators.Contains(c))
+                if (c == SuffixMark || c == ImageMark || wordSeparators.Contains(c) || fieldSeparators.Contains(c))
                 {
                     flush();
                     if (fieldSeparators.Contains(c))

@@ -250,7 +250,7 @@ namespace CDTag.FileBrowser.View
                     if (!driveInfo.IsReady)
                     {
                         node.Items.Clear();
-                        MessageBox.Show(string.Format(DriveNotReadyMessage, node.Directory), DriveNotReadyDialogTitle, MessageBoxButton.OK, MessageBoxImage.Information);
+                        CDTag.Common.ThemedMessageBox.Show(string.Format(DriveNotReadyMessage, node.Directory), DriveNotReadyDialogTitle, MessageBoxButton.OK, MessageBoxImage.Information);
                         return;
                     }
                 }
@@ -285,7 +285,7 @@ namespace CDTag.FileBrowser.View
             }
             else
             {
-                MessageBox.Show(node.AccessDeniedMessage, AccessDeniedDialogTitle, MessageBoxButton.OK, MessageBoxImage.Information);
+                CDTag.Common.ThemedMessageBox.Show(node.AccessDeniedMessage, AccessDeniedDialogTitle, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 

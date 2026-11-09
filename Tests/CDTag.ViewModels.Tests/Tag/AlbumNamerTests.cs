@@ -102,6 +102,99 @@ namespace CDTag.ViewModel.Tests.Tag
         }
 
         [Test]
+        public void RetaggingAnImageKeepsOneEnding()
+        {
+            var profile = Profile("<Artist>", "<LC><Disc><Track>-<Artist>-<Song></LC>-grp");
+            profile.FileNaming.MultiCD.SingleArtist.Images = "<LC>0000-<Artist>-<Album>-<Year>-<ImageText></LC>-grp";
+            profile.FileNaming.FileCharacterLimit = 100;
+            var album = Album("Pink Floyd", "A Momentary Lapse of Reason The High Resolution Remasters", 8, 4);
+            var namer = new AlbumNamer(profile, album, Release());
+            string head, tail;
+            Assert.That(namer.TryGetImageNameParts(".jpg", out head, out tail), Is.True);
+            Assert.That(head, Is.EqualTo("000-pink_floyd-a_momentary_lapse_of_reason_the_high_resolution_remasters-2014-"));
+            Assert.That(tail, Is.EqualTo("-grp"));
+
+            // Finish three times: the name stays the same, with one -grp.
+            string first = namer.GetFileName(NameKind.Images, "A Momentary Lapse of Reason - The High Resolution Remasters - CD 1 and 2", ".jpg");
+            string name = first;
+            for (int i = 0; i < 3; i++)
+            {
+                string text = AlbumFinisher.StripImageName(System.IO.Path.GetFileNameWithoutExtension(name), head, tail);
+                name = namer.GetFileName(NameKind.Images, text, ".jpg");
+            }
+            Assert.That(name.Length, Is.LessThanOrEqualTo(100));
+            Assert.That(name, Does.EndWith("cd_1_and_2-grp.jpg"));
+            Assert.That(name, Does.Not.Contain("-grp-grp"));
+            Assert.That(name, Does.Not.Contain("_-_"), "a \" - \" in the text becomes just -");
+            Assert.That(name, Does.StartWith("000-pink_floyd-"));
+            string again = namer.GetFileName(NameKind.Images, AlbumFinisher.StripImageName(System.IO.Path.GetFileNameWithoutExtension(name), head, tail), ".jpg");
+            Assert.That(again, Is.EqualTo(name));
+
+            // The name from the earlier versions (-grp-grp-grp, 000/0000) is cleaned up too.
+            string broken = "000-pink_floyd-a_momentary_lapse_of_reason_the_high_resolutio-ason_-_the_high_resolution_remasters_-_cd_1_and_2-grp-grp-grp";
+            Assert.That(AlbumFinisher.StripImageName(broken, head, tail), Is.EqualTo("ason_-_the_high_resolution_remasters_-_cd_1_and_2"));
+            Assert.That(AlbumFinisher.StripImageName("0000-pink_floyd-a_momentary_lapse_of_reason_the_high_resolution_remasters-2014-front-grp", head, tail), Is.EqualTo("front"));
+            // Images that were never renamed keep their name.
+            Assert.That(AlbumFinisher.StripImageName("Back Cover", head, tail), Is.EqualTo("Back Cover"));
+        }
+
+        [Test]
+        public void UpToNineDiscsTheNfoPlaylistChecksumAndImagesGet000()
+        {
+            var profile = Profile("<Artist>", "<LC><Disc><Track>-<Artist>-<Song></LC>-grp");
+            foreach (NamingFormat format in new[] { profile.FileNaming.MultiCD.SingleArtist })
+            {
+                format.NFO = format.Checksum = "<LC>0000-<Artist>-<Album>-<Discs>CD-<Year></LC>-grp";
+                format.Playlist = "<LC>0000-<Artist>-<Album>-<Year></LC>-grp";
+                format.Images = "<LC>0000-<Artist>-<Album>-<Year>-<ImageText></LC>-grp";
+            }
+
+            var nine = new AlbumNamer(profile, Album("Ween", "Live", 18, 9), Release());
+            var ten = new AlbumNamer(profile, Album("Ween", "Live", 20, 10), Release());
+            Assert.That(nine.GetFileName(NameKind.NFO), Is.EqualTo("000-ween-live-9cd-2014-grp.nfo"));
+            Assert.That(nine.GetFileName(NameKind.Checksum), Is.EqualTo("000-ween-live-9cd-2014-grp.sfv"));
+            Assert.That(nine.GetFileName(NameKind.Playlist), Is.EqualTo("000-ween-live-2014-grp.m3u"));
+            Assert.That(nine.GetFileName(NameKind.Images, "front", ".jpg"), Is.EqualTo("000-ween-live-2014-front-grp.jpg"));
+            Assert.That(ten.GetFileName(NameKind.Images, "front", ".jpg"), Is.EqualTo("0000-ween-live-2014-front-grp.jpg"));
+
+            profile.FileNaming.MultiCD.SingleArtist.Playlist = "<LC><Disc>00-<Artist>-<Album>-<Year></LC>-grp";
+            Assert.That(nine.GetFileName(NameKind.Playlist, null, null, 3), Is.EqualTo("300-ween-live-2014-grp.m3u"));
+            Assert.That(nine.GetFileName(NameKind.Playlist, null, null, AlbumNamer.AllDiscs), Is.EqualTo("000-ween-live-2014-grp.m3u"));
+            Assert.That(ten.GetFileName(NameKind.Playlist, null, null, 3), Is.EqualTo("0300-ween-live-2014-grp.m3u"));
+            Assert.That(ten.GetFileName(NameKind.Playlist, null, null, AlbumNamer.AllDiscs), Is.EqualTo("0000-ween-live-2014-grp.m3u"));
+            Assert.That(ten.GetFileName(NameKind.NFO), Is.EqualTo("0000-ween-live-10cd-2014-grp.nfo"));
+            Assert.That(ten.GetFileName(NameKind.Checksum), Is.EqualTo("0000-ween-live-10cd-2014-grp.sfv"));
+        }
+
+        [Test]
+        public void LongImageNamesKeepTheImageText()
+        {
+            var profile = Profile("<Artist>", "<LC><Track>-<Artist>-<Song></LC>-grp");
+            profile.FileNaming.SingleCD.SingleArtist.Images = "<LC>0000-<Artist>-<Album>-<Year>-<ImageText></LC>";
+            profile.FileNaming.FileCharacterLimit = 64;
+            var album = Album("Pink Floyd", "A Momentary Lapse of Reason The High Resolution Remasters", 10);
+            var namer = new AlbumNamer(profile, album, Release());
+
+            string front = namer.GetFileName(NameKind.Images, "a_momentary_lapse_of_reason-the_high_resolution_remasters-front", ".jpg");
+            string back = namer.GetFileName(NameKind.Images, "a_momentary_lapse_of_reason-the_high_resolution_remasters-back", ".jpg");
+            Assert.That(front, Is.Not.EqualTo(back));
+            Assert.That(front.Length, Is.LessThanOrEqualTo(64));
+            Assert.That(back.Length, Is.LessThanOrEqualTo(64));
+            Assert.That(front, Does.StartWith("0000-pink_floyd-").And.EndWith("-front.jpg"));
+            Assert.That(back, Does.EndWith("-back.jpg"));
+
+            string cover = namer.GetFileName(NameKind.Images, "front", ".jpg");
+            Assert.That(cover, Does.EndWith("-front.jpg"));
+            Assert.That(cover, Does.StartWith("0000-pink_floyd-"));
+            Assert.That(cover.Length, Is.LessThanOrEqualTo(64));
+
+            // Room enough: nothing is shortened.
+            profile.FileNaming.FileCharacterLimit = 200;
+            Assert.That(new AlbumNamer(profile, album, Release()).GetFileName(NameKind.Images, "front", ".jpg"),
+                        Is.EqualTo("0000-pink_floyd-a_momentary_lapse_of_reason_the_high_resolution_remasters-2014-front.jpg"));
+        }
+
+        [Test]
         public void TrackNumbersGetThreeDigitsWhenMoreThan99Tracks()
         {
             var profile = Profile("<Artist>", "<LC><Track>-<Artist>-<Song></LC>-grp");

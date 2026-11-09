@@ -25,6 +25,19 @@ namespace CDTag.FileBrowser.View
             InitializeComponent();
 
             DataContextChanged += FileList_DataContextChanged;
+            fileView.SelectionChanged += fileView_SelectionChanged;
+        }
+
+        /// <summary>
+        /// Keeps <see cref="FileView.IsSelected"/> (what Tag Album, Checksum... read) in step with the list. The row
+        /// binding alone misses selections when rows are scrolled out of view and reused (long folders).
+        /// </summary>
+        private void fileView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            foreach (FileView item in e.RemovedItems.OfType<FileView>())
+                item.IsSelected = false;
+            foreach (FileView item in e.AddedItems.OfType<FileView>())
+                item.IsSelected = true;
         }
 
         private void FileList_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)

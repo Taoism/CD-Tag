@@ -28,7 +28,7 @@ namespace CDTag.Views.Tag.EditTag
         private static void CollectionNavigator_BeforeDelete(object sender, CancelDataEventArgs<object> e)
         {
             // TODO: Localize
-            if (MessageBox.Show("Delete picture?", "Delete picture", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            if (CDTag.Common.ThemedMessageBox.Show("Delete picture?", "Delete picture", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             {
                 e.Cancel = true;
             }
