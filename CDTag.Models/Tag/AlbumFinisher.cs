@@ -129,7 +129,11 @@ namespace CDTag.Model.Tag
     /// </summary>
     public class AlbumFinisher
     {
-        private static readonly string[] ImageExtensions = { ".jpg", ".jpeg", ".png", ".gif" };
+        private static readonly string[] ImageExtensions =
+        {
+            ".jpg", ".jpeg", ".jpe", ".jfif", ".png", ".gif", ".bmp", ".dib", ".tif", ".tiff", ".webp", ".avif", ".heic", ".heif",
+            ".jxl", ".jp2", ".j2k", ".ico", ".tga", ".psd", ".svg", ".pcx"
+        };
 
         private readonly UserProfile _profile;
         private readonly Album _album;
@@ -274,6 +278,8 @@ namespace CDTag.Model.Tag
                 }
             }
 
+            PlanArtFolders(plan, tracks, deleted);
+
             // NFO
             string nfoName = _namer.GetFileName(NameKind.NFO);
             List<string> nfos = remaining.Where(f => Path.GetExtension(f).Equals(".nfo", StringComparison.OrdinalIgnoreCase)).ToList();
@@ -333,7 +339,7 @@ namespace CDTag.Model.Tag
 
             // The files as they will be after Finish, relative to the release folder.
             var moves = plan.Moves.ToDictionary(m => m.Source, m => m.Target, StringComparer.OrdinalIgnoreCase);
-            var files = AlbumFiles().Where(f => !deleted.Contains(f)).Select(f => { string target; return moves.TryGetValue(f, out target) ? target : f; })
+            var files = AlbumFiles().Concat(_artFiles).Where(f => !deleted.Contains(f)).Select(f => { string target; return moves.TryGetValue(f, out target) ? target : f; })
                                     .Concat(plan.Creates.Select(c => c.Path))
                                     .Distinct(StringComparer.OrdinalIgnoreCase)
                                     .Select(f => RelativeTo(Folder, f))
@@ -350,6 +356,100 @@ namespace CDTag.Model.Tag
             };
             plan.RuleSetName = SceneRules.Describe(rules);
             plan.RuleIssues.AddRange(SceneRules.Check(rules, release));
+        }
+
+        private static readonly string[] JunkFiles = { "thumbs.db", "desktop.ini", ".ds_store" };
+
+        private List<string> _artFiles = new List<string>();
+
+        /// <summary>
+        /// Art folders (Artwork, Scans, Covers... in the album folder or a disc folder, any folder without tracks that holds
+        /// only images): the images go into the album folder with the image names (000- up to 9 discs, 0000- from 10) and the
+        /// folder is deleted. A folder with other files in it stays as it is.
+        /// </summary>
+        private void PlanArtFolders(FinishPlan plan, List<AlbumTrack> tracks, HashSet<string> deleted)
+        {
+            _artFiles = new List<string>();
+            if (!Directory.Exists(Folder))
+                return;
+            var trackFolders = new HashSet<string>(tracks.Select(t => Path.GetDirectoryName(t.OriginalFileName)), StringComparer.OrdinalIgnoreCase);
+            var parents = new List<string> { Folder };
+            parents.AddRange(trackFolders.Where(f => !string.Equals(f, Folder, StringComparison.OrdinalIgnoreCase)
+                                                     && f.StartsWith(Folder + "\\", StringComparison.OrdinalIgnoreCase)));
+
+            var artFolders = new List<string>();
+            foreach (string parent in parents.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                foreach (string sub in Directory.GetDirectories(parent).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+                {
+                    if (trackFolders.Any(t => string.Equals(t, sub, StringComparison.OrdinalIgnoreCase) || t.StartsWith(sub + "\\", StringComparison.OrdinalIgnoreCase)))
+                        continue; // holds tracks: a disc folder
+                    string[] files = Directory.GetFiles(sub, "*", SearchOption.AllDirectories);
+                    if (!files.Any(IsImage))
+                        continue;
+                    string other = files.FirstOrDefault(f => !IsImage(f) && !IsJunk(f));
+                    if (other != null)
+                    {
+                        plan.Warnings.Add(string.Format("{0} has files that are not images ({1}), so it stays as it is.", RelativeTo(Folder, sub), Path.GetFileName(other)));
+                        continue;
+                    }
+                    artFolders.Add(sub);
+                }
+            }
+            if (artFolders.Count == 0)
+                return;
+
+            var moves = new List<KeyValuePair<FileMove, string>>(); // move, image text
+            foreach (string folder in artFolders)
+            {
+                foreach (string file in Directory.GetFiles(folder, "*", SearchOption.AllDirectories).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+                {
+                    _artFiles.Add(file);
+                    if (!IsImage(file))
+                    {
+                        plan.Deletes.Add(file);
+                        deleted.Add(file);
+                        continue;
+                    }
+                    string text = ImageText(file);
+                    string name = _finish.RenameImageFiles ? _namer.GetFileName(NameKind.Images, text, Path.GetExtension(file).ToLowerInvariant()) : null;
+                    moves.Add(new KeyValuePair<FileMove, string>(new FileMove { Source = file, Target = Path.Combine(Folder, name ?? Path.GetFileName(file)) }, text));
+                }
+                plan.RemovedFolders.Add(folder);
+            }
+
+            // The same name twice (front.jpg in Artwork\CD1 and Artwork\CD2, or next to the album's own folder.jpg):
+            // the folder goes into the image text ("artwork_cd2_front").
+            var taken = new HashSet<string>(plan.Moves.Select(m => m.Target), StringComparer.OrdinalIgnoreCase);
+            foreach (string file in AlbumFiles().Where(f => !deleted.Contains(f) && plan.Moves.All(m => !string.Equals(m.Source, f, StringComparison.OrdinalIgnoreCase))))
+                taken.Add(file);
+            var counts = moves.GroupBy(m => m.Key.Target, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+            foreach (var item in moves)
+            {
+                FileMove move = item.Key;
+                if (counts[move.Target] > 1 || taken.Contains(move.Target))
+                {
+                    string where = System.Text.RegularExpressions.Regex.Replace(RelativeTo(Folder, Path.GetDirectoryName(move.Source)).ToLowerInvariant(), @"[^a-z0-9]+", "_").Trim('_');
+                    string text = where + "_" + item.Value;
+                    string name = _finish.RenameImageFiles ? _namer.GetFileName(NameKind.Images, text, Path.GetExtension(move.Source).ToLowerInvariant()) : null;
+                    move.Target = Path.Combine(Folder, name ?? (where + "_" + Path.GetFileName(move.Source)));
+                }
+                plan.Moves.Add(move);
+            }
+        }
+
+        private static bool IsImage(string file)
+        {
+            return ImageExtensions.Contains(Path.GetExtension(file).ToLowerInvariant());
+        }
+
+        private bool IsJunk(string file)
+        {
+            string name = Path.GetFileName(file);
+            if (JunkFiles.Contains(name.ToLowerInvariant()))
+                return true;
+            return _finish.DeleteOldFiles && _profile.DeleteFiles != null
+                   && _profile.DeleteFiles.Any(pattern => FileSystemName.MatchesSimpleExpression(pattern.Trim(), name, ignoreCase: true));
         }
 
         /// <summary>auCDtect Task Manager (y-soft.org) reports: a rip log, "Folder.auCDtect.txt".</summary>
@@ -527,7 +627,7 @@ namespace CDTag.Model.Tag
                     if (!sources.Contains(file) && !deleted.Contains(file))
                         plan.Moves.Add(new FileMove { Source = file, Target = Path.Combine(Folder, Path.GetFileName(file)) });
                 }
-                if (Directory.GetDirectories(folder).Length > 0)
+                if (Directory.GetDirectories(folder).Any(d => !plan.RemovedFolders.Contains(d, StringComparer.OrdinalIgnoreCase)))
                     plan.Warnings.Add(string.Format("{0} has subfolders; they stay where they are, so {0} is not deleted.", Path.GetFileName(folder)));
             }
 

@@ -353,6 +353,37 @@ namespace CDTag.ViewModel.Tests.Tag
         }
 
         [Test]
+        public void ArtFoldersGoIntoTheAlbumFolderWithImageNamesAndAreDeleted()
+        {
+            string folder = MakeFolder("art (src)", "untagged.flac", @"CD1\01.flac", @"CD2\01.flac");
+            Directory.CreateDirectory(Path.Combine(folder, "Artwork"));
+            File.WriteAllBytes(Path.Combine(folder, "Artwork", "Front.png"), new byte[] { 1 });
+            File.WriteAllBytes(Path.Combine(folder, "Artwork", "back.webp"), new byte[] { 2 });
+            File.WriteAllText(Path.Combine(folder, "Artwork", "Thumbs.db"), "junk");
+            Directory.CreateDirectory(Path.Combine(folder, "CD2", "Scans", "Inlay"));
+            File.WriteAllBytes(Path.Combine(folder, "CD2", "Scans", "booklet 01.tif"), new byte[] { 3 });
+            File.WriteAllBytes(Path.Combine(folder, "CD2", "Scans", "Inlay", "front.png"), new byte[] { 4 }); // same name as Artwork\Front.png
+            Directory.CreateDirectory(Path.Combine(folder, "Extras"));
+            File.WriteAllBytes(Path.Combine(folder, "Extras", "photo.jpg"), new byte[] { 5 });
+            File.WriteAllText(Path.Combine(folder, "Extras", "readme.txt"), "not art");
+            Album album = Load(folder, "Ween", "Live", "One", "Two");
+            var finisher = new AlbumFinisher(Profile(), album, Release(), null);
+
+            FinishPlan plan = finisher.Plan();
+            Assert.That(plan.Problems, Is.Empty);
+            Assert.That(plan.Warnings, Has.Some.Contains("Extras"));
+            string result = finisher.Run(plan);
+
+            string[] names = Directory.GetFiles(result).Select(Path.GetFileName).ToArray();
+            TestContext.Out.WriteLine(string.Join(Environment.NewLine, names));
+            Assert.That(names, Does.Contain("000-ween-live-1994-artwork_front-grp.png"));
+            Assert.That(names, Does.Contain("000-ween-live-1994-cd2_scans_inlay_front-grp.png"));
+            Assert.That(names, Does.Contain("000-ween-live-1994-back-grp.webp"));
+            Assert.That(names, Does.Contain("000-ween-live-1994-booklet_01-grp.tif"));
+            Assert.That(Directory.GetDirectories(result).Select(Path.GetFileName), Is.EqualTo(new[] { "Extras" }), "Artwork, CD1, CD2 (and Scans) are deleted");
+        }
+
+        [Test]
         public void DifferentFilesWithTheSameNameInTwoDiscFoldersGetTheDiscInTheName()
         {
             string folder = MakeFolder("clash (src)", "untagged.flac", @"CD1\01.flac", @"CD2\01.flac");
