@@ -97,6 +97,7 @@
                 <MenuItem Header="Home _page" Command="{Binding HomePageCommand}" />
                 <MenuItem Header="Report a _problem" Command="{Binding SupportForumCommand}" />
                 <Separator />
+                <MenuItem Header="Check for _Updates..." Command="{Binding CheckForUpdatesCommand}" />
                 <MenuItem Header="_About CD-Tag" Command="{Binding AboutCommand}" InputGestureText="Ctrl+F1" />
             </MenuItem>
         </Menu>

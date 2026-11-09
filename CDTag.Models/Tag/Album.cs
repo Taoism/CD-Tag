@@ -219,13 +219,60 @@ namespace CDTag.Model.Tag
                 throw new Exception(string.Format("No audio files found in '{0}'", path)); // TODO: Localize
 
             var tracks = new List<AlbumTrack>();
+            var damaged = new List<string>();
             foreach (string file in files)
             {
-                AlbumTrack track = new AlbumTrack(file);
-                tracks.Add(track);
+                try
+                {
+                    tracks.Add(new AlbumTrack(file));
+                }
+                catch (InvalidDataException)
+                {
+                    // Keep going so every damaged file is named at once, not one per try.
+                    damaged.Add(DescribeDamagedFile(path, file));
+                }
+            }
+
+            if (damaged.Count != 0)
+            {
+                throw new InvalidDataException(string.Format("{0} no audio that can be read: {1}. Download or rip {2} again.",
+                    damaged.Count == 1 ? "This file has" : damaged.Count + " files have", string.Join("; ", damaged),
+                    damaged.Count == 1 ? "it" : "them"));
             }
 
             return tracks;
+        }
+
+        /// <summary>"CD1\108 Title.mp3 (only zero bytes: an unfinished download or copy)" or "... (no audio frames found)".</summary>
+        public static string DescribeDamagedFile(string albumPath, string file)
+        {
+            string name = Path.GetRelativePath(albumPath, file);
+            string reason;
+            try
+            {
+                reason = IsAllZero(file) ? "only zero bytes: an unfinished download or copy" : "no audio frames found";
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                reason = ex.Message;
+            }
+            return string.Format("{0} ({1})", name, reason);
+        }
+
+        /// <summary>True when the file is empty or every byte is 0.</summary>
+        public static bool IsAllZero(string file)
+        {
+            var buffer = new byte[1 << 16];
+            using (var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, buffer.Length))
+            {
+                int read;
+                while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    if (Array.FindIndex(buffer, 0, read, b => b != 0) >= 0)
+                        return false;
+                }
+            }
+            return true;
         }
 
         public ImageSource Picture

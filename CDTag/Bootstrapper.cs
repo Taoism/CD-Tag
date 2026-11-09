@@ -117,6 +117,7 @@ namespace CDTag
             MainWindow shell = IoC.Resolve<MainWindow>();
             shell.Show();
             CheckSceneRules(shell);
+            CheckForUpdates(shell);
 
             return shell;
         }
@@ -155,6 +156,17 @@ namespace CDTag
             {
                 // Not essential: built-in defaults are used.
             }
+        }
+
+        /// <summary>Looks for a newer CD-Tag on GitHub (Options > Updates) and asks whether to install it. Offline: silent.</summary>
+        private static void CheckForUpdates(Window shell)
+        {
+            CDTag.Model.Update.UpdateChecker.CleanUp();
+            if (!CDTag.Common.Settings.AppOptions.Current.IsCheckForUpdates)
+                return;
+            // After the window is up, so the question has an owner on the right monitor.
+            shell.Dispatcher.BeginInvoke(new Action(async () => await CDTag.ViewModel.Update.UpdatePrompt.CheckAsync(shell, quiet: true)),
+                                         System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         }
 
         private static void CheckSceneRules(Window shell)

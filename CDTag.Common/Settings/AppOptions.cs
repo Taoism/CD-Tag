@@ -78,6 +78,17 @@ namespace CDTag.Common.Settings
         [DataMember(Name = "enabled")]
         public string SceneTaggingEnabled { get; set; }
 
+        /// <summary>Look for a newer CD-Tag on GitHub when CD-Tag starts, "true" or "false". Missing = on.</summary>
+        [DataMember]
+        public string CheckForUpdates { get; set; }
+
+        /// <summary>True unless <see cref="CheckForUpdates"/> is "false".</summary>
+        [System.Xml.Serialization.XmlIgnore]
+        public bool IsCheckForUpdates
+        {
+            get { return !string.Equals((CheckForUpdates ?? "").Trim(), "false", StringComparison.OrdinalIgnoreCase); }
+        }
+
         /// <summary>True unless <see cref="SceneTaggingEnabled"/> is "false".</summary>
         [System.Xml.Serialization.XmlIgnore]
         public bool IsSceneTagging

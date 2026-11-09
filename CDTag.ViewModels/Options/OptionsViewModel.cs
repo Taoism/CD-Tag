@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using CDTag.Common;
@@ -28,6 +29,10 @@ namespace CDTag.ViewModel.Options
             NewTagID3v2Version = options.NewTagID3v2Version == "ID3v24" ? "ID3v24" : "ID3v23";
             TagBothFormats = options.TagBothFormats;
             KeepRipLogs = options.KeepRipLogs;
+            CheckForUpdates = options.IsCheckForUpdates;
+            CurrentVersionText = "This is CD-Tag " + CDTag.Model.Update.UpdateChecker.CurrentVersion +
+                                 ". When a newer version is on GitHub, CD-Tag asks whether to install it; your options and profiles are kept.";
+            CheckForUpdatesNowCommand = new DelegateCommand(CheckForUpdatesNow);
             LamePath = options.LamePath;
             FlacPath = options.FlacPath;
             GnudbEmail = options.GnudbEmail;
@@ -76,6 +81,30 @@ namespace CDTag.ViewModel.Options
         {
             get { return Get<bool>("KeepRipLogs"); }
             set { Set("KeepRipLogs", value); }
+        }
+
+        /// <summary>Look for a newer CD-Tag on GitHub when CD-Tag starts.</summary>
+        public bool CheckForUpdates
+        {
+            get { return Get<bool>("CheckForUpdates"); }
+            set { Set("CheckForUpdates", value); }
+        }
+
+        /// <summary>"This is CD-Tag 3.2.7."</summary>
+        public string CurrentVersionText
+        {
+            get { return Get<string>("CurrentVersionText"); }
+            private set { Set("CurrentVersionText", value); }
+        }
+
+        /// <summary>Checks GitHub now and asks whether to install a newer version.</summary>
+        public ICommand CheckForUpdatesNowCommand { get; private set; }
+
+        private async void CheckForUpdatesNow()
+        {
+            System.Windows.Window owner = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive)
+                                          ?? System.Windows.Application.Current.MainWindow;
+            await CDTag.ViewModel.Update.UpdatePrompt.CheckAsync(owner, quiet: false);
         }
 
         public bool TagBothFormats
@@ -231,6 +260,7 @@ namespace CDTag.ViewModel.Options
             options.NewTagID3v2Version = NewTagID3v2Version;
             options.TagBothFormats = TagBothFormats;
             options.KeepRipLogs = KeepRipLogs;
+            options.CheckForUpdates = CheckForUpdates ? "true" : "false";
             options.LamePath = string.IsNullOrWhiteSpace(LamePath) ? null : LamePath.Trim();
             options.FlacPath = string.IsNullOrWhiteSpace(FlacPath) ? null : FlacPath.Trim();
             options.GnudbEmail = string.IsNullOrWhiteSpace(GnudbEmail) ? null : GnudbEmail.Trim();

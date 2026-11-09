@@ -35,6 +35,7 @@ namespace CDTag.ViewModels.Tag
             InitializeMainWindow();
 
             AboutCommand = new DelegateCommand(() => ShowWindow<IAboutWindow>());
+            CheckForUpdatesCommand = new DelegateCommand(async () => await CDTag.ViewModel.Update.UpdatePrompt.CheckAsync(Application.Current.MainWindow, quiet: false));
             ExitCommand = new DelegateCommand(() => Application.Current.MainWindow.Close());
             TagAlbumCommand = new DelegateCommand(TagAlbum);
             EditTagsCommand = new DelegateCommand(() => ShowWindow<IEditTagWindow>());

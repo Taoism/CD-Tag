@@ -157,6 +157,22 @@
                            Text="Discogs asks programs to use a token for searching, and allows 60 lookups a minute with one instead of 25: sign in at discogs.com, open Settings > Developers, click Generate new token and paste it here." />
             </StackPanel>
 
+            <!-- Updates -->
+            <TextBlock Text="Updates" Style="{StaticResource SectionHeader}" />
+            <StackPanel Style="{StaticResource SectionBody}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <CheckBox Content="Check for _updates when CD-Tag starts" IsChecked="{Binding CheckForUpdates, Mode=TwoWay}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="Check _now" Command="{Binding CheckForUpdatesNowCommand}" Padding="10,2" Margin="6,0,0,0"
+                            ToolTip="Looks for a newer CD-Tag on GitHub and asks whether to install it" />
+                </Grid>
+                <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0"
+                           Text="{Binding CurrentVersionText}" />
+            </StackPanel>
+
             <Path Data="M0,0 L1,0" Stroke="{DynamicResource Theme.Divider}" Stretch="Fill" Margin="0,0,0,10" />
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

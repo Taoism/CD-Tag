@@ -47,6 +47,11 @@ namespace CDTag.Launcher
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
+            // cdtag.exe --update <zip url> <program folder> <CD-Tag process id> <version>: started by CD-Tag (Help or
+            // Options > Check for updates) from a temporary copy of this file.
+            if (args.Length >= 5 && args[0] == "--update")
+                return Updater.Run(args[1], args[2], args[3], args[4]);
+
             string app = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin", "cdtag.exe");
             if (!File.Exists(app))
             {
@@ -122,7 +127,7 @@ namespace CDTag.Launcher
             }
         }
 
-        private static string Quote(string arg)
+        internal static string Quote(string arg)
         {
             if (arg.Length > 0 && arg.IndexOfAny(new[] { ' ', '\t', '"' }) < 0)
                 return arg;
@@ -227,7 +232,7 @@ namespace CDTag.Launcher
         }
 
         /// <summary>Unpacks a zip into a folder, overwriting files both runtime zips contain (licence texts).</summary>
-        private static void Extract(string zip, string directory)
+        internal static void Extract(string zip, string directory)
         {
             string root = Path.GetFullPath(directory) + Path.DirectorySeparatorChar;
             using (ZipArchive archive = ZipFile.OpenRead(zip))
@@ -248,7 +253,7 @@ namespace CDTag.Launcher
             }
         }
 
-        private static void Download(string url, string path, InstallForm form)
+        internal static void Download(string url, string path, InstallForm form)
         {
             using (var client = new WebClient())
             {
@@ -393,6 +398,11 @@ namespace CDTag.Launcher
         private readonly ThemedProgress _progress;
 
         public InstallForm()
+            : this("CD-Tag needs the .NET 10 Desktop Runtime. It is being installed; this only happens once.")
+        {
+        }
+
+        public InstallForm(string introText)
         {
             Text = "CD-Tag";
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -414,7 +424,7 @@ namespace CDTag.Launcher
 
             var intro = new Label
             {
-                Text = "CD-Tag needs the .NET 10 Desktop Runtime. It is being installed; this only happens once.",
+                Text = introText,
                 Left = 14, Top = 12, Width = 412, Height = 36, ForeColor = _theme.Text
             };
             _status = new Label { Text = "Starting...", Left = 14, Top = 52, Width = 412, Height = 20, ForeColor = _theme.SecondaryText };
