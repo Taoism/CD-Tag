@@ -372,7 +372,7 @@ namespace CDTag.Model.Profile
                     text.Append('[').Append(section.Key).Append("]\r\n");
                     foreach (var entry in section.Value)
                         text.Append(entry.Key).Append('=').Append(entry.Value).Append("\r\n");
-                    text.Append("\r\n\r\n");
+                    text.Append("\r\n"); // one blank line between sections, as 2.x writes them
                 }
                 return text.ToString();
             }

@@ -95,11 +95,19 @@ repository; the build copies them to `bin\Encoders` (Debug and Release). That fo
 A release has `options.json` next to `cdtag.exe`; CD-Tag reads and saves its options there (the same settings as
 *Tools → Options*). Without that file, options are kept in `%LOCALAPPDATA%\CD-Tag\options.json`.
 
+## Profiles
+
+As in CD-Tag 2.x, profiles (`.cfg`) and their NFO templates (`.nfo`) are kept next to `cdtag.exe`: when that
+folder has profiles, CD-Tag uses them. Otherwise they are kept in `%LOCALAPPDATA%\CD-Tag\Profiles`.
+
+Profiles are saved in the CD-Tag 2.x format, so CD-Tag 2.x and this version can share the same files. Settings
+2.x doesn't have are stored in a `[CDTAG3]` section, which 2.x ignores.
+
 ## NFO template
 
 `bin\Defaults\blank.nfo` is a plain NFO template with every field. On first run it is copied to
-`%LOCALAPPDATA%\CD-Tag\Profiles\blank.nfo`; choose it on a profile's *NFO* page, or use it as a starting point
-for your own. Profiles and NFO templates are not part of this repository.
+the profile folder (unless that folder already has profiles); choose it on a profile's *NFO* page, or use it as a
+starting point for your own. Profiles and NFO templates are not part of this repository.
 
 ## Building
 
@@ -117,7 +125,7 @@ Release build (the layout above, in `publish\CD-Tag`):
 dotnet publish CDTag\CDTag.csproj -c Release -o publish\CD-Tag
 ```
 
-Settings are stored in `%LOCALAPPDATA%\CD-Tag` (`appearance.json`, `mainWindow.json`, `windows.json`, `Profiles\`).
+Settings are stored in `%LOCALAPPDATA%\CD-Tag` (`appearance.json`, `mainWindow.json`, `windows.json`, and `Profiles\` when there are no profiles next to `cdtag.exe`).
 
 ## Theming
 
