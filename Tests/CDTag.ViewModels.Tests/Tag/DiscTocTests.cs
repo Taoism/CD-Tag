@@ -12,7 +12,7 @@ namespace CDTag.ViewModel.Tests.Tag
     [TestFixture]
     public class DiscTocTests
     {
-        private const string EacLog =
+        internal const string EacLog =
             "Exact Audio Copy V1.6 from 23. October 2020\r\n\r\n" +
             "TOC of the extracted CD\r\n\r\n" +
             "     Track |   Start  |  Length  | Start sector | End sector \r\n" +

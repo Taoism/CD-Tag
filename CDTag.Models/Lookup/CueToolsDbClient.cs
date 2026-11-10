@@ -11,12 +11,12 @@ using System.Xml.Linq;
 namespace CDTag.Model.Lookup
 {
     /// <summary>
-    /// CUETools Database (db.cuetools.net) metadata lookup by disc TOC — the service behind CUETools / CUERipper and
+    /// CUETools Database (db.cue.tools, over HTTPS; db.cuetools.net only has a certificate for cue.tools) metadata lookup by disc TOC — the service behind CUETools / CUERipper and
     /// EAC's CTDB plugin. One request returns matching releases from MusicBrainz, Discogs and freedb.
     /// </summary>
     public class CueToolsDbClient
     {
-        private const string LookupUrl = "http://db.cuetools.net/lookup2.php?version=3&ctdb=0&fuzzy=1&metadata=";
+        private const string LookupUrl = "https://db.cue.tools/lookup2.php?version=3&ctdb=0&fuzzy=1&metadata=";
         private static readonly XNamespace Ns = "http://db.cuetools.net/ns/mmd-1.0#";
 
         private static readonly HttpClient Http = CreateClient();
@@ -59,7 +59,7 @@ namespace CDTag.Model.Lookup
         {
             try
             {
-                string url = "http://db.cuetools.net/lookup2.php?version=3&ctdb=1&fuzzy=0&metadata=fast&toc=" + toc.CtdbToc;
+                string url = "https://db.cue.tools/lookup2.php?version=3&ctdb=1&fuzzy=0&metadata=none&toc=" + toc.CtdbToc;
                 using (HttpResponseMessage response = await Http.GetAsync(url, cancellation).ConfigureAwait(false))
                 {
                     if (response.StatusCode == HttpStatusCode.NotFound)
@@ -185,8 +185,25 @@ namespace CDTag.Model.Lookup
             // Cover Art Archive thumbnails: "-250.jpg" -> the 500 px version.
             string small = (string)cover.Attribute("uri150");
             if (small != null && small.Contains("coverartarchive.org") && small.EndsWith("-250.jpg", StringComparison.OrdinalIgnoreCase))
-                return small.Substring(0, small.Length - "-250.jpg".Length) + "-500.jpg";
-            return (string)cover.Attribute("uri") ?? small;
+                return Secure(small.Substring(0, small.Length - "-250.jpg".Length) + "-500.jpg");
+            return Secure((string)cover.Attribute("uri") ?? small);
+        }
+
+        /// <summary>
+        /// Cover links in CTDB answers may be http:// (Cover Art Archive, Discogs); both serve the same images over https,
+        /// so the image can't be swapped on the way. Anything that isn't http(s) is dropped.
+        /// </summary>
+        public static string Secure(string url)
+        {
+            Uri uri;
+            if (string.IsNullOrEmpty(url) || !Uri.TryCreate(url, UriKind.Absolute, out uri))
+                return null;
+            if (uri.Scheme == Uri.UriSchemeHttps)
+                return uri.AbsoluteUri;
+            if (uri.Scheme != Uri.UriSchemeHttp)
+                return null;
+            var builder = new UriBuilder(uri) { Scheme = Uri.UriSchemeHttps, Port = -1 };
+            return builder.Uri.AbsoluteUri;
         }
 
         private static string SourceName(string source)
