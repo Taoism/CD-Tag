@@ -22,6 +22,8 @@ namespace CDTag.Model.Update
         public string PageUrl { get; set; }
         /// <summary>The release notes (Markdown), may be empty.</summary>
         public string Notes { get; set; }
+        /// <summary>SHA-256 of the zip as GitHub lists it (lowercase hex); the updater refuses a download that doesn't match.</summary>
+        public string Sha256 { get; set; }
     }
 
     /// <summary>
@@ -35,6 +37,8 @@ namespace CDTag.Model.Update
         public const string ReleasesPage = "https://github.com/" + Repository + "/releases/latest";
         private const string LatestApi = "https://api.github.com/repos/" + Repository + "/releases/latest";
         private const string TempPrefix = "cdtag-update-";
+        /// <summary>The only place an update is downloaded from (the updater checks it again).</summary>
+        public const string DownloadPrefix = "https://github.com/" + Repository + "/releases/download/";
 
         /// <summary>The running version (3 parts, e.g. 3.2.6).</summary>
         public static Version CurrentVersion
@@ -69,16 +73,21 @@ namespace CDTag.Model.Update
                 if (version == null)
                     return null;
 
-                string download = null;
+                string download = null, sha256 = null;
                 JsonElement assets;
                 if (root.TryGetProperty("assets", out assets) && assets.ValueKind == JsonValueKind.Array)
                 {
-                    download = assets.EnumerateArray()
-                                     .Where(a => (GetString(a, "name") ?? "").EndsWith("-win-x64.zip", StringComparison.OrdinalIgnoreCase))
-                                     .Select(a => GetString(a, "browser_download_url"))
-                                     .FirstOrDefault(u => !string.IsNullOrEmpty(u));
+                    JsonElement zip = assets.EnumerateArray()
+                                            .FirstOrDefault(a => (GetString(a, "name") ?? "").EndsWith("-win-x64.zip", StringComparison.OrdinalIgnoreCase)
+                                                                 && !string.IsNullOrEmpty(GetString(a, "browser_download_url")));
+                    if (zip.ValueKind == JsonValueKind.Object)
+                    {
+                        download = GetString(zip, "browser_download_url");
+                        sha256 = ParseDigest(GetString(zip, "digest"));
+                    }
                 }
-                if (download == null)
+                // Only a zip from this repository's releases, with GitHub's SHA-256, is installed.
+                if (!IsReleaseDownload(download) || sha256 == null)
                     return null;
 
                 return new UpdateInfo
@@ -86,9 +95,28 @@ namespace CDTag.Model.Update
                     Version = version,
                     DownloadUrl = download,
                     PageUrl = GetString(root, "html_url") ?? ReleasesPage,
-                    Notes = GetString(root, "body") ?? ""
+                    Notes = GetString(root, "body") ?? "",
+                    Sha256 = sha256
                 };
             }
+        }
+
+        /// <summary>True for an https download from this repository's GitHub releases.</summary>
+        public static bool IsReleaseDownload(string url)
+        {
+            Uri uri;
+            return !string.IsNullOrEmpty(url) && Uri.TryCreate(url, UriKind.Absolute, out uri) && uri.Scheme == Uri.UriSchemeHttps
+                   && uri.AbsoluteUri.StartsWith(DownloadPrefix, StringComparison.OrdinalIgnoreCase) && !uri.AbsolutePath.Contains("/../");
+        }
+
+        /// <summary>GitHub's asset digest "sha256:9e77..." -> "9e77..." (64 lowercase hex digits); null otherwise.</summary>
+        public static string ParseDigest(string digest)
+        {
+            const string prefix = "sha256:";
+            if (string.IsNullOrEmpty(digest) || !digest.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return null;
+            string hex = digest.Substring(prefix.Length).Trim().ToLowerInvariant();
+            return hex.Length == 64 && hex.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) ? hex : null;
         }
 
         /// <summary>"v3.2.7" or "3.2.7" -> 3.2.7; null when it isn't a version.</summary>
@@ -140,21 +168,32 @@ namespace CDTag.Model.Update
             if (starter == null)
                 throw new InvalidOperationException("This copy of CD-Tag can't update itself; download the new version from GitHub.");
 
-            // Run a copy: the starter in the program folder is replaced too.
-            string temp = Path.Combine(Path.GetTempPath(), TempPrefix + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(temp);
-            string updater = Path.Combine(temp, "cdtag.exe");
-            File.Copy(starter, updater);
+            if (!IsReleaseDownload(update.DownloadUrl) || update.Sha256 == null)
+                throw new InvalidOperationException("The update isn't a CD-Tag release from GitHub; download it from the releases page.");
 
             string program = PathService.ProgramDirectory;
             string arguments = string.Join(" ", new[]
             {
                 "--update", Quote(update.DownloadUrl), Quote(program),
-                Process.GetCurrentProcess().Id.ToString(), Quote(update.Version.ToString())
+                Process.GetCurrentProcess().Id.ToString(), Quote(update.Version.ToString()), update.Sha256
             });
-            var info = new ProcessStartInfo(updater, arguments) { UseShellExecute = true, WorkingDirectory = temp };
-            if (!CanWrite(program))
-                info.Verb = "runas";
+
+            ProcessStartInfo info;
+            if (CanWrite(program))
+            {
+                // Run a copy: the starter in the program folder is replaced too.
+                string temp = Path.Combine(Path.GetTempPath(), TempPrefix + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(temp);
+                string updater = Path.Combine(temp, "cdtag.exe");
+                File.Copy(starter, updater);
+                info = new ProcessStartInfo(updater, arguments) { UseShellExecute = true, WorkingDirectory = temp };
+            }
+            else
+            {
+                // As administrator the starter runs where it is: a folder only administrators can change (a copy in
+                // %TEMP% could have a DLL planted next to it). It renames itself to cdtag.exe.old before it is replaced.
+                info = new ProcessStartInfo(starter, arguments) { UseShellExecute = true, WorkingDirectory = program, Verb = "runas" };
+            }
             Process.Start(info);
         }
 

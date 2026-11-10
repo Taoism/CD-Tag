@@ -47,10 +47,19 @@ namespace CDTag.Launcher
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // cdtag.exe --update <zip url> <program folder> <CD-Tag process id> <version>: started by CD-Tag (Help or
-            // Options > Check for updates) from a temporary copy of this file.
-            if (args.Length >= 5 && args[0] == "--update")
-                return Updater.Run(args[1], args[2], args[3], args[4]);
+            // cdtag.exe --update <zip url> <program folder> <CD-Tag process id> <version> <sha256>: started by CD-Tag (Help or
+            // Options > Check for updates) from a temporary copy of this file, or in place when it runs as administrator.
+            if (args.Length >= 1 && args[0] == "--update")
+            {
+                if (args.Length < 6)
+                {
+                    MessageBox.Show("This update can't be checked (no checksum). Download CD-Tag again from GitHub.", "CD-Tag",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return 1;
+                }
+                return Updater.Run(args[1], args[2], args[3], args[4], args[5]);
+            }
+            Updater.RemoveOldStarter(AppDomain.CurrentDomain.BaseDirectory);
 
             string app = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin", "cdtag.exe");
             if (!File.Exists(app))
@@ -184,6 +193,9 @@ namespace CDTag.Launcher
                     form.SetStatus("Installing the .NET 10 Desktop Runtime...");
                     try
                     {
+                        // It runs as administrator: only Microsoft's own signed installer. Otherwise the private copy below.
+                        if (!Authenticode.IsSignedByMicrosoft(installer))
+                            throw new Win32Exception("The downloaded .NET installer isn't signed by Microsoft.");
                         using (Process setup = Process.Start(new ProcessStartInfo(installer, "/install /quiet /norestart") { UseShellExecute = true, Verb = "runas" }))
                         {
                             setup.WaitForExit();

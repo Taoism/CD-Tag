@@ -20,15 +20,29 @@ namespace IdSharp.Tagging.ID3v2
             return returnValue;
         }
 
+        /// <summary>The largest an ID3v2 tag can be (28-bit size), so no frame inflates to more.</summary>
+        private const int MaxInflatedFrame = 0x0FFFFFFF;
+
         public static Stream DecompressFrame(Stream stream, int compressedSize)
         {
+            // The size comes from the file: a damaged or crafted one must not allocate more than the file holds.
+            if (compressedSize < 0 || (stream.CanSeek && compressedSize > stream.Length - stream.Position))
+                throw new InvalidDataException(string.Format("Compressed ID3v2 frame of {0} bytes is larger than the rest of the file.", compressedSize));
+
             byte[] compressed = new byte[compressedSize];
             stream.ReadExactly(compressed, 0, compressedSize);
 
             MemoryStream outStream = new MemoryStream();
             using (var zlib = new ZLibStream(new MemoryStream(compressed), CompressionMode.Decompress))
             {
-                zlib.CopyTo(outStream);
+                byte[] buffer = new byte[81920];
+                int read;
+                while ((read = zlib.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    if (outStream.Length + read > MaxInflatedFrame)
+                        throw new InvalidDataException("Compressed ID3v2 frame inflates to more than an ID3v2 tag can hold.");
+                    outStream.Write(buffer, 0, read);
+                }
             }
             outStream.Position = 0;
             return outStream;

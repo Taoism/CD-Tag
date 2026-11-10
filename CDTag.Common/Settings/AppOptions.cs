@@ -56,8 +56,23 @@ namespace CDTag.Common.Settings
         /// Discogs personal access token (discogs.com > Settings > Developers). Needed for the Discogs search and covers;
         /// release links work without it.
         /// </summary>
-        [DataMember]
+        /// <remarks>Kept in memory only: options.json stores it encrypted (<see cref="DiscogsTokenProtected"/>). A plain
+        /// "DiscogsToken" from an older options.json is still read, and is written encrypted at the next save.</remarks>
+        [System.Xml.Serialization.XmlIgnore]
         public string DiscogsToken { get; set; }
+
+        /// <summary>The Discogs token encrypted for the current Windows user (DPAPI); this is what options.json holds.</summary>
+        [DataMember]
+        public string DiscogsTokenProtected
+        {
+            get { return Dpapi.Protect(DiscogsToken); }
+            set
+            {
+                string token = Dpapi.Unprotect(value);
+                if (token != null)
+                    DiscogsToken = token;
+            }
+        }
 
         /// <summary>
         /// Tag Album also tags the same rip in the other format (the FLAC album and its MP3 encode in folders next to
