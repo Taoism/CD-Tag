@@ -8,140 +8,140 @@ namespace CDTag.ViewModels.Tag
     {
         public ICommand NewProfileCommand
         {
-            get { return Get<ICommand>("NewProfileCommand"); }
-            private set { Set("NewProfileCommand", value); }
+            get { return Get<ICommand>(nameof(NewProfileCommand)); }
+            private set { Set(nameof(NewProfileCommand), value); }
         }
 
         public ICommand EditProfileCommand
         {
-            get { return Get<ICommand>("EditProfileCommand"); }
-            private set { Set("EditProfileCommand", value); }
+            get { return Get<ICommand>(nameof(EditProfileCommand)); }
+            private set { Set(nameof(EditProfileCommand), value); }
         }
 
         public ICommand AboutCommand
         {
-            get { return Get<ICommand>("AboutCommand"); }
-            private set { Set("AboutCommand", value); }
+            get { return Get<ICommand>(nameof(AboutCommand)); }
+            private set { Set(nameof(AboutCommand), value); }
         }
 
         public ICommand TagAlbumCommand
         {
-            get { return Get<ICommand>("TagAlbumCommand"); }
-            private set { Set("TagAlbumCommand", value); }
+            get { return Get<ICommand>(nameof(TagAlbumCommand)); }
+            private set { Set(nameof(TagAlbumCommand), value); }
         }
 
         public ICommand EditTagsCommand
         {
-            get { return Get<ICommand>("EditTagsCommand"); }
-            private set { Set("EditTagsCommand", value); }
+            get { return Get<ICommand>(nameof(EditTagsCommand)); }
+            private set { Set(nameof(EditTagsCommand), value); }
         }
 
         public ICommand CheckForUpdatesCommand
         {
-            get { return Get<ICommand>("CheckForUpdatesCommand"); }
-            private set { Set("CheckForUpdatesCommand", value); }
+            get { return Get<ICommand>(nameof(CheckForUpdatesCommand)); }
+            private set { Set(nameof(CheckForUpdatesCommand), value); }
         }
 
         public ICommand ExitCommand
         {
-            get { return Get<ICommand>("ExitCommand"); }
-            private set { Set("ExitCommand", value); }
+            get { return Get<ICommand>(nameof(ExitCommand)); }
+            private set { Set(nameof(ExitCommand), value); }
         }
 
         public ICommand CutCommand
         {
-            get { return Get<ICommand>("CutCommand"); }
-            private set { Set("CutCommand", value); }
+            get { return Get<ICommand>(nameof(CutCommand)); }
+            private set { Set(nameof(CutCommand), value); }
         }
 
         public ICommand CopyCommand
         {
-            get { return Get<ICommand>("CopyCommand"); }
-            private set { Set("CopyCommand", value); }
+            get { return Get<ICommand>(nameof(CopyCommand)); }
+            private set { Set(nameof(CopyCommand), value); }
         }
 
         public ICommand PasteCommand
         {
-            get { return Get<ICommand>("PasteCommand"); }
-            private set { Set("PasteCommand", value); }
+            get { return Get<ICommand>(nameof(PasteCommand)); }
+            private set { Set(nameof(PasteCommand), value); }
         }
 
         public ICommand CopyToFolderCommand
         {
-            get { return Get<ICommand>("CopyToFolderCommand"); }
-            private set { Set("CopyToFolderCommand", value); }
+            get { return Get<ICommand>(nameof(CopyToFolderCommand)); }
+            private set { Set(nameof(CopyToFolderCommand), value); }
         }
 
         public ICommand MoveToFolderCommand
         {
-            get { return Get<ICommand>("MoveToFolderCommand"); }
-            private set { Set("MoveToFolderCommand", value); }
+            get { return Get<ICommand>(nameof(MoveToFolderCommand)); }
+            private set { Set(nameof(MoveToFolderCommand), value); }
         }
 
         public ICommand RefreshCommand
         {
-            get { return Get<ICommand>("RefreshCommand"); }
-            private set { Set("RefreshCommand", value); }
+            get { return Get<ICommand>(nameof(RefreshCommand)); }
+            private set { Set(nameof(RefreshCommand), value); }
         }
 
         public ICommand CreateChecksumCommand
         {
-            get { return Get<ICommand>("CreateChecksumCommand"); }
-            private set { Set("CreateChecksumCommand", value); }
+            get { return Get<ICommand>(nameof(CreateChecksumCommand)); }
+            private set { Set(nameof(CreateChecksumCommand), value); }
         }
 
         public ICommand VerifyChecksumCommand
         {
-            get { return Get<ICommand>("VerifyChecksumCommand"); }
-            private set { Set("VerifyChecksumCommand", value); }
+            get { return Get<ICommand>(nameof(VerifyChecksumCommand)); }
+            private set { Set(nameof(VerifyChecksumCommand), value); }
         }
 
         public ICommand SplitCueSheetCommand
         {
-            get { return Get<ICommand>("SplitCueSheetCommand"); }
-            private set { Set("SplitCueSheetCommand", value); }
+            get { return Get<ICommand>(nameof(SplitCueSheetCommand)); }
+            private set { Set(nameof(SplitCueSheetCommand), value); }
         }
 
         public ICommand EncodingInspectorCommand
         {
-            get { return Get<ICommand>("EncodingInspectorCommand"); }
-            private set { Set("EncodingInspectorCommand", value); }
+            get { return Get<ICommand>(nameof(EncodingInspectorCommand)); }
+            private set { Set(nameof(EncodingInspectorCommand), value); }
         }
 
         public ICommand MassTagCommand
         {
-            get { return Get<ICommand>("MassTagCommand"); }
-            private set { Set("MassTagCommand", value); }
+            get { return Get<ICommand>(nameof(MassTagCommand)); }
+            private set { Set(nameof(MassTagCommand), value); }
         }
 
         public ICommand ShowHelpCommand
         {
-            get { return Get<ICommand>("ShowHelpCommand"); }
-            private set { Set("ShowHelpCommand", value); }
+            get { return Get<ICommand>(nameof(ShowHelpCommand)); }
+            private set { Set(nameof(ShowHelpCommand), value); }
         }
 
         public ICommand HomePageCommand
         {
-            get { return Get<ICommand>("HomePageCommand"); }
-            private set { Set("HomePageCommand", value); }
+            get { return Get<ICommand>(nameof(HomePageCommand)); }
+            private set { Set(nameof(HomePageCommand), value); }
         }
 
         public ICommand SupportForumCommand
         {
-            get { return Get<ICommand>("SupportForumCommand"); }
-            private set { Set("SupportForumCommand", value); }
+            get { return Get<ICommand>(nameof(SupportForumCommand)); }
+            private set { Set(nameof(SupportForumCommand), value); }
         }
 
         public ICommand OptionsCommand
         {
-            get { return Get<ICommand>("OptionsCommand"); }
-            private set { Set("OptionsCommand", value); }
+            get { return Get<ICommand>(nameof(OptionsCommand)); }
+            private set { Set(nameof(OptionsCommand), value); }
         }
 
         public ICommand VerifyEACLogCommand
         {
-            get { return Get<ICommand>("VerifyEACLogCommand"); }
-            private set { Set("VerifyEACLogCommand", value); }
+            get { return Get<ICommand>(nameof(VerifyEACLogCommand)); }
+            private set { Set(nameof(VerifyEACLogCommand), value); }
         }
     }
 }

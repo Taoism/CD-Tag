@@ -47,54 +47,54 @@ namespace CDTag.ViewModel.Options
 
         public string Theme
         {
-            get { return Get<string>("Theme"); }
-            set { Set("Theme", value); }
+            get { return Get<string>(nameof(Theme)); }
+            set { Set(nameof(Theme), value); }
         }
 
         public bool IsStartupLastUsed
         {
-            get { return Get<bool>("IsStartupLastUsed"); }
-            set { Set("IsStartupLastUsed", value); }
+            get { return Get<bool>(nameof(IsStartupLastUsed)); }
+            set { Set(nameof(IsStartupLastUsed), value); }
         }
 
         public bool IsStartupSpecific
         {
-            get { return Get<bool>("IsStartupSpecific"); }
-            set { Set("IsStartupSpecific", value); }
+            get { return Get<bool>(nameof(IsStartupSpecific)); }
+            set { Set(nameof(IsStartupSpecific), value); }
         }
 
         public string StartupFolder
         {
-            get { return Get<string>("StartupFolder"); }
-            set { Set("StartupFolder", value); }
+            get { return Get<string>(nameof(StartupFolder)); }
+            set { Set(nameof(StartupFolder), value); }
         }
 
         public bool ShowHiddenFiles
         {
-            get { return Get<bool>("ShowHiddenFiles"); }
-            set { Set("ShowHiddenFiles", value); }
+            get { return Get<bool>(nameof(ShowHiddenFiles)); }
+            set { Set(nameof(ShowHiddenFiles), value); }
         }
 
         /// <summary>Tag Album also tags the same album in the other format (FLAC and MP3 folders next to each other).</summary>
         /// <summary>Finish keeps (and renames) the rip logs; off = they are deleted.</summary>
         public bool KeepRipLogs
         {
-            get { return Get<bool>("KeepRipLogs"); }
-            set { Set("KeepRipLogs", value); }
+            get { return Get<bool>(nameof(KeepRipLogs)); }
+            set { Set(nameof(KeepRipLogs), value); }
         }
 
         /// <summary>Look for a newer CD-Tag on GitHub when CD-Tag starts.</summary>
         public bool CheckForUpdates
         {
-            get { return Get<bool>("CheckForUpdates"); }
-            set { Set("CheckForUpdates", value); }
+            get { return Get<bool>(nameof(CheckForUpdates)); }
+            set { Set(nameof(CheckForUpdates), value); }
         }
 
         /// <summary>"This is CD-Tag 3.2.7."</summary>
         public string CurrentVersionText
         {
-            get { return Get<string>("CurrentVersionText"); }
-            private set { Set("CurrentVersionText", value); }
+            get { return Get<string>(nameof(CurrentVersionText)); }
+            private set { Set(nameof(CurrentVersionText), value); }
         }
 
         /// <summary>Checks GitHub now and asks whether to install a newer version.</summary>
@@ -109,23 +109,23 @@ namespace CDTag.ViewModel.Options
 
         public bool TagBothFormats
         {
-            get { return Get<bool>("TagBothFormats"); }
-            set { Set("TagBothFormats", value); }
+            get { return Get<bool>(nameof(TagBothFormats)); }
+            set { Set(nameof(TagBothFormats), value); }
         }
 
         public string NewTagID3v2Version
         {
-            get { return Get<string>("NewTagID3v2Version"); }
-            set { Set("NewTagID3v2Version", value); }
+            get { return Get<string>(nameof(NewTagID3v2Version)); }
+            set { Set(nameof(NewTagID3v2Version), value); }
         }
 
         /// <summary>lame.exe; empty uses Encoders\mp3\lame.exe next to cdtag.exe when it is there, otherwise the built-in LAME.</summary>
         public string LamePath
         {
-            get { return Get<string>("LamePath"); }
+            get { return Get<string>(nameof(LamePath)); }
             set
             {
-                Set("LamePath", value);
+                Set(nameof(LamePath), value);
                 LameInfo = EncoderInfo(value, CDTag.Model.Encoders.AudioEncoder.UserLameFolder, "lame", "lame.exe");
             }
         }
@@ -133,15 +133,15 @@ namespace CDTag.ViewModel.Options
         /// <summary>Address registered with gnudb.org; empty = gnudb is not asked (Rip > Find CD).</summary>
         public string GnudbEmail
         {
-            get { return Get<string>("GnudbEmail"); }
-            set { Set("GnudbEmail", value); }
+            get { return Get<string>(nameof(GnudbEmail)); }
+            set { Set(nameof(GnudbEmail), value); }
         }
 
         /// <summary>Discogs personal access token; empty = Discogs search is off (release links still work).</summary>
         public string DiscogsToken
         {
-            get { return Get<string>("DiscogsToken"); }
-            set { Set("DiscogsToken", value); }
+            get { return Get<string>(nameof(DiscogsToken)); }
+            set { Set(nameof(DiscogsToken), value); }
         }
 
         /// <summary>Opens discogs.com's developer settings, where the personal access token is made.</summary>
@@ -160,10 +160,10 @@ namespace CDTag.ViewModel.Options
 
         public string FlacPath
         {
-            get { return Get<string>("FlacPath"); }
+            get { return Get<string>(nameof(FlacPath)); }
             set
             {
-                Set("FlacPath", value);
+                Set(nameof(FlacPath), value);
                 FlacInfo = EncoderInfo(value, CDTag.Model.Encoders.AudioEncoder.UserFlacFolder, "flac", "flac.exe");
             }
         }
@@ -171,14 +171,14 @@ namespace CDTag.ViewModel.Options
         /// <summary>Which lame.exe is used (chosen, yours in Encoders\mp3, or built-in) and its version.</summary>
         public string LameInfo
         {
-            get { return Get<string>("LameInfo"); }
-            private set { Set("LameInfo", value); }
+            get { return Get<string>(nameof(LameInfo)); }
+            private set { Set(nameof(LameInfo), value); }
         }
 
         public string FlacInfo
         {
-            get { return Get<string>("FlacInfo"); }
-            private set { Set("FlacInfo", value); }
+            get { return Get<string>(nameof(FlacInfo)); }
+            private set { Set(nameof(FlacInfo), value); }
         }
 
         public ICommand BrowseLameCommand { get; private set; }

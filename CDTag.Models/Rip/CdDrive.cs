@@ -108,7 +108,7 @@ namespace CDTag.Model.Rip
         {
             const int raw = SectorBytes + 96;
             if (count < 1 || count > MaxSectorsPerRead)
-                throw new ArgumentOutOfRangeException("count");
+                throw new ArgumentOutOfRangeException(nameof(count));
             byte[] info = new byte[16];
             BitConverter.GetBytes((long)lba * 2048).CopyTo(info, 0);
             BitConverter.GetBytes(count).CopyTo(info, 8);
@@ -189,10 +189,12 @@ namespace CDTag.Model.Rip
                 int[] at = { 12, 16, 20 };
                 for (int k = 0; k < 3; k++)
                 {
-                    parts[k] = "";
                     int offset = BitConverter.ToInt32(buffer, at[k]);
                     if (offset <= 0 || offset >= returned)
+                    {
+                        parts[k] = "";
                         continue;
+                    }
                     int end = offset;
                     while (end < returned && buffer[end] != 0)
                         end++;
@@ -265,7 +267,7 @@ namespace CDTag.Model.Rip
         public bool ReadSectors(int lba, int count, byte[] buffer, int offset = 0)
         {
             if (count <= 0 || count > MaxSectorsPerRead || buffer.Length - offset < count * SectorBytes)
-                throw new ArgumentOutOfRangeException("count");
+                throw new ArgumentOutOfRangeException(nameof(count));
             // RAW_READ_INFO: LARGE_INTEGER DiskOffset (in 2048-byte units), ULONG SectorCount, TRACK_MODE_TYPE TrackMode (CDDA = 2)
             byte[] info = new byte[16];
             BitConverter.GetBytes((long)lba * 2048).CopyTo(info, 0);
@@ -309,7 +311,7 @@ namespace CDTag.Model.Rip
         {
             c2Errors = 0;
             if (count <= 0 || count > MaxSectorsPerC2Read || buffer.Length - offset < count * SectorBytes)
-                throw new ArgumentOutOfRangeException("count");
+                throw new ArgumentOutOfRangeException(nameof(count));
             int per = SectorBytes + C2Bytes;
             byte[] info = new byte[16];
             BitConverter.GetBytes((long)lba * 2048).CopyTo(info, 0);

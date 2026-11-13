@@ -42,7 +42,7 @@ namespace CDTag.Views.Theming
         private Application _application;
         private ResourceDictionary _palette;
         private ThemePreference _preference = ThemePreference.System;
-        private bool _isDark;
+        private bool _darkActive;
         private bool _initialized;
 
         private ThemeManager()
@@ -86,7 +86,7 @@ namespace CDTag.Views.Theming
         /// <summary>Gets whether the dark palette is currently active.</summary>
         public bool IsDarkActive
         {
-            get { return _isDark; }
+            get { return _darkActive; }
         }
 
         public bool IsSystem { get { return _preference == ThemePreference.System; } }
@@ -103,11 +103,11 @@ namespace CDTag.Views.Theming
                     return;
 
                 _preference = value;
-                OnPropertyChanged("Preference");
-                OnPropertyChanged("ThemeName");
-                OnPropertyChanged("IsSystem");
-                OnPropertyChanged("IsLight");
-                OnPropertyChanged("IsDark");
+                OnPropertyChanged(nameof(Preference));
+                OnPropertyChanged(nameof(ThemeName));
+                OnPropertyChanged(nameof(IsSystem));
+                OnPropertyChanged(nameof(IsLight));
+                OnPropertyChanged(nameof(IsDark));
 
                 Apply();
                 Save();
@@ -121,8 +121,7 @@ namespace CDTag.Views.Theming
         /// </summary>
         public void Initialize(Application application)
         {
-            if (application == null)
-                throw new ArgumentNullException("application");
+            ArgumentNullException.ThrowIfNull(application);
             if (_initialized)
                 return;
             _initialized = true;
@@ -130,7 +129,7 @@ namespace CDTag.Views.Theming
             _application = application;
 
             _preference = Load();
-            CDTag.Common.ThemedMessageBox.IsDark = () => _isDark;
+            CDTag.Common.ThemedMessageBox.IsDark = () => _darkActive;
 
             // Dark title bars for every window as soon as it gets an HWND / when it loads.
             EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnWindowLoaded));
@@ -145,7 +144,7 @@ namespace CDTag.Views.Theming
         public void ApplyToWindow(Window window)
         {
             if (window != null)
-                GlassHelper.SetDarkTitleBar(window, _isDark);
+                GlassHelper.SetDarkTitleBar(window, _darkActive);
         }
 
         /// <summary>Reads the Windows "Choose your app mode" setting.</summary>
@@ -181,10 +180,10 @@ namespace CDTag.Views.Theming
                     break;
             }
 
-            if (!force && dark == _isDark)
+            if (!force && dark == _darkActive)
                 return;
 
-            _isDark = dark;
+            _darkActive = dark;
 
             if (_application != null)
             {
@@ -205,7 +204,7 @@ namespace CDTag.Views.Theming
                     ApplyToWindow(window);
             }
 
-            OnPropertyChanged("IsDarkActive");
+            OnPropertyChanged(nameof(IsDarkActive));
             EventHandler handler = ThemeChanged;
             if (handler != null)
                 handler(this, EventArgs.Empty);

@@ -116,20 +116,20 @@ namespace CDTag.ViewModels.Checksum
 
         public string Folder
         {
-            get { return Get<string>("Folder"); }
-            private set { Set("Folder", value); }
+            get { return Get<string>(nameof(Folder)); }
+            private set { Set(nameof(Folder), value); }
         }
 
         /// <summary>True: verify a checksum file. False: create one.</summary>
         public bool IsVerifyMode
         {
-            get { return Get<bool>("IsVerifyMode"); }
+            get { return Get<bool>(nameof(IsVerifyMode)); }
             set
             {
                 if (IsVerifyMode == value)
                     return;
-                Set("IsVerifyMode", value);
-                RaisePropertyChanged("IsCreateMode", !value, value);
+                Set(nameof(IsVerifyMode), value);
+                RaisePropertyChanged(nameof(IsCreateMode), !value, value);
                 Reload();
             }
         }
@@ -142,11 +142,11 @@ namespace CDTag.ViewModels.Checksum
 
         public ChecksumKindItem SelectedKind
         {
-            get { return Get<ChecksumKindItem>("SelectedKind"); }
+            get { return Get<ChecksumKindItem>(nameof(SelectedKind)); }
             set
             {
                 ChecksumKindItem old = SelectedKind;
-                Set("SelectedKind", value);
+                Set(nameof(SelectedKind), value);
                 if (value == null)
                     return;
                 // Keep a typed name, only swap the extension.
@@ -154,7 +154,7 @@ namespace CDTag.ViewModels.Checksum
                 if (string.IsNullOrWhiteSpace(current))
                     OutputFileName = DefaultOutputName(value.Kind);
                 else if (old != null && current.EndsWith(ChecksumList.GetExtension(old.Kind), StringComparison.OrdinalIgnoreCase))
-                    OutputFileName = current.Substring(0, current.Length - ChecksumList.GetExtension(old.Kind).Length) + ChecksumList.GetExtension(value.Kind);
+                    OutputFileName = string.Concat(current.AsSpan(0, current.Length - ChecksumList.GetExtension(old.Kind).Length), ChecksumList.GetExtension(value.Kind));
                 if (!_loading && !IsVerifyMode)
                     ClearHashes();
             }
@@ -162,10 +162,10 @@ namespace CDTag.ViewModels.Checksum
 
         public bool AudioOnly
         {
-            get { return Get<bool>("AudioOnly"); }
+            get { return Get<bool>(nameof(AudioOnly)); }
             set
             {
-                Set("AudioOnly", value);
+                Set(nameof(AudioOnly), value);
                 if (!_loading && !IsVerifyMode)
                     Reload();
             }
@@ -173,10 +173,10 @@ namespace CDTag.ViewModels.Checksum
 
         public bool IncludeSubfolders
         {
-            get { return Get<bool>("IncludeSubfolders"); }
+            get { return Get<bool>(nameof(IncludeSubfolders)); }
             set
             {
-                Set("IncludeSubfolders", value);
+                Set(nameof(IncludeSubfolders), value);
                 if (!_loading && !IsVerifyMode)
                     Reload();
             }
@@ -185,18 +185,18 @@ namespace CDTag.ViewModels.Checksum
         /// <summary>Name of the checksum file to create (in <see cref="Folder"/>).</summary>
         public string OutputFileName
         {
-            get { return Get<string>("OutputFileName"); }
-            set { Set("OutputFileName", value); }
+            get { return Get<string>(nameof(OutputFileName)); }
+            set { Set(nameof(OutputFileName), value); }
         }
 
         public string SelectedChecksumFile
         {
-            get { return Get<string>("SelectedChecksumFile"); }
+            get { return Get<string>(nameof(SelectedChecksumFile)); }
             set
             {
                 if (SelectedChecksumFile == value)
                     return;
-                Set("SelectedChecksumFile", value);
+                Set(nameof(SelectedChecksumFile), value);
                 if (!_loading && IsVerifyMode)
                     Reload();
             }
@@ -204,20 +204,20 @@ namespace CDTag.ViewModels.Checksum
 
         public bool IsBusy
         {
-            get { return Get<bool>("IsBusy"); }
-            private set { Set("IsBusy", value); }
+            get { return Get<bool>(nameof(IsBusy)); }
+            private set { Set(nameof(IsBusy), value); }
         }
 
         public double Progress
         {
-            get { return Get<double>("Progress"); }
-            private set { Set("Progress", value); }
+            get { return Get<double>(nameof(Progress)); }
+            private set { Set(nameof(Progress), value); }
         }
 
         public string StatusText
         {
-            get { return Get<string>("StatusText"); }
-            private set { Set("StatusText", value); }
+            get { return Get<string>(nameof(StatusText)); }
+            private set { Set(nameof(StatusText), value); }
         }
 
         public ICommand BrowseCommand { get; private set; }
@@ -376,7 +376,7 @@ namespace CDTag.ViewModels.Checksum
         }
 
         /// <summary>Calculates the hash of each row in the background; returns false when cancelled.</summary>
-        private async Task<bool> HashRows(IList<ChecksumRow> rows, ChecksumKind kind, Action<ChecksumRow, string> done)
+        private async Task<bool> HashRows(List<ChecksumRow> rows, ChecksumKind kind, Action<ChecksumRow, string> done)
         {
             _cancellation = new CancellationTokenSource();
             CancellationToken token = _cancellation.Token;
@@ -463,7 +463,7 @@ namespace CDTag.ViewModels.Checksum
             {
                 byte[] content = ChecksumList.Build(kind, rows.Select(r => new ChecksumItem { Path = r.FullPath, Hash = r.Hash }).ToList(), Folder,
                                                     tagging != null && tagging.ChecksumHideGeneratedBy, tagging != null && tagging.ChecksumHideFileInfo);
-                File.WriteAllBytes(target, content);
+                await File.WriteAllBytesAsync(target, content, CancellationToken.None);
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {

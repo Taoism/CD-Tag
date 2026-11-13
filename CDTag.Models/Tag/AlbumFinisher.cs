@@ -127,7 +127,7 @@ namespace CDTag.Model.Tag
     /// Tag Album's Finish (CD-Tag 2.x "process"): writes tags and the cover, deletes the profile's delete list,
     /// renames files and the folder, and creates the NFO, playlists and checksum files.
     /// </summary>
-    public class AlbumFinisher
+    public partial class AlbumFinisher
     {
         private static readonly string[] ImageExtensions =
         {
@@ -147,10 +147,8 @@ namespace CDTag.Model.Tag
         /// <param name="nfoTemplate">The NFO template text, or null when the profile has none.</param>
         public AlbumFinisher(UserProfile profile, Album album, ReleaseInfo release, string nfoTemplate)
         {
-            if (profile == null)
-                throw new ArgumentNullException("profile");
-            if (album == null)
-                throw new ArgumentNullException("album");
+            ArgumentNullException.ThrowIfNull(profile);
+            ArgumentNullException.ThrowIfNull(album);
 
             _profile = profile;
             _album = album;
@@ -429,7 +427,7 @@ namespace CDTag.Model.Tag
                 FileMove move = item.Key;
                 if (counts[move.Target] > 1 || taken.Contains(move.Target))
                 {
-                    string where = System.Text.RegularExpressions.Regex.Replace(RelativeTo(Folder, Path.GetDirectoryName(move.Source)).ToLowerInvariant(), @"[^a-z0-9]+", "_").Trim('_');
+                    string where = NonAlphanumeric().Replace(RelativeTo(Folder, Path.GetDirectoryName(move.Source)).ToLowerInvariant(), "_").Trim('_');
                     string text = where + "_" + item.Value;
                     string name = _finish.RenameImageFiles ? _namer.GetFileName(NameKind.Images, text, Path.GetExtension(move.Source).ToLowerInvariant()) : null;
                     move.Target = Path.Combine(Folder, name ?? (where + "_" + Path.GetFileName(move.Source)));
@@ -675,10 +673,10 @@ namespace CDTag.Model.Tag
         /// <summary>"cd2" for CD2 / Disc 2 / Disk_2 folders; otherwise the folder name in lowercase with underscores.</summary>
         private static string DiscTag(string folderName)
         {
-            var number = System.Text.RegularExpressions.Regex.Match(folderName ?? "", @"\d+");
+            var number = Digits().Match(folderName ?? "");
             if (number.Success)
                 return "cd" + int.Parse(number.Value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
-            return System.Text.RegularExpressions.Regex.Replace((folderName ?? "disc").Trim().ToLowerInvariant(), @"[^a-z0-9]+", "_");
+            return NonAlphanumeric().Replace((folderName ?? "disc").Trim().ToLowerInvariant(), "_");
         }
 
         private static bool SameContent(string a, string b)
@@ -691,7 +689,7 @@ namespace CDTag.Model.Tag
         }
 
         /// <summary>Two moves to one name, or a move onto a file that stays: stop before touching anything.</summary>
-        private void CheckTargets(FinishPlan plan, HashSet<string> deleted)
+        private static void CheckTargets(FinishPlan plan, HashSet<string> deleted)
         {
             var sources = new HashSet<string>(plan.Moves.Select(m => m.Source), StringComparer.OrdinalIgnoreCase);
             var targets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -716,8 +714,7 @@ namespace CDTag.Model.Tag
         /// <summary>Carries out <paramref name="plan"/>; returns the album folder afterwards.</summary>
         public string Run(FinishPlan plan, Action<string> progress = null)
         {
-            if (plan == null)
-                throw new ArgumentNullException("plan");
+            ArgumentNullException.ThrowIfNull(plan);
             if (!plan.CanRun)
                 throw new InvalidOperationException(string.Join(Environment.NewLine, plan.Problems));
             progress = progress ?? (s => { });
@@ -743,7 +740,7 @@ namespace CDTag.Model.Tag
             var temporary = new List<FileMove>();
             foreach (FileMove move in pending)
             {
-                string temp = Path.Combine(Path.GetDirectoryName(move.Source), "~cdtag" + Guid.NewGuid().ToString("N").Substring(0, 8) + Path.GetExtension(move.Source));
+                string temp = Path.Combine(Path.GetDirectoryName(move.Source), string.Concat("~cdtag", Guid.NewGuid().ToString("N").AsSpan(0, 8), Path.GetExtension(move.Source)));
                 File.Move(move.Source, temp);
                 temporary.Add(new FileMove { Source = temp, Target = move.Target });
             }
@@ -860,7 +857,7 @@ namespace CDTag.Model.Tag
                 {
                     // FLAC rules 6.3 (CD, vinyl...): the picture block MUST be empty. WEB FLAC has no such rule,
                     // so artwork from the shop stays.
-                    vorbis.SetPictureBlocks(new byte[0][]);
+                    vorbis.SetPictureBlocks(Array.Empty<byte[]>());
                 }
                 vorbis.Save(path);
 
@@ -1089,7 +1086,7 @@ namespace CDTag.Model.Tag
 
         private static int DiscFromName(string path, int fallback)
         {
-            var match = System.Text.RegularExpressions.Regex.Match(Path.GetFileNameWithoutExtension(path), @"(?:cd|disc|disk)\s*[-_#.]?\s*(\d{1,2})(?!\d)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var match = DiscInName().Match(Path.GetFileNameWithoutExtension(path));
             return match.Success ? int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture) : fallback;
         }
 
@@ -1162,10 +1159,19 @@ namespace CDTag.Model.Tag
         {
             if (string.IsNullOrWhiteSpace(text))
                 return fallback;
-            var match = System.Text.RegularExpressions.Regex.Match(text, @"\d+");
+            var match = Digits().Match(text);
             int number;
             return match.Success && int.TryParse(match.Value, out number) ? number : fallback;
         }
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"[^a-z0-9]+", System.Text.RegularExpressions.RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial System.Text.RegularExpressions.Regex NonAlphanumeric();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"\d+", System.Text.RegularExpressions.RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial System.Text.RegularExpressions.Regex Digits();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"(?:cd|disc|disk)\s*[-_#.]?\s*(\d{1,2})(?!\d)", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial System.Text.RegularExpressions.Regex DiscInName();
     }
 
     /// <summary>CRC-32 (IEEE) as used in SFV files.</summary>

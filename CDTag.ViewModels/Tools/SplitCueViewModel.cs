@@ -40,7 +40,7 @@ namespace CDTag.ViewModels.Tools
                 _status = value;
                 PropertyChangedEventHandler handler = PropertyChanged;
                 if (handler != null)
-                    handler(this, new PropertyChangedEventArgs("Status"));
+                    handler(this, new PropertyChangedEventArgs(nameof(Status)));
             }
         }
 
@@ -74,7 +74,7 @@ namespace CDTag.ViewModels.Tools
                 new SplitFormatItem { Format = SplitFormat.Flac, Name = "FLAC (-8, tagged from the CUE sheet)" },
                 new SplitFormatItem { Format = SplitFormat.Wav, Name = "WAV" }
             };
-            Set("SelectedFormat", Formats[0]);
+            Set(nameof(SelectedFormat), Formats[0]);
 
             OpenCommand = new DelegateCommand(Open, () => !IsBusy);
             BrowseOutputCommand = new DelegateCommand(BrowseOutput, () => !IsBusy);
@@ -91,78 +91,78 @@ namespace CDTag.ViewModels.Tools
 
         public CueFileItem SelectedCue
         {
-            get { return Get<CueFileItem>("SelectedCue"); }
+            get { return Get<CueFileItem>(nameof(SelectedCue)); }
             set
             {
                 if (SelectedCue == value)
                     return;
-                Set("SelectedCue", value);
+                Set(nameof(SelectedCue), value);
                 ReadCue();
             }
         }
 
         public SplitFormatItem SelectedFormat
         {
-            get { return Get<SplitFormatItem>("SelectedFormat"); }
+            get { return Get<SplitFormatItem>(nameof(SelectedFormat)); }
             set
             {
-                Set("SelectedFormat", value);
+                Set(nameof(SelectedFormat), value);
                 BuildRows();
             }
         }
 
         public string OutputFolder
         {
-            get { return Get<string>("OutputFolder"); }
-            set { Set("OutputFolder", value); }
+            get { return Get<string>(nameof(OutputFolder)); }
+            set { Set(nameof(OutputFolder), value); }
         }
 
         /// <summary>Audio before track 1 exists: offer to save it as track 00.</summary>
         public bool HasHiddenTrack
         {
-            get { return Get<bool>("HasHiddenTrack"); }
-            private set { Set("HasHiddenTrack", value); }
+            get { return Get<bool>(nameof(HasHiddenTrack)); }
+            private set { Set(nameof(HasHiddenTrack), value); }
         }
 
         public bool SaveHiddenTrack
         {
-            get { return Get<bool>("SaveHiddenTrack"); }
+            get { return Get<bool>(nameof(SaveHiddenTrack)); }
             set
             {
-                Set("SaveHiddenTrack", value);
+                Set(nameof(SaveHiddenTrack), value);
                 BuildRows();
             }
         }
 
         public string HiddenTrackText
         {
-            get { return Get<string>("HiddenTrackText"); }
-            private set { Set("HiddenTrackText", value); }
+            get { return Get<string>(nameof(HiddenTrackText)); }
+            private set { Set(nameof(HiddenTrackText), value); }
         }
 
         /// <summary>Album, image file and track count, or why the sheet can't be split.</summary>
         public string Info
         {
-            get { return Get<string>("Info"); }
-            private set { Set("Info", value); }
+            get { return Get<string>(nameof(Info)); }
+            private set { Set(nameof(Info), value); }
         }
 
         public bool IsBusy
         {
-            get { return Get<bool>("IsBusy"); }
-            private set { Set("IsBusy", value); }
+            get { return Get<bool>(nameof(IsBusy)); }
+            private set { Set(nameof(IsBusy), value); }
         }
 
         public double Progress
         {
-            get { return Get<double>("Progress"); }
-            private set { Set("Progress", value); }
+            get { return Get<double>(nameof(Progress)); }
+            private set { Set(nameof(Progress), value); }
         }
 
         public string StatusText
         {
-            get { return Get<string>("StatusText"); }
-            private set { Set("StatusText", value); }
+            get { return Get<string>(nameof(StatusText)); }
+            private set { Set(nameof(StatusText), value); }
         }
 
         public ICommand OpenCommand { get; private set; }
@@ -183,7 +183,7 @@ namespace CDTag.ViewModels.Tools
                 CueFiles.Insert(0, new CueFileItem { FullPath = cueFile, Name = Path.GetFileName(cueFile) });
 
             CueFileItem selected = cueFile != null ? CueFiles.First(f => string.Equals(f.FullPath, cueFile, StringComparison.OrdinalIgnoreCase)) : CueFiles.FirstOrDefault();
-            Set<CueFileItem>("SelectedCue", null);
+            Set<CueFileItem>(nameof(SelectedCue), null);
             if (selected != null)
             {
                 SelectedCue = selected;

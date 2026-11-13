@@ -55,7 +55,7 @@ namespace CDTag.ViewModels.Tests.Tag
         [SetUp]
         public void CreateDir()
         {
-            _dir = Path.Combine(Path.GetTempPath(), "cdtag-cue-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+            _dir = Path.Combine(Path.GetTempPath(), string.Concat("cdtag-cue-", Guid.NewGuid().ToString("N").AsSpan(0, 8)));
             Directory.CreateDirectory(_dir);
         }
 

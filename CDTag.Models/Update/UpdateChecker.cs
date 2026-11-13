@@ -162,8 +162,7 @@ namespace CDTag.Model.Update
         /// </summary>
         public static void StartInstall(UpdateInfo update)
         {
-            if (update == null)
-                throw new ArgumentNullException("update");
+            ArgumentNullException.ThrowIfNull(update);
             string starter = Starter;
             if (starter == null)
                 throw new InvalidOperationException("This copy of CD-Tag can't update itself; download the new version from GitHub.");
@@ -175,7 +174,7 @@ namespace CDTag.Model.Update
             string arguments = string.Join(" ", new[]
             {
                 "--update", Quote(update.DownloadUrl), Quote(program),
-                Process.GetCurrentProcess().Id.ToString(), Quote(update.Version.ToString()), update.Sha256
+                Environment.ProcessId.ToString(), Quote(update.Version.ToString()), update.Sha256
             });
 
             ProcessStartInfo info;

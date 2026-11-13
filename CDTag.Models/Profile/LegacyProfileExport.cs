@@ -27,10 +27,9 @@ namespace CDTag.Model.Profile
         /// else its preserved original (name<see cref="LegacyProfile.BackupExtension"/>).</param>
         public static List<string> Export(UserProfile profile, string profileDirectory, string directory, string originalPath = null)
         {
-            if (profile == null)
-                throw new ArgumentNullException("profile");
+            ArgumentNullException.ThrowIfNull(profile);
             if (string.IsNullOrWhiteSpace(directory))
-                throw new ArgumentNullException("directory");
+                throw new ArgumentNullException(nameof(directory));
 
             string name = profile.ProfileName;
             Directory.CreateDirectory(directory);
@@ -226,7 +225,7 @@ namespace CDTag.Model.Profile
             set(extra, "EmbedFlacCover", b(tagging.EmbedCoverInFlac));
             set(extra, "SkipSceneRules", b(tagging.SkipSceneRules));
 
-            ExtInfoDefinition[] ext = p.ExtInfo ?? new ExtInfoDefinition[0];
+            ExtInfoDefinition[] ext = p.ExtInfo ?? Array.Empty<ExtInfoDefinition>();
             for (int n = 1; n <= ext.Length && n <= 8; n++)
             {
                 string section = n == 1 ? "OPTIONS" : "Options" + n;
@@ -244,15 +243,15 @@ namespace CDTag.Model.Profile
             NamingRules rules = p.NamingRules;
             if (rules != null)
             {
-                ReplacePair[] pairs = rules.Replacements ?? new ReplacePair[0];
+                ReplacePair[] pairs = rules.Replacements ?? Array.Empty<ReplacePair>();
                 lists["ORIG_LIST"] = pairs.Select(r => r.Find ?? "").ToList();
                 lists["REPLACE_LIST"] = pairs.Select(r => r.Replace ?? "").ToList();
-                lists["REMOVE_LIST"] = (rules.RemoveStrings ?? new string[0]).ToList();
-                lists["LOWERCASE_LIST"] = (rules.LowercaseWords ?? new string[0]).ToList();
-                lists["WORDSEP_LIST"] = (rules.WordSeparators ?? new string[0]).ToList();
-                lists["FIELDSEP_LIST"] = (rules.FieldSeparators ?? new string[0]).ToList();
+                lists["REMOVE_LIST"] = (rules.RemoveStrings ?? Array.Empty<string>()).ToList();
+                lists["LOWERCASE_LIST"] = (rules.LowercaseWords ?? Array.Empty<string>()).ToList();
+                lists["WORDSEP_LIST"] = (rules.WordSeparators ?? Array.Empty<string>()).ToList();
+                lists["FIELDSEP_LIST"] = (rules.FieldSeparators ?? Array.Empty<string>()).ToList();
             }
-            lists["DELETE_LIST"] = (p.DeleteFiles ?? new string[0]).ToList();
+            lists["DELETE_LIST"] = (p.DeleteFiles ?? Array.Empty<string>()).ToList();
 
             ReleaseInfoOptions release = p.ReleaseInfo;
             if (release != null)
@@ -265,11 +264,11 @@ namespace CDTag.Model.Profile
                 AddPairs(lists, "CLEANEXPLICITNFO_LIST", "CLEANEXPLICITDIR_LIST", release.CleanExplicit);
             }
 
-            ExtInfoDefinition[] ext = p.ExtInfo ?? new ExtInfoDefinition[0];
+            ExtInfoDefinition[] ext = p.ExtInfo ?? Array.Empty<ExtInfoDefinition>();
             for (int n = 1; n <= ext.Length && n <= 8; n++)
             {
                 string suffix = n == 1 ? "" : n.ToString(CultureInfo.InvariantCulture);
-                ExtInfoItem[] items = ext[n - 1].Items ?? new ExtInfoItem[0];
+                ExtInfoItem[] items = ext[n - 1].Items ?? Array.Empty<ExtInfoItem>();
                 lists["EXTDIRVAL_LIST" + suffix] = items.Select(i => i.Field ?? "").ToList();
                 lists["EXTDIRDIR_LIST" + suffix] = items.Select(i => i.Format == "<Value>" ? "" : i.Format ?? "").ToList();
             }

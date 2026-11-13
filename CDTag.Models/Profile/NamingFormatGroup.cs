@@ -13,14 +13,14 @@ namespace CDTag.Model.Profile
 
         public NamingFormat SingleArtist
         {
-            get { return Get<NamingFormat>("SingleArtist"); }
-            set { Set("SingleArtist", value); }
+            get { return Get<NamingFormat>(nameof(SingleArtist)); }
+            set { Set(nameof(SingleArtist), value); }
         }
 
         public NamingFormat VariousArtists
         {
-            get { return Get<NamingFormat>("VariousArtists"); }
-            set { Set("VariousArtists", value); }
+            get { return Get<NamingFormat>(nameof(VariousArtists)); }
+            set { Set(nameof(VariousArtists), value); }
         }
     }
 }

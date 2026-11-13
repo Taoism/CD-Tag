@@ -21,7 +21,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
     /// Tag Album, CD-Tag 2.x style: page 0 = release information (NFO fields), page 1 = album and tracks with the
     /// folder/file names the profile produces. Preview NFO fills the profile's NFO template.
     /// </summary>
-    public class TagAlbumViewModel : ViewModelBase<TagAlbumViewModel>, ITagAlbumViewModel
+    public partial class TagAlbumViewModel : ViewModelBase<TagAlbumViewModel>, ITagAlbumViewModel
     {
         public const int ReleasePage = 0;
         public const int AlbumPage = 1;
@@ -48,8 +48,8 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             _nextCommand = new DelegateCommand(() => Page = AlbumPage, () => Page == ReleasePage);
             LookupCommand = new DelegateCommand(Lookup, () => Album != null);
 
-            RippingTools = new ObservableCollection<string>(new[] { "EAC", "XLD", "dBpoweramp", "CUERipper", "whipper", "CUETools", "foobar2000" });
-            Encoders = new ObservableCollection<string>(new[] { "LAME 3.100 -V0", "LAME 3.100 -b 320", "FLAC 1.4.3", "FLAC 1.5.0" });
+            RippingTools = new ObservableCollection<string> { "EAC", "XLD", "dBpoweramp", "CUERipper", "whipper", "CUETools", "foobar2000" };
+            Encoders = new ObservableCollection<string> { "LAME 3.100 -V0", "LAME 3.100 -b 320", "FLAC 1.4.3", "FLAC 1.5.0" };
 
             EnhancedPropertyChanged += TagAlbumViewModel_EnhancedPropertyChanged;
         }
@@ -92,10 +92,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
                 Release.Quality = SceneRules.FilesQualityTag(Album) ?? "";
         }
 
-        private static readonly System.Text.RegularExpressions.Regex BitKhzPart = new System.Text.RegularExpressions.Regex(
-            @"\b\d{2}BIT\b|\d\s*KHZ\b|\b(16|24|32)\s*[/-]\s*(44(\.1)?|48|88(\.2)?|96|176(\.4)?|192)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-        /// <summary>Fix tags have their own box (Fix), so they are not types.</summary>
+/// <summary>Fix tags have their own box (Fix), so they are not types.</summary>
         public static readonly string[] FixTags = { "RERIP", "REPACK", "DIRFIX", "NFOFIX" };
 
         /// <summary>
@@ -106,7 +103,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         {
             if (types == null)
                 return null;
-            return types.Where(t => !BitKhzPart.IsMatch(t.Nfo ?? "") && !BitKhzPart.IsMatch(t.Dir ?? "")
+            return types.Where(t => !BitKhzPart().IsMatch(t.Nfo ?? "") && !BitKhzPart().IsMatch(t.Dir ?? "")
                                     && !FixTags.Any(f => System.Text.RegularExpressions.Regex.IsMatch((t.Nfo ?? "") + " " + (t.Dir ?? ""), @"(?<![A-Za-z])" + f + @"(?![A-Za-z])",
                                                                                                       System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
                         .ToArray();
@@ -120,10 +117,10 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         public bool SceneTagging { get { return CDTag.Common.Settings.AppOptions.Current.IsSceneTagging; } }
 
         /// <summary>FLAC files from a WEB or Blu-ray source: the Bit/kHz choice applies.</summary>
-        public bool HasBitKhz { get { return Get<bool>("HasBitKhz"); } private set { Set("HasBitKhz", value); } }
+        public bool HasBitKhz { get { return Get<bool>(nameof(HasBitKhz)); } private set { Set(nameof(HasBitKhz), value); } }
 
         /// <summary>Bit/kHz choices (WEB FLAC rules 4.10, Blu-ray): the files' own value first, then 16BIT, 24BIT, 24BIT-44KHZ...</summary>
-        public QualityChoice[] QualityChoices { get { return Get<QualityChoice[]>("QualityChoices"); } private set { Set("QualityChoices", value); } }
+        public QualityChoice[] QualityChoices { get { return Get<QualityChoice[]>(nameof(QualityChoices)); } private set { Set(nameof(QualityChoices), value); } }
 
         /// <summary>Loads the album in <paramref name="path"/> to be tagged with <paramref name="profile"/>.</summary>
         public void Load(string path, UserProfile profile, IEnumerable<string> otherFolders = null)
@@ -213,13 +210,13 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         /// <summary>The same rip in the other format (Tools > Options: tag the FLAC and MP3 albums together), or null.</summary>
         public Album Twin
         {
-            get { return Get<Album>("Twin"); }
+            get { return Get<Album>(nameof(Twin)); }
             private set
             {
-                Set("Twin", value);
-                RaisePropertyChanged("HasTwin", null, null);
-                RaisePropertyChanged("TwinText", null, null);
-                RaisePropertyChanged("TwinFormatName", null, null);
+                Set(nameof(Twin), value);
+                RaisePropertyChanged(nameof(HasTwin), null, null);
+                RaisePropertyChanged(nameof(TwinText), null, null);
+                RaisePropertyChanged(nameof(TwinFormatName), null, null);
             }
         }
 
@@ -228,8 +225,8 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         /// <summary>Finish also tags <see cref="Twin"/>.</summary>
         public bool TagTwin
         {
-            get { return Get<bool>("TagTwin"); }
-            set { Set("TagTwin", value); }
+            get { return Get<bool>(nameof(TagTwin)); }
+            set { Set(nameof(TagTwin), value); }
         }
 
         /// <summary>"MP3" or "FLAC": the format of <see cref="Twin"/>.</summary>
@@ -251,7 +248,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
 
         private static string NameKey(string profileName)
         {
-            return System.Text.RegularExpressions.Regex.Replace(profileName ?? "", "flac|mp3", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+            return FormatWord().Replace(profileName ?? "", "")
                          .Trim(' ', '-', '_', '.').ToLowerInvariant();
         }
 
@@ -361,9 +358,9 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             if (text.Length >= 10 && text[4] == '-')
                 return text.Substring(0, 10);
             if (text.Length >= 7 && text[4] == '-')
-                return text.Substring(0, 7) + "-00";
+                return string.Concat(text.AsSpan(0, 7), "-00");
             if (text.Length >= 4)
-                return text.Substring(0, 4) + "-00-00";
+                return string.Concat(text.AsSpan(0, 4), "-00-00");
             return "";
         }
 
@@ -372,7 +369,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             if (e.PropertyName != "NewFolderName")
                 UpdateNames();
             if (e.PropertyName == "DiscNames")
-                RaisePropertyChanged("DiscName", null, null);
+                RaisePropertyChanged(nameof(DiscName), null, null);
         }
 
         private void Track_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -398,7 +395,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
                 if (Album == null || Album.GetDiscName(SelectedDisc) == (string.IsNullOrWhiteSpace(value) ? null : value.Trim()))
                     return;
                 Album.SetDiscName(SelectedDisc, value);
-                RaisePropertyChanged("DiscName", null, null);
+                RaisePropertyChanged(nameof(DiscName), null, null);
             }
         }
 
@@ -409,14 +406,14 @@ namespace CDTag.ViewModels.Tag.TagAlbum
 
         private void RaiseDiscNameChanged()
         {
-            RaisePropertyChanged("SelectedDisc", null, null);
-            RaisePropertyChanged("DiscName", null, null);
-            RaisePropertyChanged("DiscNameLabel", null, null);
+            RaisePropertyChanged(nameof(SelectedDisc), null, null);
+            RaisePropertyChanged(nameof(DiscName), null, null);
+            RaisePropertyChanged(nameof(DiscNameLabel), null, null);
         }
 
         private static int DiscNumberOf(AlbumTrack track)
         {
-            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(track.DiscNumber ?? "", @"\d+");
+            System.Text.RegularExpressions.Match match = Digits().Match(track.DiscNumber ?? "");
             int number;
             return match.Success && int.TryParse(match.Value, out number) && number > 0 ? number : 1;
         }
@@ -590,15 +587,15 @@ namespace CDTag.ViewModels.Tag.TagAlbum
 
         public bool IsFinishing
         {
-            get { return Get<bool>("IsFinishing"); }
-            private set { Set("IsFinishing", value); System.Windows.Input.CommandManager.InvalidateRequerySuggested(); }
+            get { return Get<bool>(nameof(IsFinishing)); }
+            private set { Set(nameof(IsFinishing), value); System.Windows.Input.CommandManager.InvalidateRequerySuggested(); }
         }
 
         /// <summary>What Finish is doing ("Tagging 01.flac").</summary>
         public string FinishStatus
         {
-            get { return Get<string>("FinishStatus"); }
-            private set { Set("FinishStatus", value); }
+            get { return Get<string>(nameof(FinishStatus)); }
+            private set { Set(nameof(FinishStatus), value); }
         }
 
         /// <summary>The album folder after Finish (renamed), or null when Finish has not run.</summary>
@@ -777,48 +774,48 @@ namespace CDTag.ViewModels.Tag.TagAlbum
 
         public UserProfile Profile
         {
-            get { return Get<UserProfile>("Profile"); }
-            private set { Set("Profile", value); }
+            get { return Get<UserProfile>(nameof(Profile)); }
+            private set { Set(nameof(Profile), value); }
         }
 
         public Album Album
         {
-            get { return Get<Album>("Album"); }
-            private set { Set("Album", value); }
+            get { return Get<Album>(nameof(Album)); }
+            private set { Set(nameof(Album), value); }
         }
 
         /// <summary>Release information (first page).</summary>
         public ReleaseInfo Release
         {
-            get { return Get<ReleaseInfo>("Release"); }
-            private set { Set("Release", value); }
+            get { return Get<ReleaseInfo>(nameof(Release)); }
+            private set { Set(nameof(Release), value); }
         }
 
         /// <summary>0 = release information, 1 = album.</summary>
         public int Page
         {
-            get { return Get<int>("Page"); }
-            set { Set("Page", value); }
+            get { return Get<int>(nameof(Page)); }
+            set { Set(nameof(Page), value); }
         }
 
         /// <summary>Whether the profile shows the release information page (2.x "Show screen with additional NFO fields").</summary>
         public bool HasReleasePage
         {
-            get { return Get<bool>("HasReleasePage"); }
-            private set { Set("HasReleasePage", value); }
+            get { return Get<bool>(nameof(HasReleasePage)); }
+            private set { Set(nameof(HasReleasePage), value); }
         }
 
         public string OldFolderName
         {
-            get { return Get<string>("OldFolderName"); }
-            private set { Set("OldFolderName", value); }
+            get { return Get<string>(nameof(OldFolderName)); }
+            private set { Set(nameof(OldFolderName), value); }
         }
 
         /// <summary>The tracks in disc / track order (Track Preview tab).</summary>
         public List<TrackPreviewRow> TrackPreview
         {
-            get { return Get<List<TrackPreviewRow>>("TrackPreview"); }
-            private set { Set("TrackPreview", value); }
+            get { return Get<List<TrackPreviewRow>>(nameof(TrackPreview)); }
+            private set { Set(nameof(TrackPreview), value); }
         }
 
         private void UpdateTrackPreview()
@@ -850,55 +847,55 @@ namespace CDTag.ViewModels.Tag.TagAlbum
 
         private static int PreviewNumber(string text, int fallback)
         {
-            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(text ?? "", @"\d+");
+            System.Text.RegularExpressions.Match match = Digits().Match(text ?? "");
             int number;
             return match.Success && int.TryParse(match.Value, out number) ? number : fallback;
         }
 
         public string NfoFileName
         {
-            get { return Get<string>("NfoFileName"); }
-            private set { Set("NfoFileName", value); }
+            get { return Get<string>(nameof(NfoFileName)); }
+            private set { Set(nameof(NfoFileName), value); }
         }
 
         public AlbumTrack SelectedTrack
         {
-            get { return Get<AlbumTrack>("SelectedTrack"); }
-            set { Set("SelectedTrack", value); }
+            get { return Get<AlbumTrack>(nameof(SelectedTrack)); }
+            set { Set(nameof(SelectedTrack), value); }
         }
 
         public int SelectedTrackIndex
         {
-            get { return Get<int>("SelectedTrackIndex"); }
-            set { Set("SelectedTrackIndex", value); }
+            get { return Get<int>(nameof(SelectedTrackIndex)); }
+            set { Set(nameof(SelectedTrackIndex), value); }
         }
 
         public bool ShowAllGenres
         {
-            get { return Get<bool>("ShowAllGenres"); }
-            set { Set("ShowAllGenres", value); }
+            get { return Get<bool>(nameof(ShowAllGenres)); }
+            set { Set(nameof(ShowAllGenres), value); }
         }
 
         public ObservableCollection<string> Genres
         {
-            get { return Get<ObservableCollection<string>>("Genres"); }
-            private set { Set("Genres", value); }
+            get { return Get<ObservableCollection<string>>(nameof(Genres)); }
+            private set { Set(nameof(Genres), value); }
         }
 
         // Release info choices
-        public ReleaseListItem[] ReleaseTypes { get { return Get<ReleaseListItem[]>("ReleaseTypes"); } private set { Set("ReleaseTypes", value); } }
-        public ReleaseListItem[] Sources { get { return Get<ReleaseListItem[]>("Sources"); } private set { Set("Sources", value); } }
-        public ReleaseListItem[] Languages { get { return Get<ReleaseListItem[]>("Languages"); } private set { Set("Languages", value); } }
-        public ReleaseListItem[] LimitedEditionChoices { get { return Get<ReleaseListItem[]>("LimitedEditionChoices"); } private set { Set("LimitedEditionChoices", value); } }
-        public ReleaseListItem[] WhiteLabelChoices { get { return Get<ReleaseListItem[]>("WhiteLabelChoices"); } private set { Set("WhiteLabelChoices", value); } }
-        public ReleaseListItem[] CleanExplicitChoices { get { return Get<ReleaseListItem[]>("CleanExplicitChoices"); } private set { Set("CleanExplicitChoices", value); } }
+        public ReleaseListItem[] ReleaseTypes { get { return Get<ReleaseListItem[]>(nameof(ReleaseTypes)); } private set { Set(nameof(ReleaseTypes), value); } }
+        public ReleaseListItem[] Sources { get { return Get<ReleaseListItem[]>(nameof(Sources)); } private set { Set(nameof(Sources), value); } }
+        public ReleaseListItem[] Languages { get { return Get<ReleaseListItem[]>(nameof(Languages)); } private set { Set(nameof(Languages), value); } }
+        public ReleaseListItem[] LimitedEditionChoices { get { return Get<ReleaseListItem[]>(nameof(LimitedEditionChoices)); } private set { Set(nameof(LimitedEditionChoices), value); } }
+        public ReleaseListItem[] WhiteLabelChoices { get { return Get<ReleaseListItem[]>(nameof(WhiteLabelChoices)); } private set { Set(nameof(WhiteLabelChoices), value); } }
+        public ReleaseListItem[] CleanExplicitChoices { get { return Get<ReleaseListItem[]>(nameof(CleanExplicitChoices)); } private set { Set(nameof(CleanExplicitChoices), value); } }
         public ObservableCollection<string> RippingTools { get; private set; }
         public ObservableCollection<string> Encoders { get; private set; }
 
-        public bool IsRipperLocked { get { return Get<bool>("IsRipperLocked"); } private set { Set("IsRipperLocked", value); } }
-        public bool IsSupplierLocked { get { return Get<bool>("IsSupplierLocked"); } private set { Set("IsSupplierLocked", value); } }
-        public bool IsEncoderLocked { get { return Get<bool>("IsEncoderLocked"); } private set { Set("IsEncoderLocked", value); } }
-        public bool IsCommentLocked { get { return Get<bool>("IsCommentLocked"); } private set { Set("IsCommentLocked", value); } }
+        public bool IsRipperLocked { get { return Get<bool>(nameof(IsRipperLocked)); } private set { Set(nameof(IsRipperLocked), value); } }
+        public bool IsSupplierLocked { get { return Get<bool>(nameof(IsSupplierLocked)); } private set { Set(nameof(IsSupplierLocked), value); } }
+        public bool IsEncoderLocked { get { return Get<bool>(nameof(IsEncoderLocked)); } private set { Set(nameof(IsEncoderLocked), value); } }
+        public bool IsCommentLocked { get { return Get<bool>(nameof(IsCommentLocked)); } private set { Set(nameof(IsCommentLocked), value); } }
 
         /// <summary>No/Yes selectors for OST and Internal (2.x shows them as dropdowns).</summary>
         public int OstIndex
@@ -932,5 +929,14 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         {
             get { return _previousCommand; }
         }
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"\b\d{2}BIT\b|\d\s*KHZ\b|\b(16|24|32)\s*[/-]\s*(44(\.1)?|48|88(\.2)?|96|176(\.4)?|192)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial System.Text.RegularExpressions.Regex BitKhzPart();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"\d+", System.Text.RegularExpressions.RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial System.Text.RegularExpressions.Regex Digits();
+
+        [System.Text.RegularExpressions.GeneratedRegex("flac|mp3", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial System.Text.RegularExpressions.Regex FormatWord();
     }
 }

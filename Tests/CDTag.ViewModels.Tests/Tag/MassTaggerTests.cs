@@ -16,7 +16,7 @@ namespace CDTag.ViewModels.Tests.Tag
         [SetUp]
         public void CreateDir()
         {
-            _dir = Path.Combine(Path.GetTempPath(), "cdtag-masstag-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+            _dir = Path.Combine(Path.GetTempPath(), string.Concat("cdtag-masstag-", Guid.NewGuid().ToString("N").AsSpan(0, 8)));
             Directory.CreateDirectory(_dir);
         }
 
@@ -37,7 +37,7 @@ namespace CDTag.ViewModels.Tests.Tag
         public void Flac_WritesOnlyChangedFields_KeepsPicture()
         {
             string path = Copy("tagged.flac");
-            int pictures = new VorbisComment(path).GetPictureBlocks().Count();
+            int pictures = new VorbisComment(path).GetPictureBlocks().Count;
             TagValues before = MassTagger.Read(path);
 
             TagValues values = before.Clone();
@@ -51,7 +51,7 @@ namespace CDTag.ViewModels.Tests.Tag
             Assert.That(after[TagField.Year], Is.EqualTo("1999"));
             Assert.That(after[TagField.Title], Is.EqualTo(before[TagField.Title]));
             Assert.That(after[TagField.Artist], Is.EqualTo(before[TagField.Artist]));
-            Assert.That(new VorbisComment(path).GetPictureBlocks().Count(), Is.EqualTo(pictures));
+            Assert.That(new VorbisComment(path).GetPictureBlocks().Count, Is.EqualTo(pictures));
         }
 
         [Test]

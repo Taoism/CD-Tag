@@ -25,12 +25,10 @@ namespace CDTag.Model.Cue
     }
 
     /// <summary>A CUE sheet (EAC, foobar2000, CUETools...): album fields, files and tracks.</summary>
-    public class CueSheet
+    public partial class CueSheet
     {
         public const int FramesPerSecond = 75;
-
-        private static readonly Regex Command = new Regex(@"^\s*(?<cmd>\S+)\s*(?<args>.*?)\s*$");
-        private static readonly Regex Time = new Regex(@"^(?<m>\d+):(?<s>\d{1,2}):(?<f>\d{1,2})$");
+        private static readonly char[] Blanks = { ' ', '\t' };
 
         public CueSheet()
         {
@@ -77,7 +75,7 @@ namespace CDTag.Model.Cue
             CueTrack track = null;
             foreach (string rawLine in text.Replace("\r", "").Split('\n'))
             {
-                Match match = Command.Match(rawLine);
+                Match match = Command().Match(rawLine);
                 if (!match.Success)
                     continue;
                 string cmd = match.Groups["cmd"].Value.ToUpperInvariant();
@@ -110,7 +108,7 @@ namespace CDTag.Model.Cue
                             sheet.Files.Add(file);
                         break;
                     case "TRACK":
-                        string[] parts = args.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                        string[] parts = args.Split(Blanks, StringSplitOptions.RemoveEmptyEntries);
                         int number;
                         if (parts.Length == 0 || !int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out number))
                             break;
@@ -124,7 +122,7 @@ namespace CDTag.Model.Cue
                     case "INDEX":
                         if (track == null)
                             break;
-                        string[] index = args.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                        string[] index = args.Split(Blanks, StringSplitOptions.RemoveEmptyEntries);
                         long frames;
                         if (index.Length < 2 || !TryParseTime(index[1], out frames))
                             break;
@@ -146,7 +144,7 @@ namespace CDTag.Model.Cue
         public static bool TryParseTime(string text, out long frames)
         {
             frames = 0;
-            Match match = Time.Match(text.Trim());
+            Match match = Time().Match(text.Trim());
             if (!match.Success)
                 return false;
             frames = (long.Parse(match.Groups["m"].Value, CultureInfo.InvariantCulture) * 60 + int.Parse(match.Groups["s"].Value, CultureInfo.InvariantCulture)) * FramesPerSecond
@@ -183,7 +181,7 @@ namespace CDTag.Model.Cue
         private static string FileName(string args)
         {
             args = args.Trim();
-            if (args.StartsWith("\"", StringComparison.Ordinal))
+            if (args.StartsWith('"'))
             {
                 int end = args.IndexOf('"', 1);
                 return end > 0 ? args.Substring(1, end - 1) : args.Substring(1);
@@ -199,5 +197,11 @@ namespace CDTag.Model.Cue
                 return value.Substring(1, value.Length - 2);
             return value;
         }
+
+        [GeneratedRegex(@"^\s*(?<cmd>\S+)\s*(?<args>.*?)\s*$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex Command();
+
+        [GeneratedRegex(@"^(?<m>\d+):(?<s>\d{1,2}):(?<f>\d{1,2})$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex Time();
     }
 }

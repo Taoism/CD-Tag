@@ -26,7 +26,7 @@ namespace CDTag.Model.Tag
     /// <summary>The Mass Tag fields of one file. Missing fields are "".</summary>
     public class TagValues
     {
-        public static readonly TagField[] Fields = (TagField[])Enum.GetValues(typeof(TagField));
+        public static readonly TagField[] Fields = Enum.GetValues<TagField>();
 
         private readonly Dictionary<TagField, string> _values = new Dictionary<TagField, string>();
 

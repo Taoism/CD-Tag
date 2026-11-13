@@ -23,35 +23,35 @@ namespace CDTag.Model.Profile
         [XmlIgnore]
         public string ProfileName
         {
-            get { return Get<string>("ProfileName"); }
-            set { Set("ProfileName", value); }
+            get { return Get<string>(nameof(ProfileName)); }
+            set { Set(nameof(ProfileName), value); }
         }
 
         [XmlIgnore]
         public bool HasChanges
         {
-            get { return Get<bool>("HasChanges"); }
-            set { Set("HasChanges", value); }
+            get { return Get<bool>(nameof(HasChanges)); }
+            set { Set(nameof(HasChanges), value); }
         }
 
         [XmlIgnore]
         public string ModelHash
         {
-            get { return Get<string>("ModelHash"); }
-            set { Set("ModelHash", value); }
+            get { return Get<string>(nameof(ModelHash)); }
+            set { Set(nameof(ModelHash), value); }
         }
 
         [XmlIgnore]
         public DateTime LastModified
         {
-            get { return Get<DateTime>("LastModified"); }
-            set { Set("LastModified", value); }
+            get { return Get<DateTime>(nameof(LastModified)); }
+            set { Set(nameof(LastModified), value); }
         }
 
         public int Revision
         {
-            get { return Get<int>("Revision"); }
-            set { Set("Revision", value); }
+            get { return Get<int>(nameof(Revision)); }
+            set { Set(nameof(Revision), value); }
         }
 
         /// <summary>
@@ -61,8 +61,8 @@ namespace CDTag.Model.Profile
         /// </summary>
         public string AudioFileTypes
         {
-            get { return Get<string>("AudioFileTypes"); }
-            set { Set("AudioFileTypes", value); }
+            get { return Get<string>(nameof(AudioFileTypes)); }
+            set { Set(nameof(AudioFileTypes), value); }
         }
 
         /// <summary>The profile name (used by lists and accessibility tools).</summary>
@@ -73,55 +73,55 @@ namespace CDTag.Model.Profile
 
         public FileNaming FileNaming
         {
-            get { return Get<FileNaming>("FileNaming"); }
-            set { Set("FileNaming", value); }
+            get { return Get<FileNaming>(nameof(FileNaming)); }
+            set { Set(nameof(FileNaming), value); }
         }
 
         public NFOOptions NFOOptions
         {
-            get { return Get<NFOOptions>("NFOOptions"); }
-            set { Set("NFOOptions", value); }
+            get { return Get<NFOOptions>(nameof(NFOOptions)); }
+            set { Set(nameof(NFOOptions), value); }
         }
 
         public Finish Finish
         {
-            get { return Get<Finish>("Finish"); }
-            set { Set("Finish", value); }
+            get { return Get<Finish>(nameof(Finish)); }
+            set { Set(nameof(Finish), value); }
         }
 
         /// <summary>Find/replace, casing and separator rules for names (null = built-in defaults).</summary>
         public NamingRules NamingRules
         {
-            get { return Get<NamingRules>("NamingRules"); }
-            set { Set("NamingRules", value); }
+            get { return Get<NamingRules>(nameof(NamingRules)); }
+            set { Set(nameof(NamingRules), value); }
         }
 
         /// <summary>&lt;ExtInfo&gt;, &lt;ExtInfo2&gt;, ... definitions.</summary>
         public ExtInfoDefinition[] ExtInfo
         {
-            get { return Get<ExtInfoDefinition[]>("ExtInfo"); }
-            set { Set("ExtInfo", value); }
+            get { return Get<ExtInfoDefinition[]>(nameof(ExtInfo)); }
+            set { Set(nameof(ExtInfo), value); }
         }
 
         /// <summary>Dropdown lists and defaults for the release information page (null = built-in defaults).</summary>
         public ReleaseInfoOptions ReleaseInfo
         {
-            get { return Get<ReleaseInfoOptions>("ReleaseInfo"); }
-            set { Set("ReleaseInfo", value); }
+            get { return Get<ReleaseInfoOptions>(nameof(ReleaseInfo)); }
+            set { Set(nameof(ReleaseInfo), value); }
         }
 
         /// <summary>Tag writing, playlist and checksum options (null = defaults).</summary>
         public TaggingOptions Tagging
         {
-            get { return Get<TaggingOptions>("Tagging"); }
-            set { Set("Tagging", value); }
+            get { return Get<TaggingOptions>(nameof(Tagging)); }
+            set { Set(nameof(Tagging), value); }
         }
 
         /// <summary>File patterns deleted from the album folder on Finish (e.g. "*.m3u").</summary>
         public string[] DeleteFiles
         {
-            get { return Get<string[]>("DeleteFiles"); }
-            set { Set("DeleteFiles", value); }
+            get { return Get<string[]>(nameof(DeleteFiles)); }
+            set { Set(nameof(DeleteFiles), value); }
         }
     }
 }

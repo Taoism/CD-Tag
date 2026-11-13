@@ -43,26 +43,26 @@ namespace CDTag.ViewModels.Tools
 
         public InspectorFile SelectedFile
         {
-            get { return Get<InspectorFile>("SelectedFile"); }
+            get { return Get<InspectorFile>(nameof(SelectedFile)); }
             set
             {
                 if (SelectedFile == value)
                     return;
-                Set("SelectedFile", value);
+                Set(nameof(SelectedFile), value);
                 Inspect();
             }
         }
 
         public bool IsBusy
         {
-            get { return Get<bool>("IsBusy"); }
-            private set { Set("IsBusy", value); }
+            get { return Get<bool>(nameof(IsBusy)); }
+            private set { Set(nameof(IsBusy), value); }
         }
 
         public string StatusText
         {
-            get { return Get<string>("StatusText"); }
-            private set { Set("StatusText", value); }
+            get { return Get<string>(nameof(StatusText)); }
+            private set { Set(nameof(StatusText), value); }
         }
 
         public ICommand AddCommand { get; private set; }

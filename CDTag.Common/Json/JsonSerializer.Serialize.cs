@@ -18,8 +18,7 @@ namespace CDTag.Common.Json
         /// <returns>The JSON string.</returns>
         public static string SerializeObject(object obj)
         {
-            if (obj == null)
-                throw new ArgumentNullException("obj");
+            ArgumentNullException.ThrowIfNull(obj);
 
             StringBuilder json = new StringBuilder();
             SerializeClass(obj, json, indentLevel: 1);
@@ -29,10 +28,9 @@ namespace CDTag.Common.Json
 
         private static void SerializeClass(object obj, StringBuilder json, int indentLevel)
         {
-            if (json == null)
-                throw new ArgumentNullException("json");
+            ArgumentNullException.ThrowIfNull(json);
             if (indentLevel < 1)
-                throw new ArgumentOutOfRangeException("indentLevel", indentLevel, "indentLevel must be >= 1");
+                throw new ArgumentOutOfRangeException(nameof(indentLevel), indentLevel, "indentLevel must be >= 1");
 
             if (obj == null)
             {
@@ -51,7 +49,7 @@ namespace CDTag.Common.Json
                 {
                     string key = keys[i];
 
-                    json.Append(new string(' ', indentLevel * IndentSpacing));
+                    json.Append(' ', indentLevel * IndentSpacing);
                     json.Append(string.Format("\"{0}\": ", EscapeString(key)));
                     SerializeClass(dict[key], json, indentLevel + 1);
                     if (i == keys.Length - 1)
@@ -60,7 +58,7 @@ namespace CDTag.Common.Json
                         json.AppendLine(",");
                 }
 
-                json.Append(new string(' ', (indentLevel - 1) * IndentSpacing));
+                json.Append(' ', (indentLevel - 1) * IndentSpacing);
                 json.AppendLine("}");
             }
             else if (obj is string)
@@ -114,7 +112,7 @@ namespace CDTag.Common.Json
                         object item = array[i];
 
                         if (i == 0 || !isSimpleType)
-                            json.Append(new string(' ', indentLevel * IndentSpacing));
+                            json.Append(' ', indentLevel * IndentSpacing);
                         else
                             json.Append(' ');
 
@@ -126,15 +124,15 @@ namespace CDTag.Common.Json
                         }
                         else
                         {
-                            json.Append(",");
+                            json.Append(',');
                             if (!isSimpleType)
                                 json.AppendLine();
                         }
                     }
                 }
 
-                json.Append(new string(' ', (indentLevel - 1) * IndentSpacing));
-                json.Append("]");
+                json.Append(' ', (indentLevel - 1) * IndentSpacing);
+                json.Append(']');
             }
             else if (classType.IsClass)
             {
@@ -146,7 +144,7 @@ namespace CDTag.Common.Json
                 {
                     var property = properties[i];
 
-                    json.Append(new string(' ', indentLevel * IndentSpacing));
+                    json.Append(' ', indentLevel * IndentSpacing);
                     var dataMember = (System.Runtime.Serialization.DataMemberAttribute)Attribute.GetCustomAttribute(property, typeof(System.Runtime.Serialization.DataMemberAttribute));
                     json.Append(string.Format("\"{0}\": ", dataMember != null && !string.IsNullOrEmpty(dataMember.Name) ? dataMember.Name : property.Name));
                     SerializeClass(property.GetGetMethod().Invoke(obj, null), json, indentLevel + 1);
@@ -157,8 +155,8 @@ namespace CDTag.Common.Json
                         json.AppendLine();
                 }
 
-                json.Append(new string(' ', (indentLevel - 1) * IndentSpacing));
-                json.Append("}");
+                json.Append(' ', (indentLevel - 1) * IndentSpacing);
+                json.Append('}');
             }
             else
             {

@@ -38,7 +38,7 @@ namespace CDTag.ViewModels.Tests.Tag
         {
             if (AudioEncoder.LamePath == null)
                 Assert.Ignore("lame.exe not in Encoders.");
-            string dir = Path.Combine(Path.GetTempPath(), "cdtag-parallel-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+            string dir = Path.Combine(Path.GetTempPath(), string.Concat("cdtag-parallel-", Guid.NewGuid().ToString("N").AsSpan(0, 8)));
             Directory.CreateDirectory(dir);
             try
             {

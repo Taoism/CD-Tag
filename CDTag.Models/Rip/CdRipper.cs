@@ -131,7 +131,7 @@ namespace CDTag.Model.Rip
             {
                 testBlocks = new Dictionary<int, uint>();
                 var testCrc = new Crc32Running();
-                ReadRange(firstSample, samples, null, testBlocks, (b, o, c) => testCrc.Add(b, o, c), index, "Test", progress, cancellation, result);
+                ReadRange(firstSample, samples, null, testBlocks, (b, o, c) => testCrc.Add(b, o, c), index, "Test", progress, result, null, cancellation);
                 result.TestCrc = testCrc.Value;
             }
 
@@ -150,7 +150,7 @@ namespace CDTag.Model.Rip
                     int v = Math.Abs((int)(short)(b[i] | (b[i + 1] << 8)));
                     if (v > peak) peak = v;
                 }
-            }, index, "Copy", progress, cancellation, result);
+            }, index, "Copy", progress, result, null, cancellation);
 
             result.CopyCrc = copyCrc.Value;
             result.ArV1 = ar.V1;
@@ -174,9 +174,9 @@ namespace CDTag.Model.Rip
             if (TestAndCopy)
             {
                 testBlocks = new Dictionary<int, uint>();
-                ReadRange(0, samples, null, testBlocks, (b, o, c) => { }, 0, "Test", null, cancellation, dummy, readFrom: 0);
+                ReadRange(0, samples, null, testBlocks, (b, o, c) => { }, 0, "Test", null, dummy, 0, cancellation);
             }
-            ReadRange(0, samples, testBlocks, null, (b, o, c) => output.Write(b, o, c), 0, "Copy", null, cancellation, dummy, readFrom: 0);
+            ReadRange(0, samples, testBlocks, null, (b, o, c) => output.Write(b, o, c), 0, "Copy", null, dummy, 0, cancellation);
         }
 
         /// <summary>
@@ -186,7 +186,7 @@ namespace CDTag.Model.Rip
         /// </summary>
         private void ReadRange(long firstSample, long count, Dictionary<int, uint> compare, Dictionary<int, uint> record,
                                Action<byte[], int, int> sink, int index, string pass, IProgress<RipProgress> progress,
-                               CancellationToken cancellation, RipTrackResult result, int? readFrom = null)
+                               RipTrackResult result, int? readFrom, CancellationToken cancellation)
         {
             long rawFirst = firstSample + _offset;           // where the wanted samples are in the drive's (uncorrected) data
             long rawEnd = rawFirst + count;

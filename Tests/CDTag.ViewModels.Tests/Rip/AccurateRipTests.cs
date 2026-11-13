@@ -18,7 +18,7 @@ namespace CDTag.ViewModels.Tests.Rip
         public void DiscIdsAndUrl()
         {
             Assert.That(AccurateRip.DatabaseUrl(Starts, LeadOut),
-                Is.EqualTo("http://www.accuraterip.com/accuraterip/9/2/4/dBAR-013-0010a429-00a48ec2-b307f20d.bin"));
+                Is.EqualTo("https://www.accuraterip.com/accuraterip/9/2/4/dBAR-013-0010a429-00a48ec2-b307f20d.bin"));
         }
 
         [Test]

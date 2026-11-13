@@ -14,7 +14,7 @@ namespace CDTag.ViewModel.Tests.Tag
 {
     /// <summary>NFO generation from a CD-Tag 2.x style template (synthetic template, no group art).</summary>
     [TestFixture]
-    public class NfoGeneratorTests
+    public partial class NfoGeneratorTests
     {
         private const string Template =
             "   ARTiST      : #Artist\n" +
@@ -164,7 +164,7 @@ namespace CDTag.ViewModel.Tests.Tag
 
             Assert.That(lines.Any(l => l.TrimEnd().EndsWith(" 06:50")), Is.True);
             Assert.That(lines.Any(l => l.TrimEnd().EndsWith(" 26:51")), Is.True);
-            Assert.That(lines.Any(l => Regex.IsMatch(l, @"\s6:50$")), Is.False);
+            Assert.That(lines.Any(l => EndsInBareSixFifty().IsMatch(l)), Is.False);
         }
 
         [Test]
@@ -207,10 +207,16 @@ namespace CDTag.ViewModel.Tests.Tag
             string path = Path.GetFullPath(Path.Combine(TestContext.CurrentContext.TestDirectory, @"..\..\..\..\..\CDTag\Defaults\blank.nfo"));
             string nfo = new NfoGenerator(Profile(), Album(), Release()).Generate(File.ReadAllText(path));
 
-            Assert.That(System.Text.RegularExpressions.Regex.Matches(nfo, @"#[A-Za-z]+").Cast<System.Text.RegularExpressions.Match>().Select(m => m.Value), Is.Empty,
+            Assert.That(UnreplacedToken().Matches(nfo).Cast<System.Text.RegularExpressions.Match>().Select(m => m.Value), Is.Empty,
                         "every token is replaced");
             Assert.That(nfo, Does.Not.Contain("GRP"), "no group name in the shipped template");
         }
+
+        [GeneratedRegex(@"#[A-Za-z]+", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex UnreplacedToken();
+
+        [GeneratedRegex(@"\s6:50$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex EndsInBareSixFifty();
     }
 
     internal static class StringTestExtensions

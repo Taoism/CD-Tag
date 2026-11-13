@@ -38,62 +38,62 @@ namespace CDTag.Model.Profile
 
         public NamingFormatGroup SingleCD
         {
-            get { return Get<NamingFormatGroup>("SingleCD"); }
-            set { Set("SingleCD", value); }
+            get { return Get<NamingFormatGroup>(nameof(SingleCD)); }
+            set { Set(nameof(SingleCD), value); }
         }
 
         public NamingFormatGroup MultiCD
         {
-            get { return Get<NamingFormatGroup>("MultiCD"); }
-            set { Set("MultiCD", value); }
+            get { return Get<NamingFormatGroup>(nameof(MultiCD)); }
+            set { Set(nameof(MultiCD), value); }
         }
 
         public NamingFormatGroup Vinyl
         {
-            get { return Get<NamingFormatGroup>("Vinyl"); }
-            set { Set("Vinyl", value); }
+            get { return Get<NamingFormatGroup>(nameof(Vinyl)); }
+            set { Set(nameof(Vinyl), value); }
         }
 
         public int? FileCharacterLimit
         {
-            get { return Get<int?>("FileCharacterLimit"); }
-            set { Set("FileCharacterLimit", value); }
+            get { return Get<int?>(nameof(FileCharacterLimit)); }
+            set { Set(nameof(FileCharacterLimit), value); }
         }
 
         public int? DirectoryCharacterLimit
         {
-            get { return Get<int?>("DirectoryCharacterLimit"); }
-            set { Set("DirectoryCharacterLimit", value); }
+            get { return Get<int?>(nameof(DirectoryCharacterLimit)); }
+            set { Set(nameof(DirectoryCharacterLimit), value); }
         }
 
         public bool UseUnderscores
         {
-            get { return Get<bool>("UseUnderscores"); }
-            set { Set("UseUnderscores", value); }
+            get { return Get<bool>(nameof(UseUnderscores)); }
+            set { Set(nameof(UseUnderscores), value); }
         }
 
         public bool UseStandardCharactersOnly
         {
-            get { return Get<bool>("UseStandardCharactersOnly"); }
-            set { Set("UseStandardCharactersOnly", value); }
+            get { return Get<bool>(nameof(UseStandardCharactersOnly)); }
+            set { Set(nameof(UseStandardCharactersOnly), value); }
         }
 
         public bool UseLatinCharactersOnly
         {
-            get { return Get<bool>("UseLatinCharactersOnly"); }
-            set { Set("UseLatinCharactersOnly", value); }
+            get { return Get<bool>(nameof(UseLatinCharactersOnly)); }
+            set { Set(nameof(UseLatinCharactersOnly), value); }
         }
 
         public bool DontChangeCaseWordsWithAllCaps
         {
-            get { return Get<bool>("DontChangeCaseWordsWithAllCaps"); }
-            set { Set("DontChangeCaseWordsWithAllCaps", value); }
+            get { return Get<bool>(nameof(DontChangeCaseWordsWithAllCaps)); }
+            set { Set(nameof(DontChangeCaseWordsWithAllCaps), value); }
         }
 
         public bool DontChangeCaseWordsWithNonLetter
         {
-            get { return Get<bool>("DontChangeCaseWordsWithNonLetter"); }
-            set { Set("DontChangeCaseWordsWithNonLetter", value); }
+            get { return Get<bool>(nameof(DontChangeCaseWordsWithNonLetter)); }
+            set { Set(nameof(DontChangeCaseWordsWithNonLetter), value); }
         }
     }
 }

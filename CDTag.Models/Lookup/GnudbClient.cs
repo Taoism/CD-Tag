@@ -31,7 +31,7 @@ namespace CDTag.Model.Lookup
         }
 
         public string Email { get; private set; }
-        public bool IsEnabled { get { return Email.Contains("@"); } }
+        public bool IsEnabled { get { return Email.Contains('@'); } }
 
         /// <summary>The freedb disc ID of all tracks (data tracks included, as freedb counts them).</summary>
         public static uint DiscId(DiscToc toc)
@@ -84,7 +84,7 @@ namespace CDTag.Model.Lookup
         private async Task<string> CommandAsync(string command, CancellationToken cancellation)
         {
             string user = Uri.EscapeDataString(Email.Split('@')[0]);
-            string host = Uri.EscapeDataString(Email.Contains("@") ? Email.Substring(Email.IndexOf('@') + 1) : "localhost");
+            string host = Uri.EscapeDataString(Email.Contains('@') ? Email.Substring(Email.IndexOf('@') + 1) : "localhost");
             string url = string.Format(CultureInfo.InvariantCulture, "{0}?cmd={1}&hello={2}+{3}+CD-Tag+3&proto=6", Url, command.Replace(' ', '+'), user, host);
             byte[] data = await Http.GetByteArrayAsync(url, cancellation).ConfigureAwait(false);
             return Encoding.UTF8.GetString(data);
@@ -98,16 +98,16 @@ namespace CDTag.Model.Lookup
             var fields = new Dictionary<string, StringBuilder>(StringComparer.OrdinalIgnoreCase);
             foreach (string raw in text.Replace("\r", "").Split('\n'))
             {
-                if (raw.StartsWith("#", StringComparison.Ordinal) || !raw.Contains('='))
+                if (raw.StartsWith('#') || !raw.Contains('='))
                     continue;
                 int eq = raw.IndexOf('=');
                 string key = raw.Substring(0, eq);
                 StringBuilder sb;
                 if (!fields.TryGetValue(key, out sb))
                     fields[key] = sb = new StringBuilder();
-                sb.Append(raw.Substring(eq + 1));
+                sb.Append(raw.AsSpan(eq + 1));
             }
-            Func<string, string> get = k => fields.ContainsKey(k) ? fields[k].ToString().Trim() : "";
+            Func<string, string> get = k => fields.TryGetValue(k, out StringBuilder field) ? field.ToString().Trim() : "";
 
             string dtitle = get("DTITLE");
             int slash = dtitle.IndexOf(" / ", StringComparison.Ordinal);

@@ -14,7 +14,7 @@ namespace CDTag.Model.Tag
         public Picture(string path)
         {
             if (string.IsNullOrEmpty(path))
-                throw new ArgumentNullException("path");
+                throw new ArgumentNullException(nameof(path));
 
             PictureType = PictureType.CoverFront;
 
@@ -39,8 +39,7 @@ namespace CDTag.Model.Tag
         /// <summary>Creates a picture from raw image bytes (e.g. a FLAC PICTURE block).</summary>
         public Picture(byte[] pictureData, PictureType pictureType, string description)
         {
-            if (pictureData == null)
-                throw new ArgumentNullException("pictureData");
+            ArgumentNullException.ThrowIfNull(pictureData);
 
             PictureType = pictureType;
             Description = description;
@@ -109,8 +108,7 @@ namespace CDTag.Model.Tag
 
         public Picture(IAttachedPicture attachedPicture)
         {
-            if (attachedPicture == null)
-                throw new ArgumentNullException("attachedPicture");
+            ArgumentNullException.ThrowIfNull(attachedPicture);
 
             AttachedPicture = attachedPicture;
 
@@ -140,32 +138,32 @@ namespace CDTag.Model.Tag
 
         public ImageSource ImageSource
         {
-            get { return Get<ImageSource>("ImageSource"); }
-            set { Set("ImageSource", value); }
+            get { return Get<ImageSource>(nameof(ImageSource)); }
+            set { Set(nameof(ImageSource), value); }
         }
 
         public string Description
         {
-            get { return Get<string>("Description"); }
-            set { Set("Description", value); }
+            get { return Get<string>(nameof(Description)); }
+            set { Set(nameof(Description), value); }
         }
 
         public PictureType PictureType
         {
-            get { return Get<PictureType>("PictureType"); }
-            set { Set("PictureType", value); }
+            get { return Get<PictureType>(nameof(PictureType)); }
+            set { Set(nameof(PictureType), value); }
         }
 
         public byte[] PictureBytes
         {
-            get { return Get<byte[]>("PictureBytes"); }
-            private set { Set("PictureBytes", value); }
+            get { return Get<byte[]>(nameof(PictureBytes)); }
+            private set { Set(nameof(PictureBytes), value); }
         }
 
         public IAttachedPicture AttachedPicture
         {
-            get { return Get<IAttachedPicture>("AttachedPicture"); }
-            private set { Set("AttachedPicture", value); }
+            get { return Get<IAttachedPicture>(nameof(AttachedPicture)); }
+            private set { Set(nameof(AttachedPicture), value); }
         }
     }
 }

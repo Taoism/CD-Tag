@@ -24,12 +24,11 @@ namespace CDTag.Common.Json
         /// <returns>The deserialized object.</returns>
         public static T ReadObject<T>(Stream stream)
         {
-            if (stream == null)
-                throw new ArgumentNullException("stream");
+            ArgumentNullException.ThrowIfNull(stream);
 
-            long length = stream.Length;
+            long length = stream.Length - stream.Position; // from where the stream is now to its end
             byte[] bytes = new byte[length];
-            stream.Read(bytes, 0, (int)length);
+            stream.ReadExactly(bytes, 0, (int)length);
 
             string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
             return ReadObject<T>(json);
@@ -242,8 +241,7 @@ namespace CDTag.Common.Json
         {
             int originalIndex = i;
 
-            if (json == null)
-                throw new ArgumentNullException("json");
+            ArgumentNullException.ThrowIfNull(json);
 
             while (json[i] == ' ' || json[i] == '\r' || json[i] == '\n' || json[i] == '\t')
                 i++;

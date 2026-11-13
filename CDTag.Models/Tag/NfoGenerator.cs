@@ -14,7 +14,7 @@ namespace CDTag.Model.Tag
     /// Lines containing track tokens (#N, #Song, #Time, ...) are repeated per track; a #Rnotes line is
     /// repeated per wrapped line of the release notes. Replacements keep later columns aligned.
     /// </summary>
-    public class NfoGenerator
+    public partial class NfoGenerator
     {
         private const int LineWidth = 78;
 
@@ -37,10 +37,8 @@ namespace CDTag.Model.Tag
 
         public NfoGenerator(UserProfile profile, Album album, ReleaseInfo release)
         {
-            if (profile == null)
-                throw new ArgumentNullException("profile");
-            if (album == null)
-                throw new ArgumentNullException("album");
+            ArgumentNullException.ThrowIfNull(profile);
+            ArgumentNullException.ThrowIfNull(album);
 
             _profile = profile;
             _album = album;
@@ -76,8 +74,7 @@ namespace CDTag.Model.Tag
 
         public string Generate(string template)
         {
-            if (template == null)
-                throw new ArgumentNullException("template");
+            ArgumentNullException.ThrowIfNull(template);
 
             var output = new List<string>();
             foreach (string line in template.Replace("\r\n", "\n").Split('\n'))
@@ -104,7 +101,7 @@ namespace CDTag.Model.Tag
             if (name.Length > 0 && header.IndexOf("#DiscName", StringComparison.OrdinalIgnoreCase) < 0)
             {
                 string[] lines = header.Replace("\r\n", "\n").Split('\n');
-                int index = Array.FindIndex(lines, l => l.IndexOf("#Disc", StringComparison.OrdinalIgnoreCase) >= 0);
+                int index = Array.FindIndex(lines, l => l.Contains("#Disc", StringComparison.OrdinalIgnoreCase));
                 if (index < 0)
                     index = Array.FindIndex(lines, l => l.Trim().Length > 0);
                 if (index >= 0)
@@ -113,7 +110,7 @@ namespace CDTag.Model.Tag
                     header = string.Join(Environment.NewLine, lines);
                 }
             }
-            return Regex.Replace(header, "#DiscName", name.Replace("$", "$$"), RegexOptions.IgnoreCase)
+            return DiscNameToken().Replace(header, name.Replace("$", "$$"))
                         .Replace("#Discs", discs.ToString(CultureInfo.InvariantCulture))
                         .Replace("#Disc", disc.ToString(CultureInfo.InvariantCulture));
         }
@@ -222,7 +219,7 @@ namespace CDTag.Model.Tag
             }
         }
 
-        private static IEnumerable<string> SplitLines(string text)
+        private static string[] SplitLines(string text)
         {
             return text.Replace("\r\n", "\n").Split('\n');
         }
@@ -427,7 +424,7 @@ namespace CDTag.Model.Tag
         {
             if (string.IsNullOrWhiteSpace(date))
                 return "";
-            Match match = Regex.Match(date.Trim(), @"^(\d{4})-(\d{1,2})-(\d{1,2})$");
+            Match match = IsoDate().Match(date.Trim());
             string format = _profile.ReleaseInfo != null ? _profile.ReleaseInfo.NfoDateFormat : null;
             if (!match.Success || string.IsNullOrWhiteSpace(format))
                 return date.Trim();
@@ -446,9 +443,18 @@ namespace CDTag.Model.Tag
         {
             if (string.IsNullOrWhiteSpace(text))
                 return fallback;
-            Match match = Regex.Match(text, @"\d+");
+            Match match = Digits().Match(text);
             int number;
             return match.Success && int.TryParse(match.Value, out number) ? number : fallback;
         }
+
+        [GeneratedRegex("#DiscName", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex DiscNameToken();
+
+        [GeneratedRegex(@"\d+", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex Digits();
+
+        [GeneratedRegex(@"^(\d{4})-(\d{1,2})-(\d{1,2})$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex IsoDate();
     }
 }

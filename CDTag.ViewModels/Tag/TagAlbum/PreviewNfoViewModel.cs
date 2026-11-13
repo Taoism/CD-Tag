@@ -19,15 +19,15 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         /// <summary>The generated NFO.</summary>
         public string Text
         {
-            get { return Get<string>("Text"); }
-            set { Set("Text", value); }
+            get { return Get<string>(nameof(Text)); }
+            set { Set(nameof(Text), value); }
         }
 
         /// <summary>The name the NFO will be saved under (shown in the title).</summary>
         public string FileName
         {
-            get { return Get<string>("FileName"); }
-            set { Set("FileName", value); }
+            get { return Get<string>(nameof(FileName)); }
+            set { Set(nameof(FileName), value); }
         }
     }
 }

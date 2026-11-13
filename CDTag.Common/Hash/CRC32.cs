@@ -42,8 +42,7 @@ namespace CDTag.Common.Hash
         /// <returns>CRC32 Checksum as a string.</returns>
         public static string Calculate(FileInfo file)
         {
-            if (file == null)
-                throw new ArgumentNullException("file");
+            ArgumentNullException.ThrowIfNull(file);
 
             return string.Format("{0:X8}", CalculateInt32(file));
         }
@@ -55,8 +54,7 @@ namespace CDTag.Common.Hash
         /// <returns>CRC32 Checksum as a string.</returns>
         public static string Calculate(Stream stream)
         {
-            if (stream == null)
-                throw new ArgumentNullException("stream");
+            ArgumentNullException.ThrowIfNull(stream);
 
             return string.Format("{0:X8}", CalculateInt32(stream));
         }
@@ -68,8 +66,7 @@ namespace CDTag.Common.Hash
         /// <returns>CRC32 Checksum as a string.</returns>
         public static string Calculate(byte[] data)
         {
-            if (data == null)
-                throw new ArgumentNullException("data");
+            ArgumentNullException.ThrowIfNull(data);
 
             return string.Format("{0:X8}", CalculateInt32(data));
         }
@@ -81,8 +78,7 @@ namespace CDTag.Common.Hash
         /// <returns>CRC32 Checksum as a four byte signed integer (Int32).</returns>
         public static uint CalculateInt32(FileInfo file)
         {
-            if (file == null)
-                throw new ArgumentNullException("file");
+            ArgumentNullException.ThrowIfNull(file);
 
             using (FileStream fileStream = file.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
             {
@@ -97,8 +93,7 @@ namespace CDTag.Common.Hash
         /// <returns>CRC32 Checksum as a four byte signed integer (Int32).</returns>
         public static uint CalculateInt32(Stream stream)
         {
-            if (stream == null)
-                throw new ArgumentNullException("stream");
+            ArgumentNullException.ThrowIfNull(stream);
 
             unchecked
             {
@@ -128,8 +123,7 @@ namespace CDTag.Common.Hash
         /// <returns>CRC32 Checksum as a four byte signed integer (Int32).</returns>
         public static uint CalculateInt32(byte[] data)
         {
-            if (data == null)
-                throw new ArgumentNullException("data");
+            ArgumentNullException.ThrowIfNull(data);
 
             using (MemoryStream memoryStream = new MemoryStream(data))
             {

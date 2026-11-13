@@ -16,9 +16,8 @@ namespace CDTag.Common.Wpf
         /// <param name="menuitems">The menu items.</param>
         public static void SetKeyBindings(UIElement target, ItemCollection menuitems)
         {
-            if (menuitems == null)
-                throw new ArgumentNullException("menuitems");
-            
+            ArgumentNullException.ThrowIfNull(menuitems);
+
             foreach (var item in menuitems)
             {
                 MenuItem menuItem = item as MenuItem;
@@ -28,7 +27,7 @@ namespace CDTag.Common.Wpf
                     if (!string.IsNullOrWhiteSpace(gestureText) && menuItem.Command != null)
                     {
                         ModifierKeys modifiers = ModifierKeys.None;
-                        string[] keyTexts = gestureText.Split(new[] { '+' }, StringSplitOptions.RemoveEmptyEntries);
+                        string[] keyTexts = gestureText.Split('+', StringSplitOptions.RemoveEmptyEntries);
                         for (int i = 0; i < keyTexts.Length; i++)
                         {
                             string keyText = keyTexts[i];

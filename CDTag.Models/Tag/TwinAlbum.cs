@@ -12,7 +12,7 @@ namespace CDTag.Model.Tag
     /// The same rip in the other format: a FLAC album and its MP3 encode (or the other way round) in folders
     /// next to each other. Same discs, same number of tracks, and every track the same length.
     /// </summary>
-    public static class TwinAlbum
+    public static partial class TwinAlbum
     {
         /// <summary>Longest length difference (seconds) for two tracks to count as the same track.</summary>
         public const double MaxLengthDifference = 2.0;
@@ -192,7 +192,7 @@ namespace CDTag.Model.Tag
 
         private static int Number(string text, int fallback)
         {
-            Match match = Regex.Match(text ?? "", @"\d+");
+            Match match = Digits().Match(text ?? "");
             int number;
             return match.Success && int.TryParse(match.Value, out number) ? number : fallback;
         }
@@ -258,7 +258,7 @@ namespace CDTag.Model.Tag
                 if (first.IsFlac)
                 {
                     string vendor = FlacVendor(first.OriginalFileName);
-                    Match version = Regex.Match(vendor ?? "", @"libFLAC\s+(\d+\.\d+(\.\d+)?)", RegexOptions.IgnoreCase);
+                    Match version = LibFlacVendorVersion().Match(vendor ?? "");
                     return version.Success ? "FLAC " + version.Groups[1].Value : null;
                 }
 
@@ -313,5 +313,11 @@ namespace CDTag.Model.Tag
             }
             return null;
         }
+
+        [GeneratedRegex(@"\d+", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex Digits();
+
+        [GeneratedRegex(@"libFLAC\s+(\d+\.\d+(\.\d+)?)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex LibFlacVendorVersion();
     }
 }

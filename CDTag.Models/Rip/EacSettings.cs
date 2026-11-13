@@ -13,7 +13,7 @@ namespace CDTag.Model.Rip
     /// Exact Audio Copy's settings (HKCU\Software\AWSoftware\EACU): output folder, file naming, character replacements,
     /// output format, eject, and per drive the read offset, C2 and AccurateRip use. Null fields = not set in EAC.
     /// </summary>
-    public class EacSettings
+    public partial class EacSettings
     {
         private const string Root = @"Software\AWSoftware\EACU";
 
@@ -220,7 +220,7 @@ namespace CDTag.Model.Rip
                 { "tracknr3", track.ToString("000", CultureInfo.InvariantCulture) },
                 { "artist", artist }, { "title", title }
             };
-            string text = Regex.Replace(scheme ?? "", @"%(\w+)%", m =>
+            string text = PercentVariable().Replace(scheme ?? "", m =>
             {
                 string v;
                 return values.TryGetValue(m.Groups[1].Value, out v) ? Clean(v) : m.Value;
@@ -245,5 +245,8 @@ namespace CDTag.Model.Rip
             }
             return sb.ToString();
         }
+
+        [GeneratedRegex(@"%(\w+)%", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex PercentVariable();
     }
 }

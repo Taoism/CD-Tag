@@ -44,8 +44,8 @@ namespace CDTag.ViewModels.Tag
         /// <summary>0 = Rip, 1 = Convert Audio, 2 = Tag/Rename.</summary>
         public int SelectedTabIndex
         {
-            get { return Get<int>("SelectedTabIndex"); }
-            set { Set("SelectedTabIndex", value); }
+            get { return Get<int>(nameof(SelectedTabIndex)); }
+            set { Set(nameof(SelectedTabIndex), value); }
         }
 
         public ICommand ShowRipCommand { get; private set; }

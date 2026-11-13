@@ -11,6 +11,8 @@ namespace CDTag.Model.Profile
     /// </summary>
     public static class ProfileSelector
     {
+        private static readonly char[] ListSeparators = { ',', ';', ' ' };
+
         /// <summary>Choices for <see cref="UserProfile.AudioFileTypes"/> shown in the profile list.</summary>
         public static readonly string[] FileTypeChoices = { "", "mp3", "flac", "mp3,flac" };
 
@@ -24,7 +26,7 @@ namespace CDTag.Model.Profile
             if (profile == null || string.IsNullOrWhiteSpace(profile.AudioFileTypes))
                 return result;
 
-            foreach (string part in profile.AudioFileTypes.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (string part in profile.AudioFileTypes.Split(ListSeparators, StringSplitOptions.RemoveEmptyEntries))
                 result.Add(part.Trim().TrimStart('.').ToLowerInvariant());
             return result;
         }

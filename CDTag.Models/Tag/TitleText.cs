@@ -20,10 +20,20 @@ namespace CDTag.Model.Tag
     }
 
     /// <summary>Song name helpers for Tag Album: casing, search and replace, pasted track lists.</summary>
-    public static class TitleText
+    public static partial class TitleText
     {
         private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
-        private static readonly Regex RomanNumeral = new Regex(@"^(?=[MDCLXVI])M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$", RegexOptions.CultureInvariant);
+
+        /// <summary>True when no character of <paramref name="text"/> changes when upper-cased (so "" and "123" count).</summary>
+        private static bool IsAllUpper(string text)
+        {
+            foreach (char c in text)
+            {
+                if (char.ToUpper(c, Culture) != c)
+                    return false;
+            }
+            return true;
+        }
 
         public static string ApplyCasing(string text, TitleCasing casing)
         {
@@ -50,7 +60,7 @@ namespace CDTag.Model.Tag
         private static string CapitalizeEveryWord(string text)
         {
             // In an all-caps title "MIX" or "DID" are not numerals.
-            bool allCaps = text.ToUpper(Culture) == text;
+            bool allCaps = IsAllUpper(text);
             var sb = new StringBuilder(text.Length);
             foreach (string word in SplitWords(text))
             {
@@ -59,7 +69,7 @@ namespace CDTag.Model.Tag
                     sb.Append(word);
                     continue;
                 }
-                if (!allCaps && word.Length > 1 && RomanNumeral.IsMatch(word.Trim().Trim('(', ')', '.', ',', '[', ']')) && word.ToUpper(Culture) == word)
+                if (!allCaps && word.Length > 1 && RomanNumeral().IsMatch(word.Trim().Trim('(', ')', '.', ',', '[', ']')) && IsAllUpper(word))
                 {
                     sb.Append(word);
                     continue;
@@ -85,14 +95,14 @@ namespace CDTag.Model.Tag
         /// <summary>Upper case at the start and after . ! ?, lower case elsewhere; "i" / "i'm" stay "I" / "I'm".</summary>
         private static string SentenceCase(string text)
         {
-            bool allCaps = text.ToUpper(Culture) == text;
+            bool allCaps = IsAllUpper(text);
             var sb = new StringBuilder(text.Length);
             bool capitalizeNext = true;
             foreach (string word in SplitWords(text))
             {
                 string lower = word.ToLower(Culture);
-                bool isI = Regex.IsMatch(lower, @"^\W*i('(m|d|ll|ve))?\W*$");
-                bool keepRoman = !allCaps && word.Length > 1 && word.ToUpper(Culture) == word && RomanNumeral.IsMatch(word.Trim('(', ')', '.', ',', '[', ']'));
+                bool isI = PronounI().IsMatch(lower);
+                bool keepRoman = !allCaps && word.Length > 1 && IsAllUpper(word) && RomanNumeral().IsMatch(word.Trim('(', ')', '.', ',', '[', ']'));
                 if (keepRoman)
                 {
                     sb.Append(word);
@@ -100,7 +110,7 @@ namespace CDTag.Model.Tag
                 else if ((capitalizeNext || isI) && lower.Any(char.IsLetterOrDigit))
                 {
                     int index = lower.ToList().FindIndex(char.IsLetterOrDigit);
-                    sb.Append(lower.Substring(0, index)).Append(char.ToUpper(lower[index], Culture)).Append(lower.Substring(index + 1));
+                    sb.Append(lower.AsSpan(0, index)).Append(char.ToUpper(lower[index], Culture)).Append(lower.AsSpan(index + 1));
                 }
                 else
                 {
@@ -110,7 +120,7 @@ namespace CDTag.Model.Tag
                 if (lower.Any(char.IsLetterOrDigit))
                     capitalizeNext = false;
                 string trimmed = word.TrimEnd();
-                if (trimmed.EndsWith(".", StringComparison.Ordinal) || trimmed.EndsWith("!", StringComparison.Ordinal) || trimmed.EndsWith("?", StringComparison.Ordinal))
+                if (trimmed.EndsWith('.') || trimmed.EndsWith('!') || trimmed.EndsWith('?'))
                     capitalizeNext = true;
             }
             return sb.ToString();
@@ -122,7 +132,7 @@ namespace CDTag.Model.Tag
             var word = new StringBuilder();
             foreach (char c in text)
             {
-                bool separator = char.IsWhiteSpace(c) || "([{-/\"_".IndexOf(c) >= 0;
+                bool separator = char.IsWhiteSpace(c) || "([{-/\"_".Contains(c);
                 if (separator)
                 {
                     if (word.Length > 0 && word.ToString().Any(ch => !char.IsWhiteSpace(ch) && "([{-/\"_".IndexOf(ch) < 0))
@@ -145,11 +155,6 @@ namespace CDTag.Model.Tag
             return text.Replace(find, replace ?? "", matchCase ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
         }
 
-        private static readonly Regex DiscHeader = new Regex(@"^\s*(cd|disc|disk|side|dvd)\s*[-_#.]?\s*[0-9a-z]{0,2}\s*[:.)-]?\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        private static readonly Regex LeadingNumber = new Regex(@"^(?:(?<disc>\d{1,2})[-.])?(?<n>\d{1,3})(?=[\s.):\-]|$)[\s.):\-]*", RegexOptions.CultureInvariant);
-        private static readonly Regex VinylPosition = new Regex(@"^[A-Z]\d{1,2}(?=[\s.):\-])[\s.):\-]*", RegexOptions.CultureInvariant);
-        private static readonly Regex TrailingLength = new Regex(@"\s*[-–]?\s*[(\[]?\d{1,3}:\d{2}(?::\d{2})?[)\]]?\s*$", RegexOptions.CultureInvariant);
-
         /// <summary>
         /// Song names from a pasted track list (web page, CD booklet, Discogs...): one per line; track numbers
         /// ("1.", "01 -", "1-01", "A1"; a number only when it continues the numbering, so "10 Years Gone" stays) and lengths ("3:45", "(3:45)") are removed, disc headers and empty lines skipped.
@@ -164,20 +169,20 @@ namespace CDTag.Model.Tag
             foreach (string raw in text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
             {
                 string line = raw.Replace('\t', ' ').Trim();
-                if (line.Length == 0 || DiscHeader.IsMatch(line))
+                if (line.Length == 0 || DiscHeader().IsMatch(line))
                     continue;
 
-                line = TrailingLength.Replace(line, "");
-                Match number = LeadingNumber.Match(line);
+                line = TrailingLength().Replace(line, "");
+                Match number = LeadingNumber().Match(line);
                 int n;
                 if (number.Success && int.TryParse(number.Groups["n"].Value, out n) && (n == last + 1 || n == 1 || number.Groups["disc"].Success))
                 {
                     line = line.Substring(number.Length);
                     last = n;
                 }
-                else if (VinylPosition.IsMatch(line))
+                else if (VinylPosition().IsMatch(line))
                 {
-                    line = VinylPosition.Replace(line, "");
+                    line = VinylPosition().Replace(line, "");
                     last++;
                 }
                 line = line.Trim();
@@ -186,5 +191,23 @@ namespace CDTag.Model.Tag
             }
             return titles;
         }
+
+        [GeneratedRegex(@"^(?=[MDCLXVI])M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$", RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex RomanNumeral();
+
+        [GeneratedRegex(@"^\s*(cd|disc|disk|side|dvd)\s*[-_#.]?\s*[0-9a-z]{0,2}\s*[:.)-]?\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex DiscHeader();
+
+        [GeneratedRegex(@"^(?:(?<disc>\d{1,2})[-.])?(?<n>\d{1,3})(?=[\s.):\-]|$)[\s.):\-]*", RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex LeadingNumber();
+
+        [GeneratedRegex(@"^\W*i('(m|d|ll|ve))?\W*$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex PronounI();
+
+        [GeneratedRegex(@"\s*[-–]?\s*[(\[]?\d{1,3}:\d{2}(?::\d{2})?[)\]]?\s*$", RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex TrailingLength();
+
+        [GeneratedRegex(@"^[A-Z]\d{1,2}(?=[\s.):\-])[\s.):\-]*", RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex VinylPosition();
     }
 }

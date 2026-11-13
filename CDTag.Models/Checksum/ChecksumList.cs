@@ -34,14 +34,10 @@ namespace CDTag.Model.Checksum
     }
 
     /// <summary>Reads, writes and calculates SFV/MD5/SHA-1 checksum lists.</summary>
-    public static class ChecksumList
+    public static partial class ChecksumList
     {
         /// <summary>Extensions of checksum files, never listed in a checksum file themselves.</summary>
         public static readonly string[] Extensions = { ".sfv", ".md5", ".sha1" };
-
-        private static readonly Regex SfvLine = new Regex(@"^(?<name>.+?)\s+(?<hash>[0-9A-Fa-f]{8})\s*$");
-        private static readonly Regex HashLine = new Regex(@"^(?<hash>[0-9A-Fa-f]{32,40})\s+[*\s]?(?<name>.+?)\s*$");
-        private static readonly Regex BsdLine = new Regex(@"^(?:MD5|SHA1)\s*\((?<name>.+)\)\s*=\s*(?<hash>[0-9A-Fa-f]{32,40})\s*$", RegexOptions.IgnoreCase);
 
         public static string GetExtension(ChecksumKind kind)
         {
@@ -91,19 +87,19 @@ namespace CDTag.Model.Checksum
             foreach (string rawLine in text.Split('\n'))
             {
                 string line = rawLine.TrimEnd('\r').Trim();
-                if (line.Length == 0 || line.StartsWith(";", StringComparison.Ordinal) || (kind != ChecksumKind.Sfv && line.StartsWith("#", StringComparison.Ordinal)))
+                if (line.Length == 0 || line.StartsWith(';') || (kind != ChecksumKind.Sfv && line.StartsWith('#')))
                     continue;
 
                 Match match;
                 if (kind == ChecksumKind.Sfv)
                 {
-                    match = SfvLine.Match(line);
+                    match = SfvLine().Match(line);
                 }
                 else
                 {
-                    match = HashLine.Match(line);
+                    match = HashLine().Match(line);
                     if (!match.Success || match.Groups["hash"].Length != hashLength)
-                        match = BsdLine.Match(line);
+                        match = BsdLine().Match(line);
                     if (match.Success && match.Groups["hash"].Length != hashLength)
                         continue;
                 }
@@ -254,5 +250,14 @@ namespace CDTag.Model.Checksum
                 base.Dispose(disposing);
             }
         }
+
+        [GeneratedRegex(@"^(?<name>.+?)\s+(?<hash>[0-9A-Fa-f]{8})\s*$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex SfvLine();
+
+        [GeneratedRegex(@"^(?:MD5|SHA1)\s*\((?<name>.+)\)\s*=\s*(?<hash>[0-9A-Fa-f]{32,40})\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex BsdLine();
+
+        [GeneratedRegex(@"^(?<hash>[0-9A-Fa-f]{32,40})\s+[*\s]?(?<name>.+?)\s*$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex HashLine();
     }
 }

@@ -21,7 +21,7 @@ namespace CDTag.Model.Profile
         public static UserProfile Load(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
-                throw new ArgumentNullException("path");
+                throw new ArgumentNullException(nameof(path));
             if (!File.Exists(path))
                 throw new FileNotFoundException(string.Format("'{0}' not found.", path), path);
 

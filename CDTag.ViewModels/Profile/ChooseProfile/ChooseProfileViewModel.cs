@@ -30,16 +30,16 @@ namespace CDTag.ViewModels.Profile.ChooseProfile
 
         public string Message
         {
-            get { return Get<string>("Message"); }
-            set { Set("Message", value); }
+            get { return Get<string>(nameof(Message)); }
+            set { Set(nameof(Message), value); }
         }
 
         public ObservableCollection<UserProfile> Profiles { get; private set; }
 
         public UserProfile SelectedProfile
         {
-            get { return Get<UserProfile>("SelectedProfile"); }
-            set { Set("SelectedProfile", value); }
+            get { return Get<UserProfile>(nameof(SelectedProfile)); }
+            set { Set(nameof(SelectedProfile), value); }
         }
 
         public ICommand OKCommand { get; private set; }

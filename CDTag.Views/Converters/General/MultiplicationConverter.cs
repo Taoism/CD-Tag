@@ -8,9 +8,9 @@ namespace CDTag.View.Converters.General
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             string param = (string)parameter;
-            if (param.Contains(","))
+            if (param.Contains(','))
             {
-                string[] parameters = param.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] parameters = param.Split(',', StringSplitOptions.RemoveEmptyEntries);
                 double product = (double)value * double.Parse(parameters[0]);
                 return product + double.Parse(parameters[1]);
             }

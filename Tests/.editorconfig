@@ -1,0 +1,6 @@
+# Test-project overrides of the analyzer rules (the solution's own settings still apply).
+
+[*.cs]
+# CA1861 (constant array arguments): its only fix moves each expected-values array into a static field
+# away from the test that uses it, which makes tests harder to read for no gain (tests run once).
+dotnet_diagnostic.CA1861.severity = none

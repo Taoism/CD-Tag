@@ -36,7 +36,7 @@ namespace CDTag.ViewModel.Tests.Tag
         [SetUp]
         public void CreateRoot()
         {
-            _root = Path.Combine(Path.GetTempPath(), "cdtag-finish-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+            _root = Path.Combine(Path.GetTempPath(), string.Concat("cdtag-finish-", Guid.NewGuid().ToString("N").AsSpan(0, 8)));
             Directory.CreateDirectory(_root);
         }
 
@@ -315,7 +315,7 @@ namespace CDTag.ViewModel.Tests.Tag
             Assert.That(File.ReadAllLines(Path.Combine(result, sfv)).Select(l => l.Split(' ')[0]),
                         Is.EqualTo(new[] { "101-ween-one-grp.flac", "102-ween-two-grp.flac", "201-ween-three-grp.flac" }));
             foreach (string m3u in names.Where(n => n.EndsWith(".m3u")))
-                Assert.That(File.ReadAllLines(Path.Combine(result, m3u)).All(l => !l.Contains("\\")), Is.True, "playlist entries are in the album folder");
+                Assert.That(File.ReadAllLines(Path.Combine(result, m3u)).All(l => !l.Contains('\\')), Is.True, "playlist entries are in the album folder");
         }
 
         [TestCase("CD")]

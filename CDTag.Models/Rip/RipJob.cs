@@ -253,11 +253,11 @@ namespace CDTag.Model.Rip
 
             string baseName = BaseName();
             if (Settings.WriteCue)
-                File.WriteAllText(baseName + ".cue", cueText, new UTF8Encoding(true));
+                await File.WriteAllTextAsync(baseName + ".cue", cueText, new UTF8Encoding(true)).ConfigureAwait(false);
             if (Settings.WriteLog)
             {
                 LogPath = baseName + ".log";
-                File.WriteAllText(LogPath, LogText(paths), new UTF8Encoding(true));
+                await File.WriteAllTextAsync(LogPath, LogText(paths), new UTF8Encoding(true)).ConfigureAwait(false);
             }
         }
 
@@ -307,7 +307,7 @@ namespace CDTag.Model.Rip
                 using (var output = new FileStream(wav, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
                 {
                     byte[] header = CdRipper.CdFormat.Header((long)leadOut * CdDrive.SamplesPerSector * 4);
-                    output.Write(header, 0, header.Length);
+                    await output.WriteAsync(header, cancellation).ConfigureAwait(false);
                     await Task.Run(() => ripper.RipBeforeFirstTrack(output, cancellation), cancellation).ConfigureAwait(false);
                     for (int i = 0; i < audio.Count; i++)
                     {

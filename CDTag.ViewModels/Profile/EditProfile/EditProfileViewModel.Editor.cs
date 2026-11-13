@@ -33,10 +33,10 @@ namespace CDTag.ViewModels.Profile.EditProfile
         /// <summary>Index into <see cref="Pages"/>.</summary>
         public int SelectedPage
         {
-            get { return Get<int>("SelectedPage"); }
+            get { return Get<int>(nameof(SelectedPage)); }
             set
             {
-                Set("SelectedPage", value);
+                Set(nameof(SelectedPage), value);
                 Header = value >= 0 && value < PageNames.Length ? (value == ProfilesPage ? "Select Profile" : PageNames[value]) : "";
                 RefreshChanges();
             }
@@ -73,10 +73,10 @@ namespace CDTag.ViewModels.Profile.EditProfile
 
         public NamingSlot SelectedSlot
         {
-            get { return Get<NamingSlot>("SelectedSlot") ?? NamingSlots[0]; }
+            get { return Get<NamingSlot>(nameof(SelectedSlot)) ?? NamingSlots[0]; }
             set
             {
-                Set("SelectedSlot", value);
+                Set(nameof(SelectedSlot), value);
                 RaiseEditorChanged("NamingFormat");
             }
         }
@@ -101,7 +101,7 @@ namespace CDTag.ViewModels.Profile.EditProfile
         }
 
         public TagAction[] TagActions { get; } = { TagAction.WriteAlways, TagAction.WriteIfExists, TagAction.Remove, TagAction.Leave };
-        public FinishNFO[] FinishNFOChoices { get; } = (FinishNFO[])Enum.GetValues(typeof(FinishNFO));
+        public FinishNFO[] FinishNFOChoices { get; } = Enum.GetValues<FinishNFO>();
 
         /// <summary>Tagging options of the selected profile (created when missing).</summary>
         public TaggingOptions Tagging
@@ -213,7 +213,7 @@ namespace CDTag.ViewModels.Profile.EditProfile
             return values == null ? "" : string.Join(Environment.NewLine, values);
         }
 
-        private static IEnumerable<string> SplitLines(string text)
+        private static string[] SplitLines(string text)
         {
             return (text ?? "").Replace("\r\n", "\n").Split('\n');
         }
@@ -317,8 +317,8 @@ namespace CDTag.ViewModels.Profile.EditProfile
         /// <summary>Name typed on the Profiles page for Rename.</summary>
         public string NewProfileName
         {
-            get { return Get<string>("NewProfileName"); }
-            set { Set("NewProfileName", value); }
+            get { return Get<string>(nameof(NewProfileName)); }
+            set { Set(nameof(NewProfileName), value); }
         }
 
         private void RenameProfile()

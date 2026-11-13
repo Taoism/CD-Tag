@@ -37,7 +37,7 @@ namespace CDTag.ViewModels.ConvertAudio
                 _status = value;
                 PropertyChangedEventHandler handler = PropertyChanged;
                 if (handler != null)
-                    handler(this, new PropertyChangedEventArgs("Status"));
+                    handler(this, new PropertyChangedEventArgs(nameof(Status)));
             }
         }
 
@@ -91,10 +91,10 @@ namespace CDTag.ViewModels.ConvertAudio
 
         public EncodePresetItem SelectedPreset
         {
-            get { return Get<EncodePresetItem>("SelectedPreset"); }
+            get { return Get<EncodePresetItem>(nameof(SelectedPreset)); }
             set
             {
-                Set("SelectedPreset", value);
+                Set(nameof(SelectedPreset), value);
                 if (value != null && AppOptions.Current.EncodePreset != value.Preset.ToString())
                 {
                     AppOptionsData options = AppOptions.Current.Clone();
@@ -106,21 +106,21 @@ namespace CDTag.ViewModels.ConvertAudio
 
         public ConvertFile SelectedFile
         {
-            get { return Get<ConvertFile>("SelectedFile"); }
-            set { Set("SelectedFile", value); }
+            get { return Get<ConvertFile>(nameof(SelectedFile)); }
+            set { Set(nameof(SelectedFile), value); }
         }
 
         public bool IsBusy
         {
-            get { return Get<bool>("IsBusy"); }
-            private set { Set("IsBusy", value); }
+            get { return Get<bool>(nameof(IsBusy)); }
+            private set { Set(nameof(IsBusy), value); }
         }
 
         /// <summary>Status bar text: the encoder in use, or the progress of the queue.</summary>
         public string StatusText
         {
-            get { return Get<string>("StatusText"); }
-            private set { Set("StatusText", value); }
+            get { return Get<string>(nameof(StatusText)); }
+            private set { Set(nameof(StatusText), value); }
         }
 
         public ICommand AddCommand { get; private set; }

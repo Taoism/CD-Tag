@@ -17,15 +17,14 @@ namespace CDTag.Common.Settings
         public static void Save(string fileName, object settings)
         {
             if (string.IsNullOrWhiteSpace(fileName))
-                throw new ArgumentNullException("fileName");
-            if (settings == null)
-                throw new ArgumentNullException("settings");
+                throw new ArgumentNullException(nameof(fileName));
+            ArgumentNullException.ThrowIfNull(settings);
 
             fileName = GetFullFileName(fileName);
 
             string json = JsonSerializer.SerializeObject(settings);
 
-            using (Stream fileStream = File.Open(fileName, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (FileStream fileStream = File.Open(fileName, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 byte[] bytes = Encoding.UTF8.GetBytes(json);
                 fileStream.Write(bytes, 0, bytes.Length);
@@ -46,7 +45,7 @@ namespace CDTag.Common.Settings
             where T : class
         {
             if (string.IsNullOrWhiteSpace(fileName))
-                throw new ArgumentNullException("fileName");
+                throw new ArgumentNullException(nameof(fileName));
 
             settings = null;
 

@@ -49,7 +49,7 @@ namespace CDTag.Model.Profile
                     line = line.Trim();
                     if (line.Length == 0)
                         continue;
-                    return line.StartsWith("[", StringComparison.Ordinal);
+                    return line.StartsWith('[');
                 }
             }
             return false;
@@ -60,7 +60,7 @@ namespace CDTag.Model.Profile
         public static UserProfile Convert(string path, string profileName, out string nfoTemplatePath)
         {
             if (string.IsNullOrWhiteSpace(path))
-                throw new ArgumentNullException("path");
+                throw new ArgumentNullException(nameof(path));
 
             var ini = ReadIni(File.ReadAllLines(path, DosEncoding));
             if (!ini.ContainsKey("CONFIG") && !ini.ContainsKey("NAME0"))
@@ -93,8 +93,8 @@ namespace CDTag.Model.Profile
             }
 
             // CD-Tag 2.x profiles were made per format; FLAC ones say so in their name or folder format.
-            bool isFlac = (profileName ?? "").IndexOf("FLAC", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                          (profile.FileNaming.SingleCD.SingleArtist.Directory ?? "").IndexOf("FLAC", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool isFlac = (profileName ?? "").Contains("FLAC", StringComparison.OrdinalIgnoreCase) ||
+                          (profile.FileNaming.SingleCD.SingleArtist.Directory ?? "").Contains("FLAC", StringComparison.OrdinalIgnoreCase);
             profile.AudioFileTypes = isFlac ? "flac" : "mp3";
 
             // Naming options
@@ -419,8 +419,7 @@ namespace CDTag.Model.Profile
 
                 string key = rawLine.Substring(0, equals).Trim();
                 string value = rawLine.Substring(equals + 1); // keep trailing spaces (NFO footers rely on them)
-                if (!current.ContainsKey(key))
-                    current.Add(key, value);
+                current.TryAdd(key, value);
             }
             return result;
         }

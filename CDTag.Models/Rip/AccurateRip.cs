@@ -26,7 +26,7 @@ namespace CDTag.Model.Rip
     /// </summary>
     public static class AccurateRip
     {
-        private const string Host = "http://www.accuraterip.com/accuraterip/";
+        private const string Host = "https://www.accuraterip.com/accuraterip/";
         /// <summary>The first and last 5 sectors of the disc are not checked (drives can't read them exactly).</summary>
         public const int SkipSamples = 5 * CdDrive.SamplesPerSector;
 
@@ -102,7 +102,7 @@ namespace CDTag.Model.Rip
                         return Enumerable.Range(0, starts.Count).Select(_ => new List<AccurateRipEntry>()).ToList();
                     if (!response.IsSuccessStatusCode)
                         return null;
-                    byte[] data = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                    byte[] data = await response.Content.ReadAsByteArrayAsync(cancellation).ConfigureAwait(false);
                     return Parse(data, starts.Count);
                 }
             }
@@ -222,7 +222,7 @@ namespace CDTag.Model.Rip
 
         private static string Normalize(string name)
         {
-            return string.Join(" ", name.ToUpperInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
+            return string.Join(" ", name.ToUpperInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries));
         }
 
         private static async Task<byte[]> LoadDriveOffsetsAsync(CancellationToken cancellation)
@@ -238,7 +238,7 @@ namespace CDTag.Model.Rip
                     if (data.Length > 69 && data.Length % 69 == 0)
                     {
                         Directory.CreateDirectory(folder);
-                        File.WriteAllBytes(path, data);
+                        await File.WriteAllBytesAsync(path, data, CancellationToken.None).ConfigureAwait(false);
                         return data;
                     }
                 }
@@ -246,7 +246,7 @@ namespace CDTag.Model.Rip
                 {
                 }
             }
-            return File.Exists(path) ? File.ReadAllBytes(path) : null;
+            return File.Exists(path) ? await File.ReadAllBytesAsync(path, cancellation).ConfigureAwait(false) : null;
         }
     }
 }

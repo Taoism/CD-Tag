@@ -62,7 +62,7 @@ namespace CDTag.ViewModel.Tests.Tag
             };
             profile.ExtInfo = new[]
             {
-                new ExtInfoDefinition { Begin = "-", FieldSeparator = "", End = "", Items = new ExtInfoItem[0] },
+                new ExtInfoDefinition { Begin = "-", FieldSeparator = "", End = "", Items = System.Array.Empty<ExtInfoItem>() },
                 new ExtInfoDefinition { Begin = "-", FieldSeparator = "-", End = "", Items = new[] { new ExtInfoItem { Field = "Language 2 letter", Format = "<Value>" } } },
                 new ExtInfoDefinition { Begin = "-", FieldSeparator = "-", End = "", Items = new[] { new ExtInfoItem { Field = "Release Type", Format = "<Value>" } } },
                 new ExtInfoDefinition { Begin = "", FieldSeparator = "-", End = "", Items = new[] { new ExtInfoItem { Field = "Source", Format = "<Value>" } } }

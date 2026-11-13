@@ -195,7 +195,7 @@ namespace CDTag
                     string text = "The scene rules on scenerules.org have changed:" + Environment.NewLine + Environment.NewLine +
                                   string.Join(Environment.NewLine, changes.Select(c => "- " + c)) + Environment.NewLine + Environment.NewLine +
                                   "The new rule files are saved in" + Environment.NewLine + directory;
-                    shell.Dispatcher.BeginInvoke(new Action(() =>
+                    _ = shell.Dispatcher.BeginInvoke(new Action(() =>
                         CDTag.Common.ThemedMessageBox.Show(shell, text, "Scene rules", MessageBoxButton.OK, MessageBoxImage.Information)));
                 }
                 catch (Exception)

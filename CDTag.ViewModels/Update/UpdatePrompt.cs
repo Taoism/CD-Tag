@@ -89,7 +89,7 @@ namespace CDTag.ViewModel.Update
         {
             if (string.IsNullOrWhiteSpace(notes))
                 return "";
-            string[] paragraphs = notes.Replace("\r", "").Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries)
+            string[] paragraphs = notes.Replace("\r", "").Split("\n\n", StringSplitOptions.RemoveEmptyEntries)
                                        .Select(p => p.Trim()).Where(p => p.Length != 0).ToArray();
             string paragraph = paragraphs.FirstOrDefault(p => p.TrimStart('#', ' ').StartsWith("New in", StringComparison.OrdinalIgnoreCase))
                                ?? paragraphs.FirstOrDefault(p => p.IndexOf("Download", StringComparison.OrdinalIgnoreCase) < 0 && !p.StartsWith("CD-Tag for", StringComparison.Ordinal));

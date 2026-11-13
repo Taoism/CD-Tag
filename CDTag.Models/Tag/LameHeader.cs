@@ -10,7 +10,7 @@ namespace CDTag.Model.Tag
     /// The LAME info tag of an MP3 (written in the Xing/Info frame): encoder version, VBR method and preset.
     /// IdSharp's reader keeps only 4 characters of the version, so "3.100" reads as "3.10"; this reads all 9.
     /// </summary>
-    public class LameHeader
+    public partial class LameHeader
     {
         /// <summary>"LAME3.100", "LAME3.99r".</summary>
         public string Encoder { get; private set; }
@@ -132,9 +132,7 @@ namespace CDTag.Model.Tag
             return Settings;
         }
 
-        private static readonly Regex VersionPattern = new Regex(@"^LAME(\d+\.\d+)", RegexOptions.CultureInvariant);
-
-        /// <summary>Reads the LAME tag; null when the file has none (or can't be read).</summary>
+/// <summary>Reads the LAME tag; null when the file has none (or can't be read).</summary>
         public static LameHeader Read(string path)
         {
             try
@@ -187,7 +185,7 @@ namespace CDTag.Model.Tag
             while (end < 9 && IsVersionChar(encoder[end]))
                 end++;
             encoder = encoder.Substring(0, end);
-            Match version = VersionPattern.Match(encoder);
+            Match version = VersionPattern().Match(encoder);
 
             var header = new LameHeader
             {
@@ -284,6 +282,9 @@ namespace CDTag.Model.Tag
             long size = ((header[6] & 0x7F) << 21) | ((header[7] & 0x7F) << 14) | ((header[8] & 0x7F) << 7) | (header[9] & 0x7F);
             return 10 + size + ((header[5] & 0x10) != 0 ? 10 : 0);
         }
+
+        [GeneratedRegex(@"^LAME(\d+\.\d+)", RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex VersionPattern();
     }
 }
 

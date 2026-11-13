@@ -21,6 +21,8 @@ namespace CDTag.Model.Rip
     /// </summary>
     public static class DriveSettingsStore
     {
+        private static readonly JsonSerializerOptions IndentedJson = new JsonSerializerOptions { WriteIndented = true };
+
         private static string FilePath
         {
             get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CD-Tag", "drives.json"); }
@@ -58,7 +60,7 @@ namespace CDTag.Model.Rip
                 Dictionary<string, DriveSettings> all = LoadAll();
                 all[Key(vendor, product)] = settings;
                 Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
-                File.WriteAllText(FilePath, JsonSerializer.Serialize(all, new JsonSerializerOptions { WriteIndented = true }));
+                File.WriteAllText(FilePath, JsonSerializer.Serialize(all, IndentedJson));
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {

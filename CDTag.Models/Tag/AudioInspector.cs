@@ -24,7 +24,7 @@ namespace CDTag.Model.Tag
     /// Encoding Inspector: what is inside an MP3 (MPEG header, Xing/LAME info tag with CRC checks, tags),
     /// a FLAC file (STREAMINFO, encoder, metadata blocks) or a WAV file.
     /// </summary>
-    public static class AudioInspector
+    public static partial class AudioInspector
     {
         public static readonly string[] Extensions = { ".mp3", ".flac", ".wav" };
 
@@ -260,14 +260,14 @@ namespace CDTag.Model.Tag
             if (fileLength >= 128)
             {
                 stream.Position = fileLength - 128;
-                stream.Read(tag, 0, 3);
+                stream.ReadExactly(tag, 0, 3);
                 if (tag[0] == 'T' && tag[1] == 'A' && tag[2] == 'G')
                     size = 128;
             }
             if (fileLength - size >= 32)
             {
                 stream.Position = fileLength - size - 32;
-                stream.Read(tag, 0, 32);
+                stream.ReadExactly(tag, 0, 32);
                 if (Encoding.ASCII.GetString(tag, 0, 8) == "APETAGEX")
                     size += BitConverter.ToInt32(tag, 12) + ((tag[23] & 0x80) != 0 ? 32 : 0);
             }
@@ -281,7 +281,7 @@ namespace CDTag.Model.Tag
             if (fileLength >= 128)
             {
                 stream.Position = fileLength - 128;
-                stream.Read(tag, 0, 3);
+                stream.ReadExactly(tag, 0, 3);
                 id3v1 = tag[0] == 'T' && tag[1] == 'A' && tag[2] == 'G';
             }
             Add(items, "Tags", "ID3v1", id3v1 ? "Yes" : "No");
@@ -289,7 +289,7 @@ namespace CDTag.Model.Tag
             if (apeEnd >= 32)
             {
                 stream.Position = apeEnd - 32;
-                stream.Read(tag, 0, 32);
+                stream.ReadExactly(tag, 0, 32);
                 if (Encoding.ASCII.GetString(tag, 0, 8) == "APETAGEX")
                     Add(items, "Tags", "APE", string.Format(CultureInfo.InvariantCulture, "APEv{0}, {1:#,0} bytes", BitConverter.ToInt32(tag, 8) / 1000, BitConverter.ToInt32(tag, 12)), LogCheckState.Warning);
             }
@@ -310,9 +310,7 @@ namespace CDTag.Model.Tag
 
         // ------------------------------------------------------------------ FLAC
 
-        private static readonly Regex FlacVendor = new Regex(@"libFLAC (?<version>\d+\.\d+(?:\.\d+)?)");
-
-        private static void InspectFlac(string path, long fileLength, List<InspectorItem> items)
+private static void InspectFlac(string path, long fileLength, List<InspectorItem> items)
         {
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (var reader = new BinaryReader(stream))
@@ -386,7 +384,7 @@ namespace CDTag.Model.Tag
                             int vendorLength = BitConverter.ToInt32(block, 0);
                             string vendor = Encoding.UTF8.GetString(block, 4, vendorLength);
                             comments = BitConverter.ToInt32(block, 4 + vendorLength);
-                            Match version = FlacVendor.Match(vendor);
+                            Match version = FlacVendor().Match(vendor);
                             if (version.Success)
                                 Add(items, "FLAC", "Encoder", "FLAC " + version.Groups["version"].Value);
                             else
@@ -510,5 +508,8 @@ namespace CDTag.Model.Tag
         {
             items.Add(new InspectorItem { Section = section, Name = name, Value = value, State = state });
         }
+
+        [GeneratedRegex(@"libFLAC (?<version>\d+\.\d+(?:\.\d+)?)", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex FlacVendor();
     }
 }

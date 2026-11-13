@@ -180,7 +180,7 @@ namespace CDTag.Model.Lookup
                 {
                     if (!response.IsSuccessStatusCode)
                         return null;
-                    return await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                    return await response.Content.ReadAsByteArrayAsync(cancellation).ConfigureAwait(false);
                 }
             }
             finally
@@ -206,7 +206,7 @@ namespace CDTag.Model.Lookup
                             if ((int)response.StatusCode == 503)
                                 throw new InvalidOperationException("MusicBrainz is busy right now (rate limited). Please try again in a minute.");
                             response.EnsureSuccessStatusCode();
-                            return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            return await response.Content.ReadAsStringAsync(cancellation).ConfigureAwait(false);
                         }
                     }
                 }
@@ -234,7 +234,7 @@ namespace CDTag.Model.Lookup
             var sb = new StringBuilder();
             foreach (char c in text.Trim())
             {
-                if ("+-&|!(){}[]^\"~*?:\\/".IndexOf(c) >= 0)
+                if ("+-&|!(){}[]^\"~*?:\\/".Contains(c))
                     sb.Append('\\');
                 sb.Append(c);
             }

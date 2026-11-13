@@ -96,12 +96,11 @@ namespace CDTag.Common
         {
             lock (_locker)
             {
-                if (_instances.ContainsKey(interfaceType))
-                    return _instances[interfaceType];
+                if (_instances.TryGetValue(interfaceType, out object instance))
+                    return instance;
 
-                if (_types.ContainsKey(interfaceType))
+                if (_types.TryGetValue(interfaceType, out ConstructorInfo ctor))
                 {
-                    ConstructorInfo ctor = _types[interfaceType];
                     ParameterInfo[] parameters = ctor.GetParameters();
                     if (parameters == null || parameters.Length == 0)
                         return ctor.Invoke(null);

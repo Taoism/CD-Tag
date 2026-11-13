@@ -40,8 +40,7 @@ namespace CDTag.Views
         /// <param name="viewModel">The view model.</param>
         protected WindowViewBase(IViewModelBase viewModel)
         {
-            if (viewModel == null)
-                throw new ArgumentNullException("viewModel");
+            ArgumentNullException.ThrowIfNull(viewModel);
 
             _viewModel = viewModel;
             DataContext = _viewModel;
@@ -64,8 +63,7 @@ namespace CDTag.Views
 
         private void viewModel_ShowOpenFile(object sender, DataEventArgs<ShowOpenFileDialogEvent> e)
         {
-            if (e == null)
-                throw new ArgumentNullException("e");
+            ArgumentNullException.ThrowIfNull(e);
 
             var ofd = e.Data;
             string fileName;
@@ -76,8 +74,7 @@ namespace CDTag.Views
 
         private void viewModel_ShowDialogWindow(object sender, DataEventArgs<ShowWindowEvent> e)
         {
-            if (e == null)
-                throw new ArgumentNullException("e");
+            ArgumentNullException.ThrowIfNull(e);
 
             bool? result = _dialogService.ShowWindow(e.Data.IWindow, this);
             e.Data.Result = result;
@@ -85,8 +82,7 @@ namespace CDTag.Views
 
         private void viewModel_ShowMessageBox(object sender, DataEventArgs<MessageBoxEvent> e)
         {
-            if (e == null)
-                throw new ArgumentNullException("e");
+            ArgumentNullException.ThrowIfNull(e);
 
             MessageBoxEvent messageBoxEvent = e.Data;
             messageBoxEvent.Owner = this;

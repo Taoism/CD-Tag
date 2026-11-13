@@ -96,8 +96,7 @@ namespace CDTag.Controls
         /// <param name="exception">The exception.</param>
         public void Show(Exception exception)
         {
-            if (exception == null)
-                throw new ArgumentNullException("exception");
+            ArgumentNullException.ThrowIfNull(exception);
 
             if (_currentState != State.Hidden)
                 return;
@@ -115,8 +114,7 @@ namespace CDTag.Controls
         /// <param name="exception">The exception.</param>
         private void Show(string message, Exception exception)
         {
-            if (exception == null)
-                throw new ArgumentNullException("exception");
+            ArgumentNullException.ThrowIfNull(exception);
 
             string details = exception.ToString();
 

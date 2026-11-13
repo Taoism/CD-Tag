@@ -30,11 +30,8 @@ namespace CDTag.Model.Tag
     /// folders "Artist-Album-14CD-2026[-FLAC]" (or "Artist - Album (2026)") and
     /// files "0101 Title", "101 Title" (multi-disc), "01 Title", "01 - Title", "1-01 Title", "01-Artist-Title".
     /// </summary>
-    public static class NameGuesser
+    public static partial class NameGuesser
     {
-        private static readonly Regex YearPart = new Regex(@"^\(?((?:19|20)\d{2})\)?$");
-        private static readonly Regex DiscCountPart = new Regex(@"^(\d{1,2})\s?CDS?$", RegexOptions.IgnoreCase);
-
         // Release/format markers that end scene-style folder names and are not part of the album title.
         private static readonly HashSet<string> Markers = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -52,17 +49,17 @@ namespace CDTag.Model.Tag
             string name = folderName.Trim();
 
             // "Artist - Album (2026) [FLAC]" style: take bracketed year, drop bracketed markers.
-            Match bracketYear = Regex.Match(name, @"[\(\[]((?:19|20)\d{2})[\)\]]");
+            Match bracketYear = BracketedYear().Match(name);
             if (bracketYear.Success)
             {
                 info.Year = bracketYear.Groups[1].Value;
                 name = name.Remove(bracketYear.Index, bracketYear.Length);
             }
-            name = Regex.Replace(name, @"\[[^\]]*\]", " ").Trim();
+            name = SquareBracketed().Replace(name, " ").Trim();
 
             // Prefer " - " as the separator when present (artist/album may contain plain hyphens).
             List<string> parts = name.Contains(" - ")
-                ? name.Split(new[] { " - " }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList()
+                ? name.Split(" - ", StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList()
                 : name.Split('-').Select(p => p.Trim()).ToList();
             parts = parts.Where(p => p.Length > 0).ToList();
 
@@ -70,9 +67,9 @@ namespace CDTag.Model.Tag
             for (int i = parts.Count - 1; i >= 1; i--)
             {
                 string part = parts[i];
-                Match year = YearPart.Match(part);
-                Match discs = DiscCountPart.Match(part);
-                bool groupTagAtEnd = i == parts.Count - 1 && i >= 3 && Regex.IsMatch(part, @"^[A-Z0-9]{2,8}$");
+                Match year = YearPart().Match(part);
+                Match discs = DiscCountPart().Match(part);
+                bool groupTagAtEnd = i == parts.Count - 1 && i >= 3 && GroupTag().IsMatch(part);
                 if (year.Success && info.Year == null)
                     info.Year = year.Groups[1].Value;
                 else if (discs.Success && info.Discs == 0)
@@ -102,7 +99,7 @@ namespace CDTag.Model.Tag
                 return info;
 
             // "1-01 Title" / "1.01 Title": disc separated from track
-            Match match = Regex.Match(name, @"^(\d{1,2})[-.](\d{2,3})(?:\s*[-_.]\s*|\s+)(.*)$");
+            Match match = DiscTrackTitle().Match(name);
             if (match.Success)
             {
                 info.Disc = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
@@ -111,21 +108,21 @@ namespace CDTag.Model.Tag
             }
             else
             {
-                match = Regex.Match(name, @"^(\d{1,4})(?:\s*[-_.]\s*|\s+|$)(.*)$");
+                match = TrackTitle().Match(name);
                 if (match.Success)
                 {
                     string digits = match.Groups[1].Value;
                     if (digits.Length == 4)
                     {
                         // "0101" = disc 01, track 01
-                        info.Disc = int.Parse(digits.Substring(0, 2), CultureInfo.InvariantCulture);
-                        info.Track = int.Parse(digits.Substring(2), CultureInfo.InvariantCulture);
+                        info.Disc = int.Parse(digits.AsSpan(0, 2), CultureInfo.InvariantCulture);
+                        info.Track = int.Parse(digits.AsSpan(2), CultureInfo.InvariantCulture);
                     }
                     else if (digits.Length == 3 && discCount > 1)
                     {
                         // "101" on a multi-disc set = disc 1, track 01
-                        info.Disc = int.Parse(digits.Substring(0, 1), CultureInfo.InvariantCulture);
-                        info.Track = int.Parse(digits.Substring(1), CultureInfo.InvariantCulture);
+                        info.Disc = int.Parse(digits.AsSpan(0, 1), CultureInfo.InvariantCulture);
+                        info.Track = int.Parse(digits.AsSpan(1), CultureInfo.InvariantCulture);
                     }
                     else
                     {
@@ -138,8 +135,8 @@ namespace CDTag.Model.Tag
             name = name.Trim(' ', '-', '_', '.');
 
             // "Artist - Title" / "artist-title": split off a leading artist
-            string[] split = name.Contains(" - ") ? name.Split(new[] { " - " }, 2, StringSplitOptions.None) : null;
-            if (split == null && !name.Contains(" ") && name.Count(c => c == '-') == 1)
+            string[] split = name.Contains(" - ") ? name.Split(" - ", 2, StringSplitOptions.None) : null;
+            if (split == null && !name.Contains(' ') && name.Count(c => c == '-') == 1)
                 split = name.Split('-');
             if (split != null && split.Length == 2 && split[0].Trim().Length > 0 && split[1].Trim().Length > 0)
             {
@@ -160,14 +157,41 @@ namespace CDTag.Model.Tag
         {
             if (string.IsNullOrWhiteSpace(text))
                 return null;
-            string result = text.Contains(" ") ? text : text.Replace('_', ' ');
-            result = Regex.Replace(result, @"\s+", " ").Trim();
+            string result = text.Contains(' ') ? text : text.Replace('_', ' ');
+            result = Whitespace().Replace(result, " ").Trim();
             return result.Length == 0 ? null : result;
         }
 
         private static string Normalize(string text)
         {
-            return Regex.Replace(text ?? "", @"[\s_\-.]", "");
+            return SpaceOrSeparator().Replace(text ?? "", "");
         }
+
+        [GeneratedRegex(@"^\(?((?:19|20)\d{2})\)?$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex YearPart();
+
+        [GeneratedRegex(@"[\(\[]((?:19|20)\d{2})[\)\]]", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex BracketedYear();
+
+        [GeneratedRegex(@"^(\d{1,2})\s?CDS?$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex DiscCountPart();
+
+        [GeneratedRegex(@"^(\d{1,2})[-.](\d{2,3})(?:\s*[-_.]\s*|\s+)(.*)$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex DiscTrackTitle();
+
+        [GeneratedRegex(@"^[A-Z0-9]{2,8}$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex GroupTag();
+
+        [GeneratedRegex(@"[\s_\-.]", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex SpaceOrSeparator();
+
+        [GeneratedRegex(@"\[[^\]]*\]", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex SquareBracketed();
+
+        [GeneratedRegex(@"^(\d{1,4})(?:\s*[-_.]\s*|\s+|$)(.*)$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex TrackTitle();
+
+        [GeneratedRegex(@"\s+", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex Whitespace();
     }
 }

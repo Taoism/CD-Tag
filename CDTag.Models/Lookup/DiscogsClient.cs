@@ -16,7 +16,7 @@ namespace CDTag.Model.Lookup
     /// needing a personal access token; in November 2026 it also answered without one (25 requests a minute instead of 60),
     /// so the token is used when there is one and a refusal without one points the user to discogs.com.
     /// </summary>
-    public class DiscogsClient
+    public partial class DiscogsClient
     {
         private const string BaseUrl = "https://api.discogs.com/";
         /// <summary>Where a Discogs user makes a personal access token.</summary>
@@ -27,10 +27,6 @@ namespace CDTag.Model.Lookup
         private static readonly HttpClient Http = CreateClient();
         private static readonly SemaphoreSlim Gate = new SemaphoreSlim(1, 1);
         private static DateTime _lastRequest = DateTime.MinValue;
-
-        private static readonly Regex ReleaseLink = new Regex(@"discogs\.com/(?:[^/\s]+/)*release/(\d+)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        private static readonly Regex ReleaseCode = new Regex(@"^\s*\[?r(\d+)\]?\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        private static readonly Regex ArtistNumber = new Regex(@"\s+\(\d+\)$", RegexOptions.CultureInvariant);
 
         private readonly string _token;
 
@@ -58,9 +54,9 @@ namespace CDTag.Model.Lookup
         {
             if (string.IsNullOrWhiteSpace(text))
                 return null;
-            Match match = ReleaseLink.Match(text);
+            Match match = ReleaseLink().Match(text);
             if (!match.Success)
-                match = ReleaseCode.Match(text);
+                match = ReleaseCode().Match(text);
             return match.Success ? match.Groups[1].Value : null;
         }
 
@@ -116,7 +112,7 @@ namespace CDTag.Model.Lookup
                                 if (status == 404)
                                     throw new InvalidOperationException("Discogs has no such release.");
                                 response.EnsureSuccessStatusCode();
-                                return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                                return await response.Content.ReadAsStringAsync(cancellation).ConfigureAwait(false);
                             }
                         }
                     }
@@ -170,7 +166,7 @@ namespace CDTag.Model.Lookup
                         Source = "Discogs",
                         Disambiguation = string.Join(", ", formats.Skip(1))
                     };
-                    bool cd = format != null && format.IndexOf("CD", StringComparison.OrdinalIgnoreCase) >= 0;
+                    bool cd = format != null && format.Contains("CD", StringComparison.OrdinalIgnoreCase);
                     int rank = (cd ? 2 : 0) + (discs > 0 && Math.Max(quantity, 1) == discs ? 1 : 0);
                     results.Add(Tuple.Create(result, rank, results.Count));
                 }
@@ -269,7 +265,7 @@ namespace CDTag.Model.Lookup
                 if (type == "index" && item.TryGetProperty("sub_tracks", out subTracks) && subTracks.ValueKind == JsonValueKind.Array)
                 {
                     var subs = subTracks.EnumerateArray().ToList();
-                    bool separate = subs.Count > 1 && subs.All(s => Regex.IsMatch(Str(s, "position") ?? "", @"^\s*(?:(?:CD|DVD|Dis[ck])?\s*\d+\s*[-.]\s*)?\d+\s*$", RegexOptions.IgnoreCase));
+                    bool separate = subs.Count > 1 && subs.All(s => NumberedPosition().IsMatch(Str(s, "position") ?? ""));
                     if (separate)
                         parts.AddRange(subs);
                 }
@@ -292,7 +288,7 @@ namespace CDTag.Model.Lookup
                         disc = partDisc;
                         explicitDiscs = true;
                     }
-                    else if (partTrack == 1 && last > 0 && !explicitDiscs && !Regex.IsMatch(position, "[b-z]$", RegexOptions.IgnoreCase))
+                    else if (partTrack == 1 && last > 0 && !explicitDiscs && !SubTrackLetterAtEnd().IsMatch(position))
                     {
                         disc++;
                         last = 0;
@@ -361,14 +357,14 @@ namespace CDTag.Model.Lookup
             disc = 0;
             track = 0;
             string p = (position ?? "").Trim();
-            Match match = Regex.Match(p, @"^(?:(?:CD|DVD|Dis[ck])\s*)?(\d+)\s*[-.:]\s*(\d+)[a-z]?$", RegexOptions.IgnoreCase);
+            Match match = DiscAndTrackPosition().Match(p);
             if (match.Success)
             {
                 disc = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
                 track = int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
                 return;
             }
-            match = Regex.Match(p, @"^(\d+)[a-z]?$", RegexOptions.IgnoreCase);
+            match = TrackPosition().Match(p);
             if (match.Success)
                 track = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
         }
@@ -450,7 +446,7 @@ namespace CDTag.Model.Lookup
 
         private static string CleanArtist(string name)
         {
-            return name == null ? null : ArtistNumber.Replace(name.Trim(), "").TrimEnd('*');
+            return name == null ? null : ArtistNumber().Replace(name.Trim(), "").TrimEnd('*');
         }
 
         private static string Str(JsonElement element, string property)
@@ -477,5 +473,26 @@ namespace CDTag.Model.Lookup
                 return new List<string>();
             return value.EnumerateArray().Where(v => v.ValueKind == JsonValueKind.String).Select(v => v.GetString().Trim()).Where(v => v.Length > 0).ToList();
         }
+
+        [GeneratedRegex(@"discogs\.com/(?:[^/\s]+/)*release/(\d+)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex ReleaseLink();
+
+        [GeneratedRegex(@"\s+\(\d+\)$", RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex ArtistNumber();
+
+        [GeneratedRegex(@"^(?:(?:CD|DVD|Dis[ck])\s*)?(\d+)\s*[-.:]\s*(\d+)[a-z]?$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex DiscAndTrackPosition();
+
+        [GeneratedRegex(@"^\s*(?:(?:CD|DVD|Dis[ck])?\s*\d+\s*[-.]\s*)?\d+\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex NumberedPosition();
+
+        [GeneratedRegex(@"^\s*\[?r(\d+)\]?\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex ReleaseCode();
+
+        [GeneratedRegex("[b-z]$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex SubTrackLetterAtEnd();
+
+        [GeneratedRegex(@"^(\d+)[a-z]?$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex TrackPosition();
     }
 }

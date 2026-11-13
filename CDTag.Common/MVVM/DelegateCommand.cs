@@ -80,10 +80,7 @@ namespace CDTag.Common.Mvvm
         /// </summary>
         public DelegateCommand(Action<T> executeMethod, Func<bool> canExecuteMethod, bool isAutomaticRequeryDisabled)
         {
-            if (executeMethod == null)
-            {
-                throw new ArgumentNullException("executeMethod");
-            }
+            ArgumentNullException.ThrowIfNull(executeMethod);
 
             _executeMethod = executeMethod;
             _canExecuteMethod = canExecuteMethod;

@@ -77,7 +77,7 @@ namespace CDTag.FileBrowser.View
         private void NavigateTo(string directory)
         {
             if (string.IsNullOrEmpty(directory))
-                throw new ArgumentNullException("directory");
+                throw new ArgumentNullException(nameof(directory));
 
             FileView fileView = new FileView(directory);
             string currentDirectory = _oldDirectory;
@@ -144,7 +144,7 @@ namespace CDTag.FileBrowser.View
         private TreeViewItem FindNode(TreeViewItem parentNode, ItemCollection nodes, string directory, int attemptNumber = 1)
         {
             if (attemptNumber < 1)
-                throw new ArgumentOutOfRangeException("attemptNumber", attemptNumber, "attemptNumber must be >= 1");
+                throw new ArgumentOutOfRangeException(nameof(attemptNumber), attemptNumber, "attemptNumber must be >= 1");
 
             if (attemptNumber > 2)
             {

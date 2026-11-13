@@ -175,7 +175,7 @@ namespace CDTag.FileBrowser.ViewModel
         private void GoForward(int count = 1)
         {
             if (count <= 0)
-                throw new ArgumentOutOfRangeException("count", count, string.Format("Parameter 'count' must be >= 1."));
+                throw new ArgumentOutOfRangeException(nameof(count), count, string.Format("Parameter 'count' must be >= 1."));
 
             if (_forwardHistory.Count == 0)
                 return;
@@ -201,7 +201,7 @@ namespace CDTag.FileBrowser.ViewModel
         private void GoBack(int count = 1)
         {
             if (count <= 0)
-                throw new ArgumentOutOfRangeException("count", count, string.Format("Parameter 'count' must be >= 1."));
+                throw new ArgumentOutOfRangeException(nameof(count), count, string.Format("Parameter 'count' must be >= 1."));
 
             if (_backHistory.Count == 0)
                 return;
@@ -338,7 +338,7 @@ namespace CDTag.FileBrowser.ViewModel
             }
 
             // Remove trailing slash
-            if (directory.EndsWith(@"\") && directory.Length > 3)
+            if (directory.EndsWith('\\') && directory.Length > 3)
             {
                 directory = directory.Substring(0, directory.Length - 1);
             }
@@ -469,7 +469,7 @@ namespace CDTag.FileBrowser.ViewModel
                 ((DelegateCommand)GoForwardCommand).RaiseCanExecuteChanged();
                 ((DelegateCommand)GoUpCommand).RaiseCanExecuteChanged();
 
-                RaisePropertyChanged("CurrentDirectory", oldValue: oldDirectory, newValue: CurrentDirectory);
+                RaisePropertyChanged(nameof(CurrentDirectory), oldValue: oldDirectory, newValue: CurrentDirectory);
             }
             finally
             {
@@ -537,7 +537,7 @@ namespace CDTag.FileBrowser.ViewModel
                 directory = char.ToUpper(directory[0]) + directory.Substring(1);
                 string origDirectory = directory;
                 string searchPattern = "*";
-                if (!Directory.Exists(directory) || !directory.EndsWith(@"\"))
+                if (!Directory.Exists(directory) || !directory.EndsWith('\\'))
                 {
                     searchPattern = Path.GetFileName(directory) + "*";
                     directory = Path.GetDirectoryName(directory);

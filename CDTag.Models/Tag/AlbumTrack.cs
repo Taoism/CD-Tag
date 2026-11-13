@@ -22,7 +22,7 @@ namespace CDTag.Model.Tag
         public AlbumTrack(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
-                throw new ArgumentNullException("path");
+                throw new ArgumentNullException(nameof(path));
 
             _path = path;
 
@@ -88,7 +88,7 @@ namespace CDTag.Model.Tag
             {
                 if (TrackNumber.Contains('/'))
                 {
-                    TrackNumber = TrackNumber.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)[0];
+                    TrackNumber = TrackNumber.Split('/', StringSplitOptions.RemoveEmptyEntries)[0];
                     // TODO: Set total tracks?
                 }
             }
@@ -98,7 +98,7 @@ namespace CDTag.Model.Tag
             {
                 if (DiscNumber.Contains('/'))
                 {
-                    DiscNumber = DiscNumber.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)[0];
+                    DiscNumber = DiscNumber.Split('/', StringSplitOptions.RemoveEmptyEntries)[0];
                     // TODO: Set total discs?
                 }
             }
@@ -234,27 +234,27 @@ namespace CDTag.Model.Tag
         /// <summary>The name the profile gives this file (preview; set by Tag Album).</summary>
         public string NewFileName
         {
-            get { return Get<string>("NewFileName"); }
-            set { Set("NewFileName", value); }
+            get { return Get<string>(nameof(NewFileName)); }
+            set { Set(nameof(NewFileName), value); }
         }
 
         /// <summary>Embedded cover of a FLAC file (MP3 covers are in <see cref="Picture"/>).</summary>
         public Picture CoverPicture
         {
-            get { return Get<Picture>("CoverPicture"); }
-            private set { Set("CoverPicture", value); }
+            get { return Get<Picture>(nameof(CoverPicture)); }
+            private set { Set(nameof(CoverPicture), value); }
         }
 
         public IAttachedPicture Picture
         {
-            get { return Get<IAttachedPicture>("Picture"); }
-            set { Set("Picture", value); }
+            get { return Get<IAttachedPicture>(nameof(Picture)); }
+            set { Set(nameof(Picture), value); }
         }
 
         public decimal Bitrate
         {
-            get { return Get<decimal>("Bitrate"); }
-            private set { Set("Bitrate", value); }
+            get { return Get<decimal>(nameof(Bitrate)); }
+            private set { Set(nameof(Bitrate), value); }
         }
 
         /// <summary>True when <see cref="TotalSeconds"/> is the exact CD length from the rip log.</summary>
@@ -269,8 +269,8 @@ namespace CDTag.Model.Tag
 
         public decimal TotalSeconds
         {
-            get { return Get<decimal>("TotalSeconds"); }
-            private set { Set("TotalSeconds", value); }
+            get { return Get<decimal>(nameof(TotalSeconds)); }
+            private set { Set(nameof(TotalSeconds), value); }
         }
 
         public string OriginalFileName
@@ -280,44 +280,44 @@ namespace CDTag.Model.Tag
 
         public string DiscNumber
         {
-            get { return Get<string>("DiscNumber"); }
-            set { Set("DiscNumber", value); }
+            get { return Get<string>(nameof(DiscNumber)); }
+            set { Set(nameof(DiscNumber), value); }
         }
 
         public string TrackNumber
         {
-            get { return Get<string>("TrackNumber"); }
-            set { Set("TrackNumber", value); }
+            get { return Get<string>(nameof(TrackNumber)); }
+            set { Set(nameof(TrackNumber), value); }
         }
 
         public string Artist
         {
-            get { return Get<string>("Artist"); }
-            set { Set("Artist", value); }
+            get { return Get<string>(nameof(Artist)); }
+            set { Set(nameof(Artist), value); }
         }
 
         public string Title
         {
-            get { return Get<string>("Title"); }
-            set { Set("Title", value); }
+            get { return Get<string>(nameof(Title)); }
+            set { Set(nameof(Title), value); }
         }
 
         public string ReleaseDate
         {
-            get { return Get<string>("ReleaseDate"); }
-            set { Set("ReleaseDate", value); }
+            get { return Get<string>(nameof(ReleaseDate)); }
+            set { Set(nameof(ReleaseDate), value); }
         }
 
         public string Album
         {
-            get { return Get<string>("Album"); }
-            set { Set("Album", value); }
+            get { return Get<string>(nameof(Album)); }
+            set { Set(nameof(Album), value); }
         }
 
         public string Genre
         {
-            get { return Get<string>("Genre"); }
-            set { Set("Genre", value); }
+            get { return Get<string>(nameof(Genre)); }
+            set { Set(nameof(Genre), value); }
         }
     }
 }

@@ -102,8 +102,8 @@ namespace CDTag.Common.Mvvm
         /// <value>The error container.</value>
         public IErrorContainer ErrorContainer
         {
-            get { return Get<IErrorContainer>("ErrorContainer"); }
-            set { Set("ErrorContainer", value); }
+            get { return Get<IErrorContainer>(nameof(ErrorContainer)); }
+            set { Set(nameof(ErrorContainer), value); }
         }
 
         /// <summary>Shows the exception.</summary>
@@ -205,10 +205,10 @@ namespace CDTag.Common.Mvvm
         /// <value>The current visual state.</value>
         public string CurrentVisualState
         {
-            get { return Get<string>("CurrentVisualState"); }
+            get { return Get<string>(nameof(CurrentVisualState)); }
             set
             {
-                BeginInvoke(() => Set("CurrentVisualState", value));
+                BeginInvoke(() => Set(nameof(CurrentVisualState), value));
             }
         }
 
@@ -231,8 +231,7 @@ namespace CDTag.Common.Mvvm
         /// <returns>The message box result.</returns>
         protected MessageBoxResult MessageBox(MessageBoxEvent messageBoxEvent)
         {
-            if (messageBoxEvent == null)
-                throw new ArgumentException("messageBoxEvent");
+            ArgumentNullException.ThrowIfNull(messageBoxEvent);
 
             var handler = ShowMessageBox;
             if (handler != null)

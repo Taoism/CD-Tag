@@ -16,7 +16,7 @@ namespace CDTag.ViewModel.Tests.Checksum
         [SetUp]
         public void CreateRoot()
         {
-            _root = Path.Combine(Path.GetTempPath(), "cdtag-checksum-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+            _root = Path.Combine(Path.GetTempPath(), string.Concat("cdtag-checksum-", Guid.NewGuid().ToString("N").AsSpan(0, 8)));
             Directory.CreateDirectory(_root);
         }
 

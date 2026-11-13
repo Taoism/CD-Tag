@@ -11,8 +11,6 @@ namespace CDTag.Common.Hash
 	/// </summary>
 	public static class SHA1
 	{
-		private static readonly SHA1CryptoServiceProvider _SHA1 = new SHA1CryptoServiceProvider();
-
 		/// <summary>
 		/// Returns the SHA1 digest of an input stream as a string.
 		/// </summary>
@@ -20,8 +18,7 @@ namespace CDTag.Common.Hash
 		/// <returns>SHA1 digest as a string.</returns>
 		public static string Calculate(Stream stream)
 		{
-			if (stream == null)
-				throw new ArgumentNullException("stream");
+			ArgumentNullException.ThrowIfNull(stream);
 
 			return DigestToString(CalculateDigest(stream));
 		}
@@ -31,8 +28,7 @@ namespace CDTag.Common.Hash
         /// <returns>SHA1 digest as a string.</returns>
         public static string CalculateFromFile(FileInfo file)
         {
-            if (file == null)
-                throw new ArgumentNullException("file");
+			ArgumentNullException.ThrowIfNull(file);
 
             using (FileStream fileStream = file.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
             {
@@ -47,8 +43,7 @@ namespace CDTag.Common.Hash
 		/// <returns>SHA1 digest as a string.</returns>
 		public static string Calculate(byte[] data)
 		{
-			if (data == null)
-				throw new ArgumentNullException("data");
+			ArgumentNullException.ThrowIfNull(data);
 
 			return DigestToString(CalculateDigest(data));
 		}
@@ -60,11 +55,10 @@ namespace CDTag.Common.Hash
 		/// <returns>SHA1 digest as a byte array.</returns>
 		public static byte[] CalculateDigest(Stream stream)
 		{
-			if (stream == null)
-				throw new ArgumentNullException("stream");
+			ArgumentNullException.ThrowIfNull(stream);
 
 			stream.Position = 0;
-			return _SHA1.ComputeHash(stream);
+			return System.Security.Cryptography.SHA1.HashData(stream); // static and thread-safe, unlike a shared SHA1 instance
 		}
 
 		/// <summary>
@@ -74,8 +68,7 @@ namespace CDTag.Common.Hash
 		/// <returns>SHA1 digest as a byte array.</returns>
 		public static byte[] CalculateDigest(byte[] data)
 		{
-			if (data == null)
-				throw new ArgumentNullException("data");
+			ArgumentNullException.ThrowIfNull(data);
 
 			using (MemoryStream memoryStream = new MemoryStream(data))
 			{

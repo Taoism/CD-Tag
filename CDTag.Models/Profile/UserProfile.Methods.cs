@@ -62,9 +62,8 @@ namespace CDTag.Model.Profile
         public string GetFileName(string format, AlbumTrack track, string extension = null)
         {
             if (string.IsNullOrWhiteSpace(format))
-                throw new ArgumentNullException("format");
-            if (track == null)
-                throw new ArgumentNullException("track");
+                throw new ArgumentNullException(nameof(format));
+            ArgumentNullException.ThrowIfNull(track);
 
             format = format.Replace("<Year>", track.ReleaseDate);
             format = format.Replace("<Artist>", track.Artist);
@@ -73,7 +72,7 @@ namespace CDTag.Model.Profile
             format = format.Replace("<Song>", track.Title);
 
             int trackNumber;
-            int.TryParse(track.TrackNumber, out trackNumber);
+            _ = int.TryParse(track.TrackNumber, out trackNumber); // 0 (shown as 00) when it isn't a number
             format = format.Replace("<Track>", string.Format("{0:00}", trackNumber));
 
             format = ApplyFormattingRules(format);
@@ -89,9 +88,8 @@ namespace CDTag.Model.Profile
         public string GetDirectoryName(string format, Album album)
         {
             if (string.IsNullOrWhiteSpace(format))
-                throw new ArgumentNullException("format");
-            if (album == null)
-                throw new ArgumentNullException("album");
+                throw new ArgumentNullException(nameof(format));
+            ArgumentNullException.ThrowIfNull(album);
 
             format = format.Replace("<Year>", album.ReleaseDate);
             format = format.Replace("<Artist>", album.Artist);
@@ -105,7 +103,7 @@ namespace CDTag.Model.Profile
         private string ApplyFormattingRules(string format)
         {
             if (string.IsNullOrWhiteSpace(format))
-                throw new ArgumentNullException("format");
+                throw new ArgumentNullException(nameof(format));
 
             if (FileNaming.UseUnderscores)
             {
@@ -137,7 +135,7 @@ namespace CDTag.Model.Profile
             }
 
             // TODO: Look for word separators at end
-            format = format.TrimEnd(new[] { ' ', '_' });
+            format = format.TrimEnd(' ', '_');
 
             return format;
         }

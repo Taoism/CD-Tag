@@ -52,8 +52,7 @@ namespace CDTag.Common.Wpf
         /// </summary>
         public static void SetDarkTitleBar(Window window, bool dark)
         {
-            if (window == null)
-                throw new ArgumentNullException("window");
+            ArgumentNullException.ThrowIfNull(window);
 
             IntPtr hwnd = new WindowInteropHelper(window).Handle;
             if (hwnd == IntPtr.Zero)
@@ -63,7 +62,7 @@ namespace CDTag.Common.Wpf
             try
             {
                 if (DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref value, sizeof(int)) != 0)
-                    DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1, ref value, sizeof(int));
+                    _ = DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1, ref value, sizeof(int));
             }
             catch (DllNotFoundException)
             {
@@ -80,8 +79,7 @@ namespace CDTag.Common.Wpf
         /// </summary>
         public static bool TrySetMicaBackdrop(Window window)
         {
-            if (window == null)
-                throw new ArgumentNullException("window");
+            ArgumentNullException.ThrowIfNull(window);
 
             IntPtr hwnd = new WindowInteropHelper(window).Handle;
             if (hwnd == IntPtr.Zero)
@@ -104,8 +102,7 @@ namespace CDTag.Common.Wpf
 
         public static bool ExtendGlassFrame(Window window, Thickness margin)
         {
-            if (window == null)
-                throw new ArgumentNullException("window");
+            ArgumentNullException.ThrowIfNull(window);
 
             Brush oldBackground = window.Background;
             try

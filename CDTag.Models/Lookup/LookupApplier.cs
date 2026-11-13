@@ -8,7 +8,7 @@ using CDTag.Model.Tag;
 namespace CDTag.Model.Lookup
 {
     /// <summary>Copies a looked-up release into Tag Album's album, tracks and release information.</summary>
-    public static class LookupApplier
+    public static partial class LookupApplier
     {
         /// <summary>
         /// Applies <paramref name="details"/>. Tracks are matched by disc and track number; if that fails for any
@@ -18,10 +18,8 @@ namespace CDTag.Model.Lookup
         /// </summary>
         public static int Apply(ReleaseDetails details, Album album, ReleaseInfo release, ReleaseListItem[] sources)
         {
-            if (details == null)
-                throw new ArgumentNullException("details");
-            if (album == null)
-                throw new ArgumentNullException("album");
+            ArgumentNullException.ThrowIfNull(details);
+            ArgumentNullException.ThrowIfNull(album);
 
             album.IsVariousArtists = details.IsVariousArtists;
             album.Artist = details.IsVariousArtists && string.Equals(details.Artist, "Various Artists", StringComparison.OrdinalIgnoreCase)
@@ -136,9 +134,12 @@ namespace CDTag.Model.Lookup
         {
             if (string.IsNullOrWhiteSpace(text))
                 return fallback;
-            var match = System.Text.RegularExpressions.Regex.Match(text, @"\d+");
+            var match = Digits().Match(text);
             int number;
             return match.Success && int.TryParse(match.Value, out number) ? number : fallback;
         }
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"\d+", System.Text.RegularExpressions.RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial System.Text.RegularExpressions.Regex Digits();
     }
 }

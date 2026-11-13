@@ -42,40 +42,40 @@ namespace CDTag.Model.Tag
             return items != null && items.Length > 0 ? items[0] : null;
         }
 
-        public string Label { get { return Get<string>("Label"); } set { Set("Label", value); } }
+        public string Label { get { return Get<string>(nameof(Label)); } set { Set(nameof(Label), value); } }
 
         /// <summary>yyyy-MM-dd.</summary>
-        public string RipDate { get { return Get<string>("RipDate"); } set { Set("RipDate", value); } }
+        public string RipDate { get { return Get<string>(nameof(RipDate)); } set { Set(nameof(RipDate), value); } }
 
         /// <summary>Street/retail date, yyyy-MM-dd; unknown parts may be 00 (e.g. 2014-00-00).</summary>
-        public string RetailDate { get { return Get<string>("RetailDate"); } set { Set("RetailDate", value); } }
+        public string RetailDate { get { return Get<string>(nameof(RetailDate)); } set { Set(nameof(RetailDate), value); } }
 
-        public string Comment { get { return Get<string>("Comment"); } set { Set("Comment", value); } }
-        public string Url { get { return Get<string>("Url"); } set { Set("Url", value); } }
-        public bool IsOst { get { return Get<bool>("IsOst"); } set { Set("IsOst", value); } }
-        public bool IsInternal { get { return Get<bool>("IsInternal"); } set { Set("IsInternal", value); } }
-        public string CatalogNumber { get { return Get<string>("CatalogNumber"); } set { Set("CatalogNumber", value); } }
-        public string LiveDate { get { return Get<string>("LiveDate"); } set { Set("LiveDate", value); } }
+        public string Comment { get { return Get<string>(nameof(Comment)); } set { Set(nameof(Comment), value); } }
+        public string Url { get { return Get<string>(nameof(Url)); } set { Set(nameof(Url), value); } }
+        public bool IsOst { get { return Get<bool>(nameof(IsOst)); } set { Set(nameof(IsOst), value); } }
+        public bool IsInternal { get { return Get<bool>(nameof(IsInternal)); } set { Set(nameof(IsInternal), value); } }
+        public string CatalogNumber { get { return Get<string>(nameof(CatalogNumber)); } set { Set(nameof(CatalogNumber), value); } }
+        public string LiveDate { get { return Get<string>(nameof(LiveDate)); } set { Set(nameof(LiveDate), value); } }
 
-        public ReleaseListItem ReleaseType { get { return Get<ReleaseListItem>("ReleaseType"); } set { Set("ReleaseType", value); } }
-        public ReleaseListItem Source { get { return Get<ReleaseListItem>("Source"); } set { Set("Source", value); } }
+        public ReleaseListItem ReleaseType { get { return Get<ReleaseListItem>(nameof(ReleaseType)); } set { Set(nameof(ReleaseType), value); } }
+        public ReleaseListItem Source { get { return Get<ReleaseListItem>(nameof(Source)); } set { Set(nameof(Source), value); } }
         /// <summary>WEB FLAC bit depth / sample rate tag ("16BIT", "24BIT-96KHZ"); null = from the files (bit depth only).</summary>
-        public string Quality { get { return Get<string>("Quality"); } set { Set("Quality", value); } }
+        public string Quality { get { return Get<string>(nameof(Quality)); } set { Set(nameof(Quality), value); } }
         /// <summary>Fix tag for the release name: "" (none), "RERIP", "REPACK", "DIRFIX" or "NFOFIX".</summary>
-        public string Fix { get { return Get<string>("Fix"); } set { Set("Fix", value); } }
-        public ReleaseListItem Language { get { return Get<ReleaseListItem>("Language"); } set { Set("Language", value); } }
-        public ReleaseListItem LimitedEdition { get { return Get<ReleaseListItem>("LimitedEdition"); } set { Set("LimitedEdition", value); } }
-        public ReleaseListItem WhiteLabel { get { return Get<ReleaseListItem>("WhiteLabel"); } set { Set("WhiteLabel", value); } }
-        public ReleaseListItem CleanExplicit { get { return Get<ReleaseListItem>("CleanExplicit"); } set { Set("CleanExplicit", value); } }
+        public string Fix { get { return Get<string>(nameof(Fix)); } set { Set(nameof(Fix), value); } }
+        public ReleaseListItem Language { get { return Get<ReleaseListItem>(nameof(Language)); } set { Set(nameof(Language), value); } }
+        public ReleaseListItem LimitedEdition { get { return Get<ReleaseListItem>(nameof(LimitedEdition)); } set { Set(nameof(LimitedEdition), value); } }
+        public ReleaseListItem WhiteLabel { get { return Get<ReleaseListItem>(nameof(WhiteLabel)); } set { Set(nameof(WhiteLabel), value); } }
+        public ReleaseListItem CleanExplicit { get { return Get<ReleaseListItem>(nameof(CleanExplicit)); } set { Set(nameof(CleanExplicit), value); } }
 
         /// <summary>Release notes (#Rnotes in the NFO).</summary>
-        public string Notes { get { return Get<string>("Notes"); } set { Set("Notes", value); } }
-        public string LongComment { get { return Get<string>("LongComment"); } set { Set("LongComment", value); } }
+        public string Notes { get { return Get<string>(nameof(Notes)); } set { Set(nameof(Notes), value); } }
+        public string LongComment { get { return Get<string>(nameof(LongComment)); } set { Set(nameof(LongComment), value); } }
 
-        public string Ripper { get { return Get<string>("Ripper"); } set { Set("Ripper", value); } }
-        public string Supplier { get { return Get<string>("Supplier"); } set { Set("Supplier", value); } }
-        public string Encoder { get { return Get<string>("Encoder"); } set { Set("Encoder", value); } }
-        public string RippingTool { get { return Get<string>("RippingTool"); } set { Set("RippingTool", value); } }
+        public string Ripper { get { return Get<string>(nameof(Ripper)); } set { Set(nameof(Ripper), value); } }
+        public string Supplier { get { return Get<string>(nameof(Supplier)); } set { Set(nameof(Supplier), value); } }
+        public string Encoder { get { return Get<string>(nameof(Encoder)); } set { Set(nameof(Encoder), value); } }
+        public string RippingTool { get { return Get<string>(nameof(RippingTool)); } set { Set(nameof(RippingTool), value); } }
 
         /// <summary>The four-digit year of <see cref="RetailDate"/>, or null.</summary>
         public string RetailYear

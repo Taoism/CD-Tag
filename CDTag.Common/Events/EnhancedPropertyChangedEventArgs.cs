@@ -48,8 +48,7 @@ namespace CDTag.Common.Events
         /// </returns>
         public bool IsProperty(Expression<PropertyDelegate> propertyExpression)
         {
-            if (propertyExpression == null)
-                throw new ArgumentNullException("propertyExpression");
+            ArgumentNullException.ThrowIfNull(propertyExpression);
 
             MemberExpression memberExpression = propertyExpression.Body as MemberExpression;
             if (memberExpression != null)

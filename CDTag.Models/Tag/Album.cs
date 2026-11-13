@@ -11,7 +11,7 @@ using IdSharp.Tagging.ID3v2;
 
 namespace CDTag.Model.Tag
 {
-    public class Album : ModelBase<Album>
+    public partial class Album : ModelBase<Album>
     {
         private readonly string _path;
         private readonly ObservableCollection<AlbumTrack> _tracks;
@@ -48,8 +48,7 @@ namespace CDTag.Model.Tag
                     if (disc == 0)
                     {
                         // CD1 / Disc 2 subfolders
-                        System.Text.RegularExpressions.Match number = System.Text.RegularExpressions.Regex.Match(
-                            Path.GetFileName(Path.GetDirectoryName(track.OriginalFileName)) ?? "", @"(\d+)");
+                        System.Text.RegularExpressions.Match number = DigitRun().Match(Path.GetFileName(Path.GetDirectoryName(track.OriginalFileName)) ?? "");
                         if (IsDiscFolderName(Path.GetFileName(Path.GetDirectoryName(track.OriginalFileName))) && number.Success)
                             disc = int.Parse(number.Value);
                     }
@@ -76,7 +75,7 @@ namespace CDTag.Model.Tag
                 {
                     foreach (var group in discFolders)
                     {
-                        System.Text.RegularExpressions.Match number = System.Text.RegularExpressions.Regex.Match(Path.GetFileName(group.Key), @"(\d+)");
+                        System.Text.RegularExpressions.Match number = DigitRun().Match(Path.GetFileName(group.Key));
                         if (!number.Success)
                             continue;
                         foreach (AlbumTrack track in group)
@@ -92,7 +91,7 @@ namespace CDTag.Model.Tag
 
         private static int SortNumber(string text, int fallback)
         {
-            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(text ?? "", @"\d+");
+            System.Text.RegularExpressions.Match match = Digits().Match(text ?? "");
             int number;
             return match.Success && int.TryParse(match.Value, out number) ? number : fallback;
         }
@@ -100,11 +99,10 @@ namespace CDTag.Model.Tag
         public Album(string path, ICollection<AlbumTrack> tracks)
         {
             if (string.IsNullOrWhiteSpace(path))
-                throw new ArgumentNullException("path");
-            if (tracks == null)
-                throw new ArgumentNullException("tracks");
+                throw new ArgumentNullException(nameof(path));
+            ArgumentNullException.ThrowIfNull(tracks);
             if (tracks.Count == 0)
-                throw new ArgumentException("tracks.Count == 0", "tracks");
+                throw new ArgumentException("tracks.Count == 0", nameof(tracks));
 
             _path = path;
             _tracks = new ObservableCollection<AlbumTrack>(tracks);
@@ -159,10 +157,6 @@ namespace CDTag.Model.Tag
         /// <summary>How many folder levels below the album folder are searched (Album\CD1\... = 1).</summary>
         private const int MaxSubfolderDepth = 2;
 
-        private static readonly System.Text.RegularExpressions.Regex DiscFolderPattern = new System.Text.RegularExpressions.Regex(
-            @"^\s*((cd|disc|disk|dvd|side)\s*[-_#.]?\s*[0-9a-z]{1,2}\b.*|\d{1,2})\s*$",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
-
         private static IEnumerable<string> GetAudioFilesInFolder(string directory)
         {
             return Directory.EnumerateFiles(directory)
@@ -172,7 +166,7 @@ namespace CDTag.Model.Tag
         /// <summary>True for folder names like "CD1", "Disc 2", "Disk_1", "Side A", "02".</summary>
         public static bool IsDiscFolderName(string name)
         {
-            return !string.IsNullOrWhiteSpace(name) && DiscFolderPattern.IsMatch(name);
+            return !string.IsNullOrWhiteSpace(name) && DiscFolderPattern().IsMatch(name);
         }
 
         /// <summary>
@@ -212,7 +206,7 @@ namespace CDTag.Model.Tag
         private static List<AlbumTrack> GetTracksFromPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
-                throw new ArgumentNullException("path");
+                throw new ArgumentNullException(nameof(path));
 
             string[] files = GetAudioFiles(path).ToArray();
             if (files.Length == 0)
@@ -277,8 +271,8 @@ namespace CDTag.Model.Tag
 
         public ImageSource Picture
         {
-            get { return Get<ImageSource>("Picture"); }
-            set { Set("Picture", value); }
+            get { return Get<ImageSource>(nameof(Picture)); }
+            set { Set(nameof(Picture), value); }
         }
 
         private void SetAlbumPropertiesFromTracks()
@@ -337,32 +331,32 @@ namespace CDTag.Model.Tag
 
         public string Artist
         {
-            get { return Get<string>("Artist"); }
-            set { Set("Artist", value); }
+            get { return Get<string>(nameof(Artist)); }
+            set { Set(nameof(Artist), value); }
         }
 
         public string AlbumTitle
         {
-            get { return Get<string>("AlbumTitle"); }
-            set { Set("AlbumTitle", value); }
+            get { return Get<string>(nameof(AlbumTitle)); }
+            set { Set(nameof(AlbumTitle), value); }
         }
 
         public string Genre
         {
-            get { return Get<string>("Genre"); }
-            set { Set("Genre", value); }
+            get { return Get<string>(nameof(Genre)); }
+            set { Set(nameof(Genre), value); }
         }
 
         public string ReleaseDate
         {
-            get { return Get<string>("ReleaseDate"); }
-            set { Set("ReleaseDate", value); }
+            get { return Get<string>(nameof(ReleaseDate)); }
+            set { Set(nameof(ReleaseDate), value); }
         }
 
         public bool IsVariousArtists
         {
-            get { return Get<bool>("IsVariousArtists"); }
-            set { Set("IsVariousArtists", value); }
+            get { return Get<bool>(nameof(IsVariousArtists)); }
+            set { Set(nameof(IsVariousArtists), value); }
         }
 
         private readonly Dictionary<int, string> _discNames = new Dictionary<int, string>();
@@ -389,8 +383,8 @@ namespace CDTag.Model.Tag
         /// <summary>The folder name the profile gives this album (preview; set by Tag Album).</summary>
         public string NewFolderName
         {
-            get { return Get<string>("NewFolderName"); }
-            set { Set("NewFolderName", value); }
+            get { return Get<string>(nameof(NewFolderName)); }
+            set { Set(nameof(NewFolderName), value); }
         }
 
         public void Finish()
@@ -417,5 +411,14 @@ namespace CDTag.Model.Tag
                 }
             }
         }
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"(\d+)", System.Text.RegularExpressions.RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial System.Text.RegularExpressions.Regex DigitRun();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"\d+", System.Text.RegularExpressions.RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial System.Text.RegularExpressions.Regex Digits();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"^\s*((cd|disc|disk|dvd|side)\s*[-_#.]?\s*[0-9a-z]{1,2}\b.*|\d{1,2})\s*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial System.Text.RegularExpressions.Regex DiscFolderPattern();
     }
 }

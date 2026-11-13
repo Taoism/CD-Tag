@@ -11,8 +11,6 @@ namespace CDTag.Common.Hash
     /// </summary>
     public static class MD5
     {
-        private static readonly MD5CryptoServiceProvider m_MD5 = new MD5CryptoServiceProvider();
-
         /// <summary>
         /// Returns the MD5 digest of a specified file as a string.
         /// </summary>
@@ -20,8 +18,7 @@ namespace CDTag.Common.Hash
         /// <returns>MD5 digest as a string.</returns>
         public static string Calculate(FileInfo file)
         {
-            if (file == null)
-                throw new ArgumentNullException("file");
+            ArgumentNullException.ThrowIfNull(file);
 
             return DigestToString(CalculateDigest(file));
         }
@@ -33,8 +30,7 @@ namespace CDTag.Common.Hash
         /// <returns>MD5 digest as a string.</returns>
         public static string Calculate(Stream stream)
         {
-            if (stream == null)
-                throw new ArgumentNullException("stream");
+            ArgumentNullException.ThrowIfNull(stream);
 
             return DigestToString(CalculateDigest(stream));
         }
@@ -46,8 +42,7 @@ namespace CDTag.Common.Hash
         /// <returns>MD5 digest as a string.</returns>
         public static string Calculate(byte[] data)
         {
-            if (data == null)
-                throw new ArgumentNullException("data");
+            ArgumentNullException.ThrowIfNull(data);
 
             return DigestToString(CalculateDigest(data));
         }
@@ -59,8 +54,7 @@ namespace CDTag.Common.Hash
         /// <returns>MD5 digest as a byte array.</returns>
         public static byte[] CalculateDigest(FileInfo file)
         {
-            if (file == null)
-                throw new ArgumentNullException("file");
+            ArgumentNullException.ThrowIfNull(file);
 
             using (FileStream fileStream = file.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
             {
@@ -75,11 +69,10 @@ namespace CDTag.Common.Hash
         /// <returns>MD5 digest as a byte array.</returns>
         public static byte[] CalculateDigest(Stream stream)
         {
-            if (stream == null)
-                throw new ArgumentNullException("stream");
+            ArgumentNullException.ThrowIfNull(stream);
 
             stream.Position = 0;
-            return m_MD5.ComputeHash(stream);
+            return System.Security.Cryptography.MD5.HashData(stream); // static and thread-safe, unlike a shared MD5 instance
         }
 
         /// <summary>
@@ -89,8 +82,7 @@ namespace CDTag.Common.Hash
         /// <returns>MD5 digest as a byte array.</returns>
         public static byte[] CalculateDigest(byte[] data)
         {
-            if (data == null)
-                throw new ArgumentNullException("data");
+            ArgumentNullException.ThrowIfNull(data);
 
             using (MemoryStream memoryStream = new MemoryStream(data))
             {

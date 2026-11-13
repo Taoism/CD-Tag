@@ -33,10 +33,9 @@ namespace CDTag.Model.Lookup
         /// Looks the disc up. <paramref name="metadataSearch"/> is the CTDB plugin's search mode: "fast", "default" or "extensive"
         /// (all databases, fuzzy too; EAC's CTDB plugin setting MetadataSearch).
         /// </summary>
-        public async Task<List<ReleaseDetails>> LookupAsync(DiscToc toc, CancellationToken cancellation = default(CancellationToken), string metadataSearch = "extensive")
+        public async Task<List<ReleaseDetails>> LookupAsync(DiscToc toc, string metadataSearch = "extensive", CancellationToken cancellation = default(CancellationToken))
         {
-            if (toc == null)
-                throw new ArgumentNullException("toc");
+            ArgumentNullException.ThrowIfNull(toc);
             string mode = (metadataSearch ?? "extensive").Trim().ToLowerInvariant();
             if (mode != "fast" && mode != "default" && mode != "extensive")
                 mode = "extensive";
@@ -46,7 +45,7 @@ namespace CDTag.Model.Lookup
                 if (response.StatusCode == HttpStatusCode.NotFound)
                     return new List<ReleaseDetails>();
                 response.EnsureSuccessStatusCode();
-                string xml = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                string xml = await response.Content.ReadAsStringAsync(cancellation).ConfigureAwait(false);
                 return Parse(xml, toc);
             }
         }
@@ -66,7 +65,7 @@ namespace CDTag.Model.Lookup
                         return new List<CtdbEntry>();
                     if (!response.IsSuccessStatusCode)
                         return null;
-                    return ParseRips(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                    return ParseRips(await response.Content.ReadAsStringAsync(cancellation).ConfigureAwait(false));
                 }
             }
             catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException && !cancellation.IsCancellationRequested || ex is System.Xml.XmlException)
@@ -84,7 +83,7 @@ namespace CDTag.Model.Lookup
                 int confidence;
                 int.TryParse((string)e.Attribute("confidence"), NumberStyles.Integer, CultureInfo.InvariantCulture, out confidence);
                 var crcs = new List<uint>();
-                foreach (string part in ((string)e.Attribute("trackcrcs") ?? "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                foreach (string part in ((string)e.Attribute("trackcrcs") ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries))
                 {
                     uint crc;
                     if (uint.TryParse(part, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out crc))
@@ -102,7 +101,7 @@ namespace CDTag.Model.Lookup
             {
                 if (!response.IsSuccessStatusCode)
                     return null;
-                return await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                return await response.Content.ReadAsByteArrayAsync(cancellation).ConfigureAwait(false);
             }
         }
 
@@ -112,7 +111,7 @@ namespace CDTag.Model.Lookup
         public static List<ReleaseDetails> Parse(string xml, DiscToc toc)
         {
             var results = new List<Tuple<ReleaseDetails, int>>();
-            if (string.IsNullOrWhiteSpace(xml) || !xml.TrimStart().StartsWith("<", StringComparison.Ordinal))
+            if (string.IsNullOrWhiteSpace(xml) || !xml.TrimStart().StartsWith('<'))
                 return new List<ReleaseDetails>(); // "Not Found"
 
             XDocument document = XDocument.Parse(xml);
@@ -185,7 +184,7 @@ namespace CDTag.Model.Lookup
             // Cover Art Archive thumbnails: "-250.jpg" -> the 500 px version.
             string small = (string)cover.Attribute("uri150");
             if (small != null && small.Contains("coverartarchive.org") && small.EndsWith("-250.jpg", StringComparison.OrdinalIgnoreCase))
-                return Secure(small.Substring(0, small.Length - "-250.jpg".Length) + "-500.jpg");
+                return Secure(string.Concat(small.AsSpan(0, small.Length - "-250.jpg".Length), "-500.jpg"));
             return Secure((string)cover.Attribute("uri") ?? small);
         }
 

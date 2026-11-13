@@ -44,14 +44,12 @@ namespace CDTag.Model.Tag
     /// Checks a release against the scene rules that can be checked from the files (names, tags, audio format,
     /// required files). Every finding names the rule it comes from.
     /// </summary>
-    public static class SceneRules
+    public static partial class SceneRules
     {
         /// <summary>MP3 rules 15.2.</summary>
         public const int MaxMp3PictureBytes = 2097152;
 
-        private static readonly Regex ValidName = new Regex(@"^[A-Za-z0-9_.\-()]+$", RegexOptions.CultureInvariant);
-
-        private static readonly string[] FlacFileTypes = { ".cue", ".flac", ".jpg", ".log", ".m3u", ".nfo", ".sfv" };
+private static readonly string[] FlacFileTypes = { ".cue", ".flac", ".jpg", ".log", ".m3u", ".nfo", ".sfv" };
         private static readonly string[] WebFlacFileTypes = { ".flac", ".jpg", ".m3u", ".nfo", ".pdf", ".sfv" };
 
         /// <summary>FLAC rules 6.5: the allowed GENRE values.</summary>
@@ -195,7 +193,7 @@ namespace CDTag.Model.Tag
         /// <summary>BLURAY / HDDVD sources (2BLURAY...): bits and sample rate are kept from the disc (FLAC rules 3.4.2).</summary>
         public static bool IsBluray(string source)
         {
-            return Regex.IsMatch((source ?? "").Trim(), @"^\d*(BLURAY|HDDVD)", RegexOptions.IgnoreCase);
+            return HdDiscSource().IsMatch((source ?? "").Trim());
         }
 
         /// <summary>FLAC files from a WEB or Blu-ray source: the Bit/kHz choice applies.</summary>
@@ -224,22 +222,22 @@ namespace CDTag.Model.Tag
             int nameLimit = webFlac ? 255 : 128;
 
             // ---- Release name
-            if (!ValidName.IsMatch(name))
+            if (!ValidName().IsMatch(name))
                 issues.Add(rule("1.5", "1.6", "5.2") + ": the release name has characters other than a-z A-Z 0-9 _ . - ( ).");
             if (flac && name.Length > nameLimit)
                 issues.Add(string.Format("{0}: the release name is {1} characters ({2} at most).", rule("1.5", "1.6", ""), name.Length, nameLimit));
             if (flac)
             {
-                if (!Regex.IsMatch(name, @"-FLAC-(\d{4}|\d{2,3}[xX]{1,2})-[A-Za-z0-9_]+$"))
+                if (!FlacYearAndGroupAtEnd().IsMatch(name))
                     issues.Add(rule("4.1", "4.1", "") + ": the release name must end with -FLAC-YEAR-GROUP (FLAC in capitals).");
             }
             if (webFlac)
             {
-                if (Regex.IsMatch(name, @"-(WEBFLAC|WEB_FLAC)-", RegexOptions.IgnoreCase))
+                if (OldWebFlacTag().IsMatch(name))
                     issues.Add("WEB FLAC 4.12.1: WEBFLAC and WEB_FLAC are not allowed; use -WEB-FLAC-.");
-                if (!Regex.IsMatch(name, @"-WEB-FLAC-"))
+                if (!WebFlacTag().IsMatch(name))
                     issues.Add("WEB FLAC 4.4: the source tag must be WEB (in capitals): -WEB-FLAC-.");
-                Match bit = Regex.Match(name, @"-(\d{2})BIT(-(\d{2,3})KHZ)?-WEB-FLAC-");
+                Match bit = WebFlacBitDepthTag().Match(name);
                 if (!bit.Success)
                 {
                     issues.Add("WEB FLAC 4.10.1: the release name needs the bit depth before the source (-16BIT-WEB-FLAC-).");
@@ -247,31 +245,31 @@ namespace CDTag.Model.Tag
 
                 if (name.Contains("_-_"))
                     issues.Add("WEB FLAC 4.12.2: _-_ is not allowed in the release name.");
-                if (album != null && album.Tracks.Count == 1 && !Regex.IsMatch(name, @"-(Single|SINGLE|EP)-") && !Regex.IsMatch(name, @"_(Single|EP)-"))
+                if (album != null && album.Tracks.Count == 1 && !SingleOrEpTag().IsMatch(name) && !UnderscoreSingleOrEpTag().IsMatch(name))
                     issues.Add("WEB FLAC 4.7: a single track release needs the -Single- type tag (albums and EPs with one track are exempt).");
             }
             else if (flac)
             {
-                if (!Regex.IsMatch(name, @"-(\d+[xX]?)?(\d+INCH_)?(BLURAY|HDDVD|CDS|CDM|CDEP|MCD|CDREP|CDRS|CDR|CD|DVDA|DVD|VINYL|VLS|MLP|LP|EP|INCH_VINYL|FLEXI)-FLAC-"))
+                if (!PhysicalSourceFlacTag().IsMatch(name))
                     issues.Add("FLAC 4.4: the release name needs a source tag in capitals before -FLAC- (CD, 2CD, VINYL...).");
             }
             else
             {
-                if (!Regex.IsMatch(name, @"-(\d{4}|\d{3}x|\d{2}xx)-[A-Za-z0-9_]+$"))
+                if (!YearAndGroupAtEnd().IsMatch(name))
                     issues.Add("MP3 3.1: the release name must end with -YEAR-GROUP.");
                 if (release.Discs > 1 && !Regex.IsMatch(name, @"-" + release.Discs + @"[A-Z]+-"))
                     issues.Add(string.Format("MP3 3.6: a {0}-disc release needs a multi-disc tag (-{0}CD-).", release.Discs));
 
-                bool webInName = Regex.IsMatch(name, @"-WEB-");
+                bool webInName = WebTag().IsMatch(name);
                 if (web && !webInName)
                     issues.Add("MP3 13.2.1: a WEB release needs the -WEB- source tag in the release name.");
                 if (!web && source.Length > 0 && webInName)
                     issues.Add(string.Format("MP3 13: the release name says WEB but the source is {0} (one source tag only).", source));
-                if (web && album != null && album.Tracks.Count == 1 && album.Tracks[0].TotalSeconds <= 25 * 60 && !Regex.IsMatch(name, @"-SINGLE-"))
+                if (web && album != null && album.Tracks.Count == 1 && album.Tracks[0].TotalSeconds <= 25 * 60 && !SingleTag().IsMatch(name))
                     issues.Add("MP3 3.9: a one-track WEB release needs the -SINGLE- tag after the title (unless it is longer than 25 minutes).");
             }
             // ##BIT / ##KHZ in a FLAC release name must match the files (WEB FLAC 4.10; Blu-ray keeps the disc's bits and rate, FLAC 3.4.2).
-            Match quality = flac ? Regex.Match(name, @"-(\d{2})BIT(-(\d{2,3})KHZ)?-") : Match.Empty;
+            Match quality = flac ? BitDepthTag().Match(name) : Match.Empty;
             if (quality.Success && quality.Groups[1].Value == "16" && quality.Groups[3].Success)
                 issues.Add(string.Format("{0}: 16BIT has no kHz tag; use -16BIT- instead of -16BIT-{1}KHZ-.", rule("3.4.2", "4.10.2", ""), quality.Groups[3].Value));
             if (quality.Success && album != null)
@@ -285,7 +283,7 @@ namespace CDTag.Model.Tag
             }
             if (album != null && album.IsVariousArtists && !name.StartsWith("VA-", StringComparison.Ordinal))
                 issues.Add(rule("4.2.1", "4.2.1", "3.7") + ": a various artists release name must start with VA-.");
-            if (!string.IsNullOrEmpty(release.Year) && !Regex.IsMatch(release.Year, @"^\d{4}$"))
+            if (!string.IsNullOrEmpty(release.Year) && !FourDigitYear().IsMatch(release.Year))
                 issues.Add(rule("6.2", "6.2", "3.10") + ": the year must have four digits (" + release.Year + ").");
 
             // ---- Files
@@ -295,23 +293,23 @@ namespace CDTag.Model.Tag
             {
                 string fileName = Path.GetFileName(file);
                 string extension = Path.GetExtension(fileName).ToLowerInvariant();
-                if (!ValidName.IsMatch(fileName))
+                if (!ValidName().IsMatch(fileName))
                     issues.Add(string.Format("{0}: {1} has characters other than a-z A-Z 0-9 _ . - ( ).", rule("1.5", "1.6", "5.2"), fileName));
                 if (flac && fileName.Length > nameLimit)
                     issues.Add(string.Format("{0}: {1} is longer than {2} characters.", rule("1.5", "1.6", ""), fileName, nameLimit));
                 if (mp3 && name.Length + 1 + file.Length > 255)
                     issues.Add(string.Format("MP3 5.1: release name + {0} is longer than 255 characters.", fileName));
-                if (flac && fileName != fileName.ToLowerInvariant())
+                if (flac && fileName.Any(c => char.ToLowerInvariant(c) != c))
                     issues.Add(string.Format("{0}: {1} must be lowercase.", rule("5.2", "5.2", ""), fileName));
                 if (flac && !allowedTypes.Contains(extension))
                     issues.Add(string.Format("{0}: {1} is not an allowed file type ({2}).", rule("1.1.3", "1.2.3", ""), fileName,
                                              string.Join(", ", allowedTypes.Select(t => t.TrimStart('.')))));
                 if (webFlac && fileName.Contains("_-_"))
                     issues.Add(string.Format("WEB FLAC 5.6.1: _-_ is not allowed in file names ({0}).", fileName));
-                if (extension == audioExtension && !Regex.IsMatch(fileName, @"^([0-9]+|[a-zA-Z][0-9]+)-"))
+                if (extension == audioExtension && !TrackNumberPrefix().IsMatch(fileName))
                     issues.Add(string.Format("{0}: {1} must start with the track number.", rule("5.1", "5.1", "4.2"), fileName));
             }
-            if (rules == SceneRuleSet.Flac2016 && Regex.IsMatch(name, @"-(REAL_)?REPACK-"))
+            if (rules == SceneRuleSet.Flac2016 && RepackTag().IsMatch(name))
             {
                 string[] missing = release.Files.Where(f => f.EndsWith(".flac", StringComparison.OrdinalIgnoreCase)
                                                             && !f.EndsWith("-repack.flac", StringComparison.OrdinalIgnoreCase)).ToArray();
@@ -346,7 +344,7 @@ namespace CDTag.Model.Tag
             // ---- Audio format
             if (rules == SceneRuleSet.Flac2016)
             {
-                bool cd = source.Length == 0 || Regex.IsMatch(source, @"^\d*CD");
+                bool cd = source.Length == 0 || CdSource().IsMatch(source);
                 foreach (AlbumTrack track in album.Tracks)
                 {
                     FlacStreamInfo info = FlacStreamInfo.Read(track.OriginalFileName);
@@ -374,7 +372,7 @@ namespace CDTag.Model.Tag
                     issues.Add("MP3 13: all tracks of a WEB release must have the same bitrate.");
 
                 // Encoder: LAME 3.100 -V0 (non-WEB) or -b 320 (lossless WEB). MP3CD/FLASH MP3s are released as they are.
-                if (!Regex.IsMatch(source, "MP3CD|FLASH"))
+                if (!Mp3CdOrFlashSource().IsMatch(source))
                     CheckLame(album, web, issues);
             }
 
@@ -413,5 +411,59 @@ namespace CDTag.Model.Tag
         {
             return count > 1 ? string.Format(" ({0} tracks)", count) : "";
         }
+
+        [GeneratedRegex(@"^[A-Za-z0-9_.\-()]+$", RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex ValidName();
+
+        [GeneratedRegex(@"-(\d{2})BIT(-(\d{2,3})KHZ)?-", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex BitDepthTag();
+
+        [GeneratedRegex(@"^\d*CD", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex CdSource();
+
+        [GeneratedRegex(@"-FLAC-(\d{4}|\d{2,3}[xX]{1,2})-[A-Za-z0-9_]+$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex FlacYearAndGroupAtEnd();
+
+        [GeneratedRegex(@"^\d{4}$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex FourDigitYear();
+
+        [GeneratedRegex(@"^\d*(BLURAY|HDDVD)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex HdDiscSource();
+
+        [GeneratedRegex("MP3CD|FLASH", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex Mp3CdOrFlashSource();
+
+        [GeneratedRegex(@"-(WEBFLAC|WEB_FLAC)-", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex OldWebFlacTag();
+
+        [GeneratedRegex(@"-(\d+[xX]?)?(\d+INCH_)?(BLURAY|HDDVD|CDS|CDM|CDEP|MCD|CDREP|CDRS|CDR|CD|DVDA|DVD|VINYL|VLS|MLP|LP|EP|INCH_VINYL|FLEXI)-FLAC-", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex PhysicalSourceFlacTag();
+
+        [GeneratedRegex(@"-(REAL_)?REPACK-", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex RepackTag();
+
+        [GeneratedRegex(@"-(Single|SINGLE|EP)-", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex SingleOrEpTag();
+
+        [GeneratedRegex(@"-SINGLE-", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex SingleTag();
+
+        [GeneratedRegex(@"^([0-9]+|[a-zA-Z][0-9]+)-", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex TrackNumberPrefix();
+
+        [GeneratedRegex(@"_(Single|EP)-", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex UnderscoreSingleOrEpTag();
+
+        [GeneratedRegex(@"-(\d{2})BIT(-(\d{2,3})KHZ)?-WEB-FLAC-", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex WebFlacBitDepthTag();
+
+        [GeneratedRegex(@"-WEB-FLAC-", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex WebFlacTag();
+
+        [GeneratedRegex(@"-WEB-", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex WebTag();
+
+        [GeneratedRegex(@"-(\d{4}|\d{3}x|\d{2}xx)-[A-Za-z0-9_]+$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex YearAndGroupAtEnd();
     }
 }

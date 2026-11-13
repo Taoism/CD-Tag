@@ -73,7 +73,7 @@ namespace CDTag.ViewModels.Rip
                 new RipFormatItem { Format = RipFormat.Mp3, Preset = EncodePreset.Lame320, Name = "MP3 LAME -b 320" }
             };
 
-            FindCDCommand = new DelegateCommand(() => FindCD(), () => !IsBusy && SelectedDrive != null);
+            FindCDCommand = new DelegateCommand(() => _ = FindCD(), () => !IsBusy && SelectedDrive != null);
             OptionsCommand = new DelegateCommand(() => ShowSettings = !ShowSettings);
             DriveCommand = new DelegateCommand(RefreshDrives, () => !IsBusy);
             RipCDCommand = new DelegateCommand(RipCD, () => !IsBusy && _toc != null && Tracks.Any(t => t.IsAudio));
@@ -92,60 +92,60 @@ namespace CDTag.ViewModels.Rip
         public ObservableCollection<string> Genres { get; private set; }
         public List<RipFormatItem> Formats { get; private set; }
 
-        public string SelectedDrive { get { return Get<string>("SelectedDrive"); } set { Set("SelectedDrive", value); } }
-        public string Artist { get { return Get<string>("Artist"); } set { Set("Artist", value); } }
-        public string Album { get { return Get<string>("Album"); } set { Set("Album", value); } }
-        public string Year { get { return Get<string>("Year"); } set { Set("Year", value); } }
-        public string Genre { get { return Get<string>("Genre"); } set { Set("Genre", value); } }
-        public bool IsVariousArtists { get { return Get<bool>("IsVariousArtists"); } set { Set("IsVariousArtists", value); } }
-        public BitmapSource Cover { get { return Get<BitmapSource>("Cover"); } private set { Set("Cover", value); } }
+        public string SelectedDrive { get { return Get<string>(nameof(SelectedDrive)); } set { Set(nameof(SelectedDrive), value); } }
+        public string Artist { get { return Get<string>(nameof(Artist)); } set { Set(nameof(Artist), value); } }
+        public string Album { get { return Get<string>(nameof(Album)); } set { Set(nameof(Album), value); } }
+        public string Year { get { return Get<string>(nameof(Year)); } set { Set(nameof(Year), value); } }
+        public string Genre { get { return Get<string>(nameof(Genre)); } set { Set(nameof(Genre), value); } }
+        public bool IsVariousArtists { get { return Get<bool>(nameof(IsVariousArtists)); } set { Set(nameof(IsVariousArtists), value); } }
+        public BitmapSource Cover { get { return Get<BitmapSource>(nameof(Cover)); } private set { Set(nameof(Cover), value); } }
         private byte[] _coverBytes;
 
         public ReleaseDetails SelectedRelease
         {
-            get { return Get<ReleaseDetails>("SelectedRelease"); }
+            get { return Get<ReleaseDetails>(nameof(SelectedRelease)); }
             set
             {
                 if (SelectedRelease == value)
                     return;
-                Set("SelectedRelease", value);
+                Set(nameof(SelectedRelease), value);
                 if (value != null)
                     ApplyRelease(value);
             }
         }
 
-        public bool HasReleases { get { return Get<bool>("HasReleases"); } private set { Set("HasReleases", value); } }
-        public bool ShowSettings { get { return Get<bool>("ShowSettings"); } set { Set("ShowSettings", value); } }
+        public bool HasReleases { get { return Get<bool>(nameof(HasReleases)); } private set { Set(nameof(HasReleases), value); } }
+        public bool ShowSettings { get { return Get<bool>(nameof(ShowSettings)); } set { Set(nameof(ShowSettings), value); } }
 
         // ---- settings (from EAC)
-        public string OutputFolder { get { return Get<string>("OutputFolder"); } set { Set("OutputFolder", value); } }
-        public string Naming { get { return Get<string>("Naming"); } set { Set("Naming", value); } }
-        public string VariousNaming { get { return Get<string>("VariousNaming"); } set { Set("VariousNaming", value); } }
-        public RipFormatItem SelectedFormat { get { return Get<RipFormatItem>("SelectedFormat"); } set { Set("SelectedFormat", value); } }
+        public string OutputFolder { get { return Get<string>(nameof(OutputFolder)); } set { Set(nameof(OutputFolder), value); } }
+        public string Naming { get { return Get<string>(nameof(Naming)); } set { Set(nameof(Naming), value); } }
+        public string VariousNaming { get { return Get<string>(nameof(VariousNaming)); } set { Set(nameof(VariousNaming), value); } }
+        public RipFormatItem SelectedFormat { get { return Get<RipFormatItem>(nameof(SelectedFormat)); } set { Set(nameof(SelectedFormat), value); } }
         /// <summary>Read offset typed by the user; empty = from AccurateRip's drive database.</summary>
-        public string OffsetText { get { return Get<string>("OffsetText"); } set { Set("OffsetText", value); } }
-        public string OffsetInfo { get { return Get<string>("OffsetInfo"); } private set { Set("OffsetInfo", value); } }
-        public bool TestAndCopy { get { return Get<bool>("TestAndCopy"); } set { Set("TestAndCopy", value); } }
-        public bool EjectWhenDone { get { return Get<bool>("EjectWhenDone"); } set { Set("EjectWhenDone", value); } }
+        public string OffsetText { get { return Get<string>(nameof(OffsetText)); } set { Set(nameof(OffsetText), value); } }
+        public string OffsetInfo { get { return Get<string>(nameof(OffsetInfo)); } private set { Set(nameof(OffsetInfo), value); } }
+        public bool TestAndCopy { get { return Get<bool>(nameof(TestAndCopy)); } set { Set(nameof(TestAndCopy), value); } }
+        public bool EjectWhenDone { get { return Get<bool>(nameof(EjectWhenDone)); } set { Set(nameof(EjectWhenDone), value); } }
 
         /// <summary>Read speeds offered: 0 = maximum.</summary>
         public List<int> Speeds { get; } = new List<int> { 0, 48, 40, 32, 24, 16, 8, 4 };
-        public int SelectedSpeed { get { return Get<int>("SelectedSpeed"); } set { Set("SelectedSpeed", value); } }
+        public int SelectedSpeed { get { return Get<int>(nameof(SelectedSpeed)); } set { Set(nameof(SelectedSpeed), value); } }
         /// <summary>Use the drive's C2 error pointers (from EAC's drive setting).</summary>
-        public bool UseC2 { get { return Get<bool>("UseC2"); } set { Set("UseC2", value); } }
+        public bool UseC2 { get { return Get<bool>(nameof(UseC2)); } set { Set(nameof(UseC2), value); } }
         /// <summary>False when the drive refused a C2 read in Find CD (the checkbox is then off and disabled).</summary>
-        public bool C2Supported { get { return Get<bool>("C2Supported"); } private set { Set("C2Supported", value); } }
+        public bool C2Supported { get { return Get<bool>(nameof(C2Supported)); } private set { Set(nameof(C2Supported), value); } }
         /// <summary>Overread into the lead-in and lead-out (from EAC's drive setting).</summary>
-        public bool Overread { get { return Get<bool>("Overread"); } set { Set("Overread", value); } }
+        public bool Overread { get { return Get<bool>(nameof(Overread)); } set { Set(nameof(Overread), value); } }
         /// <summary>Copy Image &amp; Create CUE Sheet: one file for the whole disc.</summary>
-        public bool RipImage { get { return Get<bool>("RipImage"); } set { Set("RipImage", value); } }
-        public string SettingsSource { get { return Get<string>("SettingsSource"); } private set { Set("SettingsSource", value); } }
+        public bool RipImage { get { return Get<bool>(nameof(RipImage)); } set { Set(nameof(RipImage), value); } }
+        public string SettingsSource { get { return Get<string>(nameof(SettingsSource)); } private set { Set(nameof(SettingsSource), value); } }
         private EacSettings _eac;
         private int? _databaseOffset;
 
-        public bool IsBusy { get { return Get<bool>("IsBusy"); } private set { Set("IsBusy", value); } }
-        public double Progress { get { return Get<double>("Progress"); } private set { Set("Progress", value); } }
-        public string StatusText { get { return Get<string>("StatusText"); } private set { Set("StatusText", value); } }
+        public bool IsBusy { get { return Get<bool>(nameof(IsBusy)); } private set { Set(nameof(IsBusy), value); } }
+        public double Progress { get { return Get<double>(nameof(Progress)); } private set { Set(nameof(Progress), value); } }
+        public string StatusText { get { return Get<string>(nameof(StatusText)); } private set { Set(nameof(StatusText), value); } }
 
         public ICommand FindCDCommand { get; private set; }
         public ICommand OptionsCommand { get; private set; }
@@ -236,9 +236,9 @@ namespace CDTag.ViewModels.Rip
                 List<CdTrack> toc;
                 StatusText = "Reading the disc...";
                 _extras = null;
-                using (CdDrive drive = await Task.Run(() => CdDrive.Open(letter.Value.ToString())))
+                using (CdDrive drive = await Task.Run(() => CdDrive.Open(letter.Value.ToString()), CancellationToken.None))
                 {
-                    toc = await Task.Run(() => drive.ReadToc());
+                    toc = await Task.Run(() => drive.ReadToc(), CancellationToken.None);
                     _driveName = drive.Name;
                     vendor = drive.Vendor; product = drive.Product;
                     string name = drive.Name ?? "";
@@ -253,13 +253,13 @@ namespace CDTag.ViewModels.Rip
                     }
 
                     CdTrack firstAudio = toc.FirstOrDefault(t => t.IsAudio);
-                    C2Supported = firstAudio != null && await Task.Run(() => drive.SupportsC2(firstAudio.StartSector + 75));
+                    C2Supported = firstAudio != null && await Task.Run(() => drive.SupportsC2(firstAudio.StartSector + 75), CancellationToken.None);
 
                     // ISRCs, catalog number, CD-Text and pregaps (a few seconds, from the subchannel)
                     var steps = new Progress<string>(m => StatusText = m);
                     try
                     {
-                        _extras = await Task.Run(() => GapDetector.Read(drive, toc, steps, CancellationToken.None));
+                        _extras = await Task.Run(() => GapDetector.Read(drive, toc, steps, CancellationToken.None), CancellationToken.None);
                     }
                     catch (IOException)
                     {
@@ -302,7 +302,7 @@ namespace CDTag.ViewModels.Rip
                 if (!string.IsNullOrWhiteSpace(typed))
                     OffsetText = typed;
                 StatusText = "Looking up the drive offset and the disc...";
-                _databaseOffset = await AccurateRip.FindDriveOffsetAsync(vendor, product);
+                _databaseOffset = await AccurateRip.FindDriveOffsetAsync(vendor, product, CancellationToken.None);
                 UpdateOffsetInfo();
 
                 DiscToc disc = RipJob.ToDiscToc(toc);
@@ -340,6 +340,10 @@ namespace CDTag.ViewModels.Rip
             }
         }
 
+        // display names of the metadata sources, in the order MetadataSources tries them
+        private static readonly string[] FreedbFirstNames = { "gnudb", "MusicBrainz", "CUETools DB" };
+        private static readonly string[] DefaultOrderNames = { "MusicBrainz", "CUETools DB", "gnudb" };
+
         /// <summary>
         /// The metadata sources in order: EAC's own provider first (CTDB with the plugin's search mode, or freedb = gnudb),
         /// then MusicBrainz (disc ID), CUETools DB and gnudb (only with a gnudb address in Options).
@@ -348,22 +352,22 @@ namespace CDTag.ViewModels.Rip
         {
             string ctdbMode = _eac != null ? _eac.CtdbSearch : "Extensive";
             var gnudb = new GnudbClient(CDTag.Common.Settings.AppOptions.Current.GnudbEmail);
-            Func<Task<List<ReleaseDetails>>> ctdb = () => new CueToolsDbClient().LookupAsync(disc, CancellationToken.None, ctdbMode);
-            Func<Task<List<ReleaseDetails>>> mb = () => new MusicBrainzClient().LookupDiscAsync(disc);
-            Func<Task<List<ReleaseDetails>>> gnu = () => gnudb.LookupAsync(disc);
+            Func<Task<List<ReleaseDetails>>> ctdb = () => new CueToolsDbClient().LookupAsync(disc, ctdbMode, CancellationToken.None);
+            Func<Task<List<ReleaseDetails>>> mb = () => new MusicBrainzClient().LookupDiscAsync(disc, CancellationToken.None);
+            Func<Task<List<ReleaseDetails>>> gnu = () => gnudb.LookupAsync(disc, CancellationToken.None);
             string provider = _eac != null ? _eac.MetadataProvider : null;
             var sources = provider == "freedb" ? new List<Func<Task<List<ReleaseDetails>>>> { gnu, mb, ctdb }
                         : provider == "CTDB" ? new List<Func<Task<List<ReleaseDetails>>>> { ctdb, mb, gnu }
                         : new List<Func<Task<List<ReleaseDetails>>>> { mb, ctdb, gnu };
-            MetadataSourcesText = string.Join(", ", (provider == "freedb" ? new[] { "gnudb", "MusicBrainz", "CUETools DB" }
-                                                    : provider == "CTDB" ? new[] { "CUETools DB (" + ctdbMode + ", as in EAC)", "MusicBrainz", "gnudb" }
-                                                    : new[] { "MusicBrainz", "CUETools DB", "gnudb" })
-                                                   .Where(n => n != "gnudb" || gnudb.IsEnabled));
+            string[] names = provider == "freedb" ? FreedbFirstNames
+                           : provider == "CTDB" ? new[] { "CUETools DB (" + ctdbMode + ", as in EAC)", "MusicBrainz", "gnudb" }
+                           : DefaultOrderNames;
+            MetadataSourcesText = string.Join(", ", names.Where(n => n != "gnudb" || gnudb.IsEnabled));
             return sources;
         }
 
         /// <summary>"CUETools DB (Extensive, as in EAC), MusicBrainz": the sources Find CD asks, in order.</summary>
-        public string MetadataSourcesText { get { return Get<string>("MetadataSourcesText"); } private set { Set("MetadataSourcesText", value); } }
+        public string MetadataSourcesText { get { return Get<string>(nameof(MetadataSourcesText)); } private set { Set(nameof(MetadataSourcesText), value); } }
 
         // ---- automatic Find CD: watch the drive and look the disc up when one is put in
         private System.Windows.Threading.DispatcherTimer _discWatch;
@@ -386,7 +390,7 @@ namespace CDTag.ViewModels.Rip
                     {
                         var info = new DriveInfo(letter.ToString());
                         return info.IsReady ? letter + "|" + info.VolumeLabel : null;
-                    });
+                    }, CancellationToken.None);
                 }
                 catch (IOException)
                 {
@@ -430,8 +434,8 @@ namespace CDTag.ViewModels.Rip
             Cover = null; _coverBytes = null;
             try
             {
-                byte[] bytes = r.MusicBrainzId != null ? await new MusicBrainzClient().GetFrontCoverAsync(r.MusicBrainzId)
-                             : r.CoverUrl != null ? await CueToolsDbClient.GetImageAsync(r.CoverUrl) : null;
+                byte[] bytes = r.MusicBrainzId != null ? await new MusicBrainzClient().GetFrontCoverAsync(r.MusicBrainzId, CancellationToken.None)
+                             : r.CoverUrl != null ? await CueToolsDbClient.GetImageAsync(r.CoverUrl, CancellationToken.None) : null;
                 if (bytes != null && SelectedRelease == r)
                 {
                     var image = new BitmapImage();
@@ -568,7 +572,7 @@ namespace CDTag.ViewModels.Rip
                     {
                         string folderJpg = Path.Combine(Path.GetDirectoryName(paths[0]), "folder.jpg");
                         if (!File.Exists(folderJpg))
-                            File.WriteAllBytes(folderJpg, _coverBytes);
+                            await File.WriteAllBytesAsync(folderJpg, _coverBytes, CancellationToken.None);
                     }
                     for (int i = 0; i < rows.Count && i < job.AccurateRipLines.Count; i++)
                     {
@@ -576,9 +580,9 @@ namespace CDTag.ViewModels.Rip
                         string ar = job.AccurateRipLines[i];
                         string ctdb = i < job.CtdbLines.Count ? job.CtdbLines[i] : "";
                         rows[i].Status = (!r.CrcsMatch ? "CRC mismatch. " : r.Suspicious.Count > 0 ? "Suspicious. " : "OK. ") +
-                                         (ar.StartsWith("Accurately", StringComparison.Ordinal) ? "AR " + ar.Substring(ar.IndexOf('(') + 1, ar.IndexOf(')') - ar.IndexOf('(') - 1) : ar.Split(new[] { "  " }, StringSplitOptions.None)[0]) +
-                                         (ctdb.Contains("accurately") ? ", CTDB " + ctdb.Substring(ctdb.IndexOf('(') + 1, ctdb.IndexOf(')') - ctdb.IndexOf('(') - 1)
-                                          : ctdb.Length > 0 ? ", " + ctdb.Split(new[] { "  " }, StringSplitOptions.None)[0] : "");
+                                         (ar.StartsWith("Accurately", StringComparison.Ordinal) ? string.Concat("AR ", ar.AsSpan(ar.IndexOf('(') + 1, ar.IndexOf(')') - ar.IndexOf('(') - 1)) : ar.Split("  ", StringSplitOptions.None)[0]) +
+                                         (ctdb.Contains("accurately") ? string.Concat(", CTDB ", ctdb.AsSpan(ctdb.IndexOf('(') + 1, ctdb.IndexOf(')') - ctdb.IndexOf('(') - 1))
+                                          : ctdb.Length > 0 ? ", " + ctdb.Split("  ", StringSplitOptions.None)[0] : "");
                     }
                     if (EjectWhenDone)
                         drive.Eject();

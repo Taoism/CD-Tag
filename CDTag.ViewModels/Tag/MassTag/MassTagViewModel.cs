@@ -161,18 +161,18 @@ namespace CDTag.ViewModels.Tag.MassTag
 
         public IList SelectedRows
         {
-            get { return Get<IList>("SelectedRows"); }
+            get { return Get<IList>(nameof(SelectedRows)); }
             set
             {
-                Set("SelectedRows", value);
+                Set(nameof(SelectedRows), value);
                 CommandManager.InvalidateRequerySuggested();
             }
         }
 
         public string StatusText
         {
-            get { return Get<string>("StatusText"); }
-            private set { Set("StatusText", value); }
+            get { return Get<string>(nameof(StatusText)); }
+            private set { Set(nameof(StatusText), value); }
         }
 
         public ICommand AddCommand { get; private set; }

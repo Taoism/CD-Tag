@@ -47,30 +47,30 @@ namespace CDTag.ViewModels.Checksum
 
         public string Folder
         {
-            get { return Get<string>("Folder"); }
-            private set { Set("Folder", value); }
+            get { return Get<string>(nameof(Folder)); }
+            private set { Set(nameof(Folder), value); }
         }
 
         public LogFileItem SelectedLogFile
         {
-            get { return Get<LogFileItem>("SelectedLogFile"); }
+            get { return Get<LogFileItem>(nameof(SelectedLogFile)); }
             set
             {
                 if (SelectedLogFile == value)
                     return;
-                Set("SelectedLogFile", value);
+                Set(nameof(SelectedLogFile), value);
                 ReadLogFile();
             }
         }
 
         public LogItem SelectedLog
         {
-            get { return Get<LogItem>("SelectedLog"); }
+            get { return Get<LogItem>(nameof(SelectedLog)); }
             set
             {
                 if (SelectedLog == value)
                     return;
-                Set("SelectedLog", value);
+                Set(nameof(SelectedLog), value);
                 ShowLog();
             }
         }
@@ -78,27 +78,27 @@ namespace CDTag.ViewModels.Checksum
         /// <summary>More than one log in the file: show the log chooser.</summary>
         public bool HasSeveralLogs
         {
-            get { return Get<bool>("HasSeveralLogs"); }
-            private set { Set("HasSeveralLogs", value); }
+            get { return Get<bool>(nameof(HasSeveralLogs)); }
+            private set { Set(nameof(HasSeveralLogs), value); }
         }
 
         public string LogText
         {
-            get { return Get<string>("LogText"); }
-            private set { Set("LogText", value); }
+            get { return Get<string>(nameof(LogText)); }
+            private set { Set(nameof(LogText), value); }
         }
 
         /// <summary>Overall result: the worst state of all checks.</summary>
         public LogCheckState OverallState
         {
-            get { return Get<LogCheckState>("OverallState"); }
-            private set { Set("OverallState", value); }
+            get { return Get<LogCheckState>(nameof(OverallState)); }
+            private set { Set(nameof(OverallState), value); }
         }
 
         public string Summary
         {
-            get { return Get<string>("Summary"); }
-            private set { Set("Summary", value); }
+            get { return Get<string>(nameof(Summary)); }
+            private set { Set(nameof(Summary), value); }
         }
 
         public ICommand OpenCommand { get; private set; }
@@ -129,7 +129,7 @@ namespace CDTag.ViewModels.Checksum
             LogFileItem selected = logFile != null ? LogFiles.First(f => string.Equals(f.FullPath, logFile, StringComparison.OrdinalIgnoreCase)) : LogFiles.FirstOrDefault();
             if (selected == null)
             {
-                Set<LogFileItem>("SelectedLogFile", null);
+                Set<LogFileItem>(nameof(SelectedLogFile), null);
                 ReadLogFile();
             }
             else
@@ -177,7 +177,7 @@ namespace CDTag.ViewModels.Checksum
                 Logs.Add(new LogItem { Log = logs[i], Name = logs.Count == 1 ? album : string.Format("Log {0} of {1}: {2}", i + 1, logs.Count, album) });
             }
             HasSeveralLogs = Logs.Count > 1;
-            Set<LogItem>("SelectedLog", null);
+            Set<LogItem>(nameof(SelectedLog), null);
             // The last log is the one that counts (the final rip).
             SelectedLog = Logs.LastOrDefault();
             if (SelectedLog == null)

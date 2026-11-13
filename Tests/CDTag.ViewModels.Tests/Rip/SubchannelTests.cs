@@ -48,9 +48,9 @@ namespace CDTag.ViewModels.Tests.Rip
         {
             // "USAAA2600001": U=37 S=35 A=17 A=17 A=17 (6 bits each), 2 zero bits, then BCD 2 6 0 0 0 0 1, 4 zero bits
             ulong bits = 0;
-            foreach (int c in new[] { 37, 35, 17, 17, 17 }) bits = (bits << 6) | (ulong)c;
+            foreach (int c in new[] { 37, 35, 17, 17, 17 }) bits = (bits << 6) | (uint)c;
             bits <<= 2;
-            foreach (int d in new[] { 2, 6, 0, 0, 0, 0, 1 }) bits = (bits << 4) | (ulong)d;
+            foreach (int d in new[] { 2, 6, 0, 0, 0, 0, 1 }) bits = (bits << 4) | (uint)d;
             bits <<= 4;
             var q = new byte[10];
             q[0] = 0x03;

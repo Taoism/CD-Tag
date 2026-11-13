@@ -56,10 +56,8 @@ namespace CDTag.ViewModels.Tag.TagAlbum
     /// (MusicBrainz, Discogs and freedb by disc TOC), shows the track list of the selected release, and returns it
     /// with its front cover when the user clicks Apply.
     /// </summary>
-    public class LookupViewModel : ViewModelBase, ILookupViewModel
+    public partial class LookupViewModel : ViewModelBase, ILookupViewModel
     {
-        private static readonly Regex ReleaseId = new Regex(@"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", RegexOptions.IgnoreCase);
-
         private readonly MusicBrainzClient _client = new MusicBrainzClient();
         private readonly CueToolsDbClient _ctdb = new CueToolsDbClient();
         /// <summary>Results that came with their full track list (disc-ID lookups), by result ID.</summary>
@@ -94,11 +92,11 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             };
         }
 
-        public string Artist { get { return Get<string>("Artist"); } set { Set("Artist", value); } }
-        public string Album { get { return Get<string>("Album"); } set { Set("Album", value); } }
+        public string Artist { get { return Get<string>(nameof(Artist)); } set { Set(nameof(Artist), value); } }
+        public string Album { get { return Get<string>(nameof(Album)); } set { Set(nameof(Album), value); } }
 
         /// <summary>Optional MusicBrainz release link or ID (loads that release directly).</summary>
-        public string ReleaseLink { get { return Get<string>("ReleaseLink"); } set { Set("ReleaseLink", value); } }
+        public string ReleaseLink { get { return Get<string>(nameof(ReleaseLink)); } set { Set(nameof(ReleaseLink), value); } }
 
         public int TrackCount { get; set; }
         public int DiscCount { get; set; }
@@ -114,11 +112,11 @@ namespace CDTag.ViewModels.Tag.TagAlbum
                     choices.Add(new AllDiscsToc(_tocs.Count));
                 choices.AddRange(_tocs);
                 TocChoices = choices;
-                RaisePropertyChanged("Tocs", null, null);
-                RaisePropertyChanged("TocChoices", null, null);
-                RaisePropertyChanged("HasManyTocs", null, null);
+                RaisePropertyChanged(nameof(Tocs), null, null);
+                RaisePropertyChanged(nameof(TocChoices), null, null);
+                RaisePropertyChanged(nameof(HasManyTocs), null, null);
                 SelectedToc = choices.FirstOrDefault();
-                RaisePropertyChanged("TocInfo", null, null);
+                RaisePropertyChanged(nameof(TocInfo), null, null);
             }
         }
 
@@ -157,10 +155,10 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             get { return SelectedToc is AllDiscsToc; }
         }
 
-        public DiscToc SelectedToc { get { return Get<DiscToc>("SelectedToc"); } set { Set("SelectedToc", value); } }
+        public DiscToc SelectedToc { get { return Get<DiscToc>(nameof(SelectedToc)); } set { Set(nameof(SelectedToc), value); } }
 
         public List<LookupSourceOption> Sources { get; private set; }
-        public LookupSourceOption SelectedSource { get { return Get<LookupSourceOption>("SelectedSource"); } set { Set("SelectedSource", value); } }
+        public LookupSourceOption SelectedSource { get { return Get<LookupSourceOption>(nameof(SelectedSource)); } set { Set(nameof(SelectedSource), value); } }
 
         /// <summary>True when the artist/album/link boxes are used (text search).</summary>
         public bool IsTextSearch
@@ -194,12 +192,12 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         public ObservableCollection<ReleaseSearchResult> Results { get; private set; }
         public ObservableCollection<ReleaseTrack> Tracks { get; private set; }
 
-        public ReleaseSearchResult SelectedResult { get { return Get<ReleaseSearchResult>("SelectedResult"); } set { Set("SelectedResult", value); } }
-        public ReleaseDetails SelectedDetails { get { return Get<ReleaseDetails>("SelectedDetails"); } private set { Set("SelectedDetails", value); } }
+        public ReleaseSearchResult SelectedResult { get { return Get<ReleaseSearchResult>(nameof(SelectedResult)); } set { Set(nameof(SelectedResult), value); } }
+        public ReleaseDetails SelectedDetails { get { return Get<ReleaseDetails>(nameof(SelectedDetails)); } private set { Set(nameof(SelectedDetails), value); } }
         public byte[] Cover { get; private set; }
 
-        public string Status { get { return Get<string>("Status"); } private set { Set("Status", value); } }
-        public bool IsBusy { get { return Get<bool>("IsBusy"); } private set { Set("IsBusy", value); CommandManager.InvalidateRequerySuggested(); } }
+        public string Status { get { return Get<string>(nameof(Status)); } private set { Set(nameof(Status), value); } }
+        public bool IsBusy { get { return Get<bool>(nameof(IsBusy)); } private set { Set(nameof(IsBusy), value); CommandManager.InvalidateRequerySuggested(); } }
 
         public ICommand SearchCommand { get; private set; }
         public ICommand ApplyCommand { get; private set; }
@@ -225,8 +223,8 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         /// <summary>The token typed or pasted in the Look up window (saved to Tools > Options).</summary>
         public string DiscogsTokenInput
         {
-            get { return Get<string>("DiscogsTokenInput"); }
-            set { Set("DiscogsTokenInput", value); CommandManager.InvalidateRequerySuggested(); }
+            get { return Get<string>(nameof(DiscogsTokenInput)); }
+            set { Set(nameof(DiscogsTokenInput), value); CommandManager.InvalidateRequerySuggested(); }
         }
 
         public ICommand GetDiscogsTokenCommand { get; private set; }
@@ -238,7 +236,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             options.DiscogsToken = DiscogsTokenInput.Trim();
             CDTag.Common.Settings.AppOptions.Save(options);
             DiscogsTokenInput = null;
-            RaisePropertyChanged("NeedsDiscogsToken", null, null);
+            RaisePropertyChanged(nameof(NeedsDiscogsToken), null, null);
             Search();
         }
 
@@ -275,9 +273,9 @@ namespace CDTag.ViewModels.Tag.TagAlbum
 
         private void OnSourceChanged()
         {
-            RaisePropertyChanged("IsTextSearch", null, null);
-            RaisePropertyChanged("TocInfo", null, null);
-            RaisePropertyChanged("NeedsDiscogsToken", null, null);
+            RaisePropertyChanged(nameof(IsTextSearch), null, null);
+            RaisePropertyChanged(nameof(TocInfo), null, null);
+            RaisePropertyChanged(nameof(NeedsDiscogsToken), null, null);
             if (_started)
                 Search();
         }
@@ -317,15 +315,15 @@ namespace CDTag.ViewModels.Tag.TagAlbum
         {
             string link = ReleaseLink ?? "";
             string discogsId = DiscogsClient.ReleaseIdFromLink(link);
-            if (discogsId == null && source == LookupSource.DiscogsSearch && Regex.IsMatch(link.Trim(), @"^\d+$"))
+            if (discogsId == null && source == LookupSource.DiscogsSearch && AllDigits().IsMatch(link.Trim()))
                 discogsId = link.Trim();
-            Match id = ReleaseId.Match(link);
+            Match id = ReleaseId().Match(link);
             if (discogsId != null || id.Success)
             {
                 Status = discogsId != null ? "Loading release from Discogs..." : "Loading release from MusicBrainz...";
                 ReleaseDetails details = discogsId != null
-                    ? await Discogs.GetReleaseAsync(discogsId)
-                    : await _client.GetReleaseAsync(id.Value.ToLowerInvariant());
+                    ? await Discogs.GetReleaseAsync(discogsId, CancellationToken.None)
+                    : await _client.GetReleaseAsync(id.Value.ToLowerInvariant(), CancellationToken.None);
                 if (version != _searchVersion)
                     return;
                 ReleaseSearchResult row = details.ToSearchResult(TrackCount);
@@ -347,8 +345,8 @@ namespace CDTag.ViewModels.Tag.TagAlbum
 
             Status = discogs ? "Searching Discogs..." : "Searching MusicBrainz...";
             var results = discogs
-                ? await Discogs.SearchReleasesAsync(Artist, Album, DiscCount)
-                : await _client.SearchReleasesAsync(Artist, Album, TrackCount);
+                ? await Discogs.SearchReleasesAsync(Artist, Album, DiscCount, CancellationToken.None)
+                : await _client.SearchReleasesAsync(Artist, Album, TrackCount, CancellationToken.None);
             if (version != _searchVersion)
                 return;
             foreach (ReleaseSearchResult result in results)
@@ -380,8 +378,8 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             }
             Status = string.Format("Looking up disc {0} in {1}...", toc.Disc, name);
             List<ReleaseDetails> releases = source == LookupSource.CueToolsDb
-                ? await _ctdb.LookupAsync(toc)
-                : await _client.LookupDiscAsync(toc);
+                ? await _ctdb.LookupAsync(toc, cancellation: CancellationToken.None)
+                : await _client.LookupDiscAsync(toc, CancellationToken.None);
             if (version != _searchVersion)
                 return;
 
@@ -412,8 +410,8 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             {
                 Status = string.Format("Looking up disc {0} of {1} in {2}...", disc.Disc, _tocs.Count, name);
                 perDisc.Add(source == LookupSource.CueToolsDb
-                    ? await _ctdb.LookupAsync(disc)
-                    : await _client.LookupDiscAsync(disc));
+                    ? await _ctdb.LookupAsync(disc, cancellation: CancellationToken.None)
+                    : await _client.LookupDiscAsync(disc, CancellationToken.None));
                 if (version != _searchVersion)
                     return;
             }
@@ -512,7 +510,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
                     return;
                 if (DiscogsClient.FillMissing(details, full) && SelectedDetails == details)
                 {
-                    RaisePropertyChanged("Summary", null, null);
+                    RaisePropertyChanged(nameof(Summary), null, null);
                     ReleaseSearchResult row = Results.FirstOrDefault(r => r.Id == details.Id);
                     if (row != null)
                     {
@@ -542,7 +540,7 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             foreach (ReleaseTrack track in details.Tracks)
                 Tracks.Add(track);
             SelectedDetails = details;
-            RaisePropertyChanged("Summary", null, null);
+            RaisePropertyChanged(nameof(Summary), null, null);
             CommandManager.InvalidateRequerySuggested();
         }
 
@@ -552,9 +550,9 @@ namespace CDTag.ViewModels.Tag.TagAlbum
             {
                 byte[] cover = null;
                 if (details.CoverUrl != null)
-                    cover = await CueToolsDbClient.GetImageAsync(details.CoverUrl);
+                    cover = await CueToolsDbClient.GetImageAsync(details.CoverUrl, CancellationToken.None);
                 if (cover == null && details.MusicBrainzId != null)
-                    cover = await _client.GetFrontCoverAsync(details.MusicBrainzId);
+                    cover = await _client.GetFrontCoverAsync(details.MusicBrainzId, CancellationToken.None);
                 if (SelectedDetails == details)
                     Cover = cover;
             }
@@ -586,5 +584,11 @@ namespace CDTag.ViewModels.Tag.TagAlbum
                 ex = ex.InnerException;
             return ex;
         }
+
+        [GeneratedRegex(@"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex ReleaseId();
+
+        [GeneratedRegex(@"^\d+$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex AllDigits();
     }
 }

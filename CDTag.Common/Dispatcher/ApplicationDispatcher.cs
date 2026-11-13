@@ -14,8 +14,7 @@ namespace CDTag.Common.Dispatcher
         /// <param name="method">An <see cref="Action"/> which is pushed onto the <see cref="System.Windows.Threading.Dispatcher"/> event queue.</param>
         public void BeginInvoke(Action method)
         {
-            if (method == null)
-                throw new ArgumentNullException("method");
+            ArgumentNullException.ThrowIfNull(method);
 
             if (Application.Current.Dispatcher.CheckAccess())
                 method();

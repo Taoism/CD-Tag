@@ -50,13 +50,8 @@ namespace CDTag.Model.Checksum
     /// An Exact Audio Copy extraction log: settings, tracks, CRCs, AccurateRip results and the log checksum.
     /// Only English logs are checked in detail; the checksum works for any language.
     /// </summary>
-    public class EacLog
+    public partial class EacLog
     {
-        private static readonly Regex ChecksumLine = new Regex(@"^==== Log checksum (?<sum>[0-9A-Fa-f]+) ====[ \t]*\r?$", RegexOptions.Multiline);
-        private static readonly Regex SettingLine = new Regex(@"^\s*(?<key>[^:\r\n]+?)\s*:\s(?<value>.*)$");
-        private static readonly Regex TrackHeader = new Regex(@"^Track\s+(?<n>\d+)\s*$");
-        private static readonly Regex Value = new Regex(@"^\s+(?<key>Filename|Peak level|Track quality|Range quality|Test CRC|Copy CRC)\s+(?<value>.+?)\s*$");
-
         public EacLog()
         {
             Settings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -105,7 +100,7 @@ namespace CDTag.Model.Checksum
         {
             var logs = new List<EacLog>();
             int start = 0;
-            foreach (Match match in ChecksumLine.Matches(text))
+            foreach (Match match in ChecksumLine().Matches(text))
             {
                 int end = match.Index + match.Length;
                 logs.Add(Parse(text.Substring(start, end - start), text.Substring(start, match.Index - start), match.Groups["sum"].Value.ToUpperInvariant()));
@@ -123,14 +118,14 @@ namespace CDTag.Model.Checksum
             string[] lines = text.Replace("\r", "").Split('\n');
 
             log.IsEnglish = text.Contains("EAC extraction logfile");
-            Match version = Regex.Match(text, @"Exact Audio Copy V\S+(?: from [^\r\n]+)?");
+            Match version = EacVersionLine().Match(text);
             log.Version = version.Success ? version.Value.Trim() : null;
             if (!log.IsEnglish)
                 return log;
 
             log.IsRange = text.Contains("\nRange status and errors") || text.Contains("\nSelected range");
             log.NoErrors = text.Contains("\nNo errors occurred") || text.Contains("\nNo errors occured");
-            log.AllAccurate = text.Contains("All tracks accurately ripped") || Regex.IsMatch(text, @"All\s+\d+\s+tracks accurately ripped");
+            log.AllAccurate = text.Contains("All tracks accurately ripped") || AllTracksAccurate().IsMatch(text);
 
             int i = 0;
             // Header: album line after the logfile line, then settings until the TOC.
@@ -149,9 +144,9 @@ namespace CDTag.Model.Checksum
                     }
                     continue;
                 }
-                if (lines[i].StartsWith("TOC of the extracted CD", StringComparison.Ordinal) || lines[i].StartsWith("Range status", StringComparison.Ordinal) || TrackHeader.IsMatch(lines[i]))
+                if (lines[i].StartsWith("TOC of the extracted CD", StringComparison.Ordinal) || lines[i].StartsWith("Range status", StringComparison.Ordinal) || TrackHeader().IsMatch(lines[i]))
                     break;
-                Match setting = SettingLine.Match(lines[i]);
+                Match setting = SettingLine().Match(lines[i]);
                 if (setting.Success && !log.Settings.ContainsKey(setting.Groups["key"].Value))
                     log.Settings[setting.Groups["key"].Value] = setting.Groups["value"].Value.Trim();
             }
@@ -161,7 +156,7 @@ namespace CDTag.Model.Checksum
             for (; i < lines.Length; i++)
             {
                 string line = lines[i];
-                Match header = TrackHeader.Match(line);
+                Match header = TrackHeader().Match(line);
                 if (header.Success)
                 {
                     track = new EacLogTrack { Number = int.Parse(header.Groups["n"].Value, CultureInfo.InvariantCulture) };
@@ -185,7 +180,7 @@ namespace CDTag.Model.Checksum
                 if (track == null)
                     continue;
 
-                Match value = Value.Match(line);
+                Match value = Value().Match(line);
                 string trimmed = line.Trim();
                 if (value.Success)
                 {
@@ -241,7 +236,7 @@ namespace CDTag.Model.Checksum
         /// <summary>Range rips list AccurateRip per track after the range ("Track  1  accurately ripped (confidence 2)  [...]").</summary>
         private static void ParseAccurateRipSummary(EacLog log, string[] lines, int start)
         {
-            var summary = new Regex(@"^Track\s+(?<n>\d+)\s+(?<status>.+?)\s*$");
+            var summary = TrackSummaryLine();
             for (int i = start; i < lines.Length; i++)
             {
                 string line = lines[i];
@@ -271,7 +266,7 @@ namespace CDTag.Model.Checksum
 
         private static double? Percent(string text)
         {
-            Match match = Regex.Match(text, @"\d+(?:[.,]\d+)?");
+            Match match = DecimalNumber().Match(text);
             double value;
             return match.Success && double.TryParse(match.Value.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out value) ? value : (double?)null;
         }
@@ -303,7 +298,7 @@ namespace CDTag.Model.Checksum
                 checks.Add(new LogCheck { State = LogCheckState.Info, Name = "Album", Detail = Album });
             string drive = Setting("Used drive");
             if (drive != null)
-                checks.Add(new LogCheck { State = LogCheckState.Info, Name = "Drive", Detail = Regex.Replace(drive, @"\s+Adapter:.*$", "") });
+                checks.Add(new LogCheck { State = LogCheckState.Info, Name = "Drive", Detail = AdapterSuffix().Replace(drive, "") });
 
             AddSetting(checks, "Read mode", v => v.StartsWith("Secure", StringComparison.OrdinalIgnoreCase) ? LogCheckState.Good : LogCheckState.Bad, "Secure mode is required.");
             AddSetting(checks, "Utilize accurate stream", YesGood(LogCheckState.Warning), null);
@@ -399,5 +394,32 @@ namespace CDTag.Model.Checksum
 
             return new LogCheck { State = state, Name = track.Number == 0 ? "Range" : "Track " + track.Number, Detail = string.Join(", ", notes) };
         }
+
+        [GeneratedRegex(@"^==== Log checksum (?<sum>[0-9A-Fa-f]+) ====[ \t]*\r?$", RegexOptions.Multiline, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex ChecksumLine();
+
+        [GeneratedRegex(@"\s+Adapter:.*$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex AdapterSuffix();
+
+        [GeneratedRegex(@"All\s+\d+\s+tracks accurately ripped", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex AllTracksAccurate();
+
+        [GeneratedRegex(@"\d+(?:[.,]\d+)?", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex DecimalNumber();
+
+        [GeneratedRegex(@"Exact Audio Copy V\S+(?: from [^\r\n]+)?", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex EacVersionLine();
+
+        [GeneratedRegex(@"^\s*(?<key>[^:\r\n]+?)\s*:\s(?<value>.*)$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex SettingLine();
+
+        [GeneratedRegex(@"^Track\s+(?<n>\d+)\s*$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex TrackHeader();
+
+        [GeneratedRegex(@"^Track\s+(?<n>\d+)\s+(?<status>.+?)\s*$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex TrackSummaryLine();
+
+        [GeneratedRegex(@"^\s+(?<key>Filename|Peak level|Track quality|Range quality|Test CRC|Copy CRC)\s+(?<value>.+?)\s*$", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex Value();
     }
 }

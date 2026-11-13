@@ -353,7 +353,7 @@ namespace CDTag.ViewModels.Profile.NewProfile
             {
                 try
                 {
-                    File.WriteAllBytes(fileName, new byte[0]);
+                    File.WriteAllBytes(fileName, System.Array.Empty<byte>());
                 }
                 catch
                 {
@@ -388,32 +388,32 @@ namespace CDTag.ViewModels.Profile.NewProfile
 
         public FormatItem DirectoryFormat
         {
-            get { return Get<FormatItem>("DirectoryFormat"); }
-            set { Set("DirectoryFormat", value); }
+            get { return Get<FormatItem>(nameof(DirectoryFormat)); }
+            set { Set(nameof(DirectoryFormat), value); }
         }
 
         public FormatItem AudioFileFormat
         {
-            get { return Get<FormatItem>("AudioFileFormat"); }
-            set { Set("AudioFileFormat", value); }
+            get { return Get<FormatItem>(nameof(AudioFileFormat)); }
+            set { Set(nameof(AudioFileFormat), value); }
         }
 
         public bool CreateNFO
         {
-            get { return Get<bool>("CreateNFO"); }
-            set { Set("CreateNFO", value); }
+            get { return Get<bool>(nameof(CreateNFO)); }
+            set { Set(nameof(CreateNFO), value); }
         }
 
         public bool CreateSampleNFO
         {
-            get { return Get<bool>("CreateSampleNFO"); }
-            set { Set("CreateSampleNFO", value); }
+            get { return Get<bool>(nameof(CreateSampleNFO)); }
+            set { Set(nameof(CreateSampleNFO), value); }
         }
 
         public bool HasExistingNFO
         {
-            get { return Get<bool>("HasExistingNFO"); }
-            set { Set("HasExistingNFO", value); }
+            get { return Get<bool>(nameof(HasExistingNFO)); }
+            set { Set(nameof(HasExistingNFO), value); }
         }
 
         public ICommand PreviousCommand
@@ -428,18 +428,18 @@ namespace CDTag.ViewModels.Profile.NewProfile
 
         public int PageIndex
         {
-            get { return Get<int>("PageIndex"); }
-            private set { Set("PageIndex", value); }
+            get { return Get<int>(nameof(PageIndex)); }
+            private set { Set(nameof(PageIndex), value); }
         }
 
         public bool IsProfileNameFocused
         {
-            get { return Get<bool>("IsProfileNameFocused"); }
+            get { return Get<bool>(nameof(IsProfileNameFocused)); }
             set
             {
                 if (value) // force change for Binding (forcing PropertyChanged isn't sufficient)
-                    Set("IsProfileNameFocused", false);
-                Set("IsProfileNameFocused", value);
+                    Set(nameof(IsProfileNameFocused), false);
+                Set(nameof(IsProfileNameFocused), value);
             }
         }
 
@@ -460,8 +460,8 @@ namespace CDTag.ViewModels.Profile.NewProfile
 
         public string NextButtonText
         {
-            get { return Get<string>("NextButtonText"); }
-            private set { Set("NextButtonText", value); }
+            get { return Get<string>(nameof(NextButtonText)); }
+            private set { Set(nameof(NextButtonText), value); }
         }
     }
 }

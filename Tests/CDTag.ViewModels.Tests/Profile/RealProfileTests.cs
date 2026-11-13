@@ -45,7 +45,7 @@ namespace CDTag.ViewModel.Tests.Profile
 
                 Dictionary<string, string> after = Values(cfg);
                 var lost = before.Where(kv => kv.Key != "CONFIG|LastUpdated" && (!after.ContainsKey(kv.Key) || after[kv.Key] != kv.Value))
-                                 .Select(kv => kv.Key + " = '" + kv.Value + "' -> '" + (after.ContainsKey(kv.Key) ? after[kv.Key] : "(gone)") + "'").ToList();
+                                 .Select(kv => kv.Key + " = '" + kv.Value + "' -> '" + (after.TryGetValue(kv.Key, out string now) ? now : "(gone)") + "'").ToList();
                 TestContext.Out.WriteLine("{0}: {1} values, template {2}", Path.GetFileName(cfg), before.Count, profile.NFOOptions.TemplatePath);
                 foreach (string line in lost)
                     TestContext.Out.WriteLine("  changed " + line);

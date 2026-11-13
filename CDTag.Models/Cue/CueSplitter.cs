@@ -107,7 +107,7 @@ namespace CDTag.Model.Cue
     /// Splits a CUE image (one WAV or FLAC file) into tracks. Tracks start at INDEX 01, so each pregap stays at the end of the
     /// previous track (EAC "gaps appended to previous track"); audio before track 1 can be written as track 00.
     /// </summary>
-    public static class CueSplitter
+    public static partial class CueSplitter
     {
         /// <summary>The tracks to write, with file names like "01 - Title.flac" ("01 - Performer - Title" when a track has its own performer).</summary>
         public static List<SplitTrack> Plan(CueSheet sheet, int sampleRate, SplitFormat format, bool hiddenTrack)
@@ -200,7 +200,7 @@ namespace CDTag.Model.Cue
                 else
                     sb.Append(c);
             }
-            return System.Text.RegularExpressions.Regex.Replace(sb.ToString(), @"\s+", " ").Trim().TrimEnd('.');
+            return Whitespace().Replace(sb.ToString(), " ").Trim().TrimEnd('.');
         }
 
         /// <summary>Vorbis comments for a split track.</summary>
@@ -306,16 +306,16 @@ namespace CDTag.Model.Cue
             using (var output = new FileStream(target, FileMode.CreateNew, FileAccess.Write))
             {
                 byte[] header = pcm.Header(length);
-                await output.WriteAsync(header, 0, header.Length, cancellation).ConfigureAwait(false);
+                await output.WriteAsync(header, cancellation).ConfigureAwait(false);
                 source.Position = pcm.DataOffset + startSample * pcm.BlockAlign;
                 var buffer = new byte[1 << 18];
                 long left = length;
                 while (left > 0)
                 {
-                    int read = await source.ReadAsync(buffer, 0, (int)Math.Min(buffer.Length, left), cancellation).ConfigureAwait(false);
+                    int read = await source.ReadAsync(buffer.AsMemory(0, (int)Math.Min(buffer.Length, left)), cancellation).ConfigureAwait(false);
                     if (read <= 0)
                         throw new EndOfStreamException("The audio file ended early.");
-                    await output.WriteAsync(buffer, 0, read, cancellation).ConfigureAwait(false);
+                    await output.WriteAsync(buffer.AsMemory(0, read), cancellation).ConfigureAwait(false);
                     left -= read;
                     progress?.Report((int)(100 * (length - left) / Math.Max(1, length)));
                 }
@@ -338,5 +338,8 @@ namespace CDTag.Model.Cue
             {
             }
         }
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"\s+", System.Text.RegularExpressions.RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial System.Text.RegularExpressions.Regex Whitespace();
     }
 }

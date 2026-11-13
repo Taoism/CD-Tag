@@ -8,18 +8,14 @@ namespace CDTag.Model.Lookup
     /// <summary>
     /// Combines the disc-ID lookups of every disc of an album (CD1, CD2, CD3...) into whole-album results.
     /// </summary>
-    public static class MultiDiscLookup
+    public static partial class MultiDiscLookup
     {
-        private static readonly Regex DiscSuffix = new Regex(
-            @"\s*(?:[-:,/]\s*)?[\(\[]?\s*(?:cd|disc|disk)\s*[-_#.]?\s*\d{1,2}(?:\s*(?:of|/)\s*\d{1,2})?\s*[\)\]]?\s*$",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
         /// <summary>"Album (Disc 2)", "Album CD2", "Album - CD 2/3" as "Album".</summary>
         public static string StripDiscNumber(string title)
         {
             if (string.IsNullOrWhiteSpace(title))
                 return title;
-            string stripped = DiscSuffix.Replace(title, "").Trim();
+            string stripped = DiscSuffix().Replace(title, "").Trim();
             return stripped.Length > 0 ? stripped : title.Trim();
         }
 
@@ -153,5 +149,8 @@ namespace CDTag.Model.Lookup
             joined.IsVariousArtists = parts.Any(p => p.IsVariousArtists);
             return joined;
         }
+
+        [GeneratedRegex(@"\s*(?:[-:,/]\s*)?[\(\[]?\s*(?:cd|disc|disk)\s*[-_#.]?\s*\d{1,2}(?:\s*(?:of|/)\s*\d{1,2})?\s*[\)\]]?\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex DiscSuffix();
     }
 }

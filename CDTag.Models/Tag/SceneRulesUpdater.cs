@@ -48,11 +48,11 @@ namespace CDTag.Model.Tag
     /// Keeps a local copy of the newest scene rules (scenerules.org) in the Rules folder and reports when they change.
     /// The FLAC genre list for the rules check is read from the downloaded FLAC rules.
     /// </summary>
-    public class SceneRulesUpdater
+    public partial class SceneRulesUpdater
     {
         private const string SiteUrl = "https://scenerules.org/";
         private const string ManifestName = "rules.json";
-        private static readonly Regex RuleLink = new Regex(@"nfo/(?<year>\d{4})_(?<kind>MP3|FLAC|WEBFLAC)\.nfo", RegexOptions.CultureInvariant);
+        private static readonly JsonSerializerOptions IndentedJson = new JsonSerializerOptions { WriteIndented = true };
 
         private readonly string _directory;
         private readonly HttpClient _http;
@@ -108,7 +108,7 @@ namespace CDTag.Model.Tag
             {
                 byte[] bytes = await _http.GetByteArrayAsync(SiteUrl + "nfo/" + file.FileName, cancellation).ConfigureAwait(false);
                 file.Sha256 = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
-                File.WriteAllBytes(Path.Combine(_directory, file.FileName), bytes);
+                await File.WriteAllBytesAsync(Path.Combine(_directory, file.FileName), bytes, CancellationToken.None).ConfigureAwait(false);
 
                 SceneRuleFile before;
                 known.TryGetValue(file.Kind, out before);
@@ -135,7 +135,7 @@ namespace CDTag.Model.Tag
         /// <summary>The newest rule file of each kind linked from the scenerules.org index page.</summary>
         public static List<SceneRuleFile> FindLatest(string indexHtml)
         {
-            return RuleLink.Matches(indexHtml ?? "")
+            return RuleLink().Matches(indexHtml ?? "")
                 .Select(m => new SceneRuleFile
                 {
                     Kind = m.Groups["kind"].Value,
@@ -177,13 +177,13 @@ namespace CDTag.Model.Tag
             foreach (string line in block.Replace("\r\n", "\n").Split('\n'))
             {
                 string content = line.Trim().Trim('|').Trim();
-                if (content.StartsWith("+", StringComparison.Ordinal))
+                if (content.StartsWith('+'))
                     break;
                 text.Append(' ').Append(content);
             }
             foreach (string genre in text.ToString().Split(','))
             {
-                string name = Regex.Replace(genre, @"\s+", " ").Trim().TrimEnd('.');
+                string name = Whitespace().Replace(genre, " ").Trim().TrimEnd('.');
                 if (name.Length > 0)
                     result.Add(name);
             }
@@ -210,8 +210,14 @@ namespace CDTag.Model.Tag
 
         private void SaveManifest(Dictionary<string, SceneRuleFile> files)
         {
-            string json = JsonSerializer.Serialize(files.Values.OrderBy(f => f.Kind).ToList(), new JsonSerializerOptions { WriteIndented = true });
+            string json = JsonSerializer.Serialize(files.Values.OrderBy(f => f.Kind).ToList(), IndentedJson);
             File.WriteAllText(Path.Combine(_directory, ManifestName), json);
         }
+
+        [GeneratedRegex(@"nfo/(?<year>\d{4})_(?<kind>MP3|FLAC|WEBFLAC)\.nfo", RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex RuleLink();
+
+        [GeneratedRegex(@"\s+", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex Whitespace();
     }
 }

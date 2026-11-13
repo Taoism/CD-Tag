@@ -166,8 +166,7 @@ namespace CDTag.Common.Settings
         /// <summary>Stores <paramref name="options"/> as the current options and notifies listeners.</summary>
         public static void Save(AppOptionsData options)
         {
-            if (options == null)
-                throw new ArgumentNullException("options");
+            ArgumentNullException.ThrowIfNull(options);
 
             _current = options.Clone();
             SettingsFile.Save(Location, _current);

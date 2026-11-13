@@ -25,10 +25,8 @@ namespace CDTag.Model.Encoders
     /// Encodes WAV/FLAC to MP3 with lame.exe and decodes FLAC/MP3 to WAV, using the encoders in the Encoders folder
     /// next to cdtag.exe (or the paths set in Options). Tags of the source are copied to the MP3 (ID3v2).
     /// </summary>
-    public static class AudioEncoder
+    public static partial class AudioEncoder
     {
-        private static readonly Regex Percent = new Regex(@"\(\s*(\d{1,3})%\)", RegexOptions.CultureInvariant);
-
         /// <summary>Folder (under Encoders next to cdtag.exe) for your own lame.exe.</summary>
         public const string UserLameFolder = "mp3";
         /// <summary>Folder (under Encoders next to cdtag.exe) for your own flac.exe.</summary>
@@ -109,10 +107,10 @@ namespace CDTag.Model.Encoders
                 {
                     string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
                     process.WaitForExit(5000);
-                    Match lame = Regex.Match(output, @"LAME (?:\d+bits )?version (\S+)");
+                    Match lame = LameVersionOutput().Match(output);
                     if (lame.Success)
                         return "LAME " + lame.Groups[1].Value + (output.Contains("64bits") ? " (64-bit)" : "");
-                    Match flac = Regex.Match(output, @"flac (\S+)");
+                    Match flac = FlacVersionOutput().Match(output);
                     return flac.Success ? "flac " + flac.Groups[1].Value : output.Split('\n').FirstOrDefault()?.Trim();
                 }
             }
@@ -221,7 +219,7 @@ namespace CDTag.Model.Encoders
             {
                 if (!FlacThreadSupport.TryGetValue(flac, out supported))
                 {
-                    Match m = Regex.Match(GetVersion(flac) ?? "", @"flac (\d+)\.(\d+)");
+                    Match m = FlacMajorMinor().Match(GetVersion(flac) ?? "");
                     supported = m.Success && (int.Parse(m.Groups[1].Value) > 1 || (int.Parse(m.Groups[1].Value) == 1 && int.Parse(m.Groups[2].Value) >= 5));
                     FlacThreadSupport[flac] = supported;
                 }
@@ -322,7 +320,7 @@ namespace CDTag.Model.Encoders
             {
                 process.Start();
                 var errors = new StringBuilder();
-                Task output = process.StandardOutput.ReadToEndAsync();
+                Task output = process.StandardOutput.ReadToEndAsync(CancellationToken.None);
                 Task error = ReadProgressAsync(process.StandardError, progress, errors);
                 try
                 {
@@ -364,7 +362,7 @@ namespace CDTag.Model.Encoders
                     if (c == '\r' || c == '\n')
                     {
                         string text = line.ToString();
-                        Match match = Percent.Match(text);
+                        Match match = Percent().Match(text);
                         if (match.Success)
                             progress?.Report(Math.Min(99, int.Parse(match.Groups[1].Value)));
                         else if (text.Trim().Length > 0 && errors.Length < 4000)
@@ -395,5 +393,17 @@ namespace CDTag.Model.Encoders
             {
             }
         }
+
+        [GeneratedRegex(@"\(\s*(\d{1,3})%\)", RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex Percent();
+
+        [GeneratedRegex(@"flac (\d+)\.(\d+)", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex FlacMajorMinor();
+
+        [GeneratedRegex(@"flac (\S+)", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex FlacVersionOutput();
+
+        [GeneratedRegex(@"LAME (?:\d+bits )?version (\S+)", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex LameVersionOutput();
     }
 }

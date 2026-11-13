@@ -239,7 +239,7 @@ namespace CDTag.Launcher
                 using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
                     elevated = new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
                 if (elevated)
-                    Process.Start(new ProcessStartInfo("explorer.exe", Program.Quote(starter)) { UseShellExecute = false });
+                    Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"),Program.Quote(starter)) { UseShellExecute = false });
                 else
                     Process.Start(new ProcessStartInfo(starter) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(starter) });
             }

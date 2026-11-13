@@ -58,7 +58,7 @@ namespace CDTag.FileBrowser.Model
             private set
             {
                 _name = value;
-                RaisePropertyChanged("Name");
+                RaisePropertyChanged(nameof(Name));
             }
         }
 
@@ -82,7 +82,7 @@ namespace CDTag.FileBrowser.Model
                 if (_isSelected != value)
                 {
                     _isSelected = value;
-                    RaisePropertyChanged("IsSelected");
+                    RaisePropertyChanged(nameof(IsSelected));
                 }
             }
         }
@@ -97,7 +97,7 @@ namespace CDTag.FileBrowser.Model
                 if (_size != value)
                 {
                     _size = value;
-                    RaisePropertyChanged("Size");
+                    RaisePropertyChanged(nameof(Size));
                 }
             }
         }
@@ -123,7 +123,7 @@ namespace CDTag.FileBrowser.Model
                 if (_dateModified != value)
                 {
                     _dateModified = value;
-                    RaisePropertyChanged("DateModified");
+                    RaisePropertyChanged(nameof(DateModified));
                 }
             }
         }
@@ -147,7 +147,7 @@ namespace CDTag.FileBrowser.Model
                 if (_dateCreated != value)
                 {
                     _dateCreated = value;
-                    RaisePropertyChanged("DateCreated");
+                    RaisePropertyChanged(nameof(DateCreated));
                 }
             }
         }
@@ -171,7 +171,7 @@ namespace CDTag.FileBrowser.Model
                 if (_type != value)
                 {
                     _type = value;
-                    RaisePropertyChanged("Type");
+                    RaisePropertyChanged(nameof(Type));
                 }
             }
         }
@@ -199,7 +199,7 @@ namespace CDTag.FileBrowser.Model
                 if (_imageSource != value)
                 {
                     _imageSource = value;
-                    RaisePropertyChanged("ImageSource");
+                    RaisePropertyChanged(nameof(ImageSource));
                 }
             }
         }
@@ -214,7 +214,7 @@ namespace CDTag.FileBrowser.Model
                 if (_fullName != value)
                 {
                     _fullName = value;
-                    RaisePropertyChanged("FullName");
+                    RaisePropertyChanged(nameof(FullName));
                 }
             }
         }

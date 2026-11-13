@@ -95,7 +95,7 @@ namespace CDTag.ViewModel.Tests.Tag
             Assert.That(TwinAlbum.EncoderOf(flac), Is.Null);
 
             // reference libFLAC vendor string: FLAC 1.5.0.
-            string path = Path.Combine(Path.GetTempPath(), "cdtag-vendor-" + Guid.NewGuid().ToString("N").Substring(0, 8) + ".flac");
+            string path = Path.Combine(Path.GetTempPath(), string.Concat("cdtag-vendor-", Guid.NewGuid().ToString("N").AsSpan(0, 8), ".flac"));
             try
             {
                 byte[] vendor = System.Text.Encoding.UTF8.GetBytes("reference libFLAC 1.5.0 20250211");
@@ -128,7 +128,7 @@ namespace CDTag.ViewModel.Tests.Tag
         [Test]
         public void FindLooksInTheFoldersNextToTheAlbum()
         {
-            string root = Path.Combine(Path.GetTempPath(), "cdtag-twin-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+            string root = Path.Combine(Path.GetTempPath(), string.Concat("cdtag-twin-", Guid.NewGuid().ToString("N").AsSpan(0, 8)));
             try
             {
                 string flacFolder = Path.Combine(root, "Artist-Album-FLAC");

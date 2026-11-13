@@ -1004,7 +1004,7 @@ namespace CDTag.ViewModel.Tests.Profile.NewProfile
             Assert.That(newProfileViewModel.Profile.NFOOptions.TemplatePath, Is.EqualTo(_unitTestsNFO), "newProfileViewModel.Profile.NFOOptions.TemplatePath");
         }
 
-        private void ShowOpenFile(DataEventArgs<ShowOpenFileDialogEvent> e, IDialogService mockDialogService)
+        private static void ShowOpenFile(DataEventArgs<ShowOpenFileDialogEvent> e, IDialogService mockDialogService)
         {
             string fileName;
             e.Data.Result = mockDialogService.ShowOpenFileDialog(e.Data.Title, e.Data.FileName, null, out fileName);

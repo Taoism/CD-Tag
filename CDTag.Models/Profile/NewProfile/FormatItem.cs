@@ -7,20 +7,20 @@ namespace CDTag.Model.Profile.NewProfile
     {
         public string FormatString
         {
-            get { return Get<string>("FormatString"); }
-            set { Set("FormatString", value); }
+            get { return Get<string>(nameof(FormatString)); }
+            set { Set(nameof(FormatString), value); }
         }
 
         public string Result
         {
-            get { return Get<string>("Result"); }
-            set { Set("Result", value); }
+            get { return Get<string>(nameof(Result)); }
+            set { Set(nameof(Result), value); }
         }
 
         public bool IsSelected
         {
-            get { return Get<bool>("IsSelected"); }
-            set { Set("IsSelected", value); }
+            get { return Get<bool>(nameof(IsSelected)); }
+            set { Set(nameof(IsSelected), value); }
         }
     }
 }

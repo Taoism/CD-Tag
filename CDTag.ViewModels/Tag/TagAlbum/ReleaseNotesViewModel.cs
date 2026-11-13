@@ -24,20 +24,20 @@ namespace CDTag.ViewModels.Tag.TagAlbum
 
         public string Title
         {
-            get { return Get<string>("Title"); }
-            set { Set("Title", value); }
+            get { return Get<string>(nameof(Title)); }
+            set { Set(nameof(Title), value); }
         }
 
         public string Message
         {
-            get { return Get<string>("Message"); }
-            set { Set("Message", value); }
+            get { return Get<string>(nameof(Message)); }
+            set { Set(nameof(Message), value); }
         }
 
         public string Notes
         {
-            get { return Get<string>("Notes"); }
-            set { Set("Notes", value); }
+            get { return Get<string>(nameof(Notes)); }
+            set { Set(nameof(Notes), value); }
         }
 
         public ICommand OKCommand { get; private set; }

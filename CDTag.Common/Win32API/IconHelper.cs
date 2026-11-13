@@ -34,7 +34,8 @@ namespace CDTag.Common.Win32API
             else
                 return null;
 
-            Win32.SHGetFileInfo(path, attr, out info, (uint)Marshal.SizeOf(typeof(Win32.SHFILEINFO)), Win32.SHGFI_DISPLAYNAME | Win32.SHGFI_ICON | Win32.SHGFI_TYPENAME | Win32.SHGFI_SMALLICON | Win32.SHGFI_USEFILEATTRIBUTES);
+            // no icon (failure) shows as no image below; the return value adds nothing
+            _ = Win32.SHGetFileInfo(path, attr, out info, (uint)Marshal.SizeOf<Win32.SHFILEINFO>(), Win32.SHGFI_DISPLAYNAME | Win32.SHGFI_ICON | Win32.SHGFI_TYPENAME | Win32.SHGFI_SMALLICON | Win32.SHGFI_USEFILEATTRIBUTES);
 
             ImageSource img = null;
             if (info.hIcon != IntPtr.Zero)
@@ -44,7 +45,7 @@ namespace CDTag.Common.Win32API
                     img = Imaging.CreateBitmapSourceFromHIcon(icon.Handle, new Int32Rect(0, 0, icon.Width, icon.Height), BitmapSizeOptions.FromEmptyOptions());
                 }
 
-                Win32.DestroyIcon(info.hIcon);
+                _ = Win32.DestroyIcon(info.hIcon); // nothing to do if it fails
             }
 
             return img;

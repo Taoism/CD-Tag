@@ -46,7 +46,7 @@ namespace CDTag.Common
         private static readonly Brush Footer = Frozen(0x2B, 0x2B, 0x2B);
         private static readonly Brush Text = Frozen(0xE4, 0xE4, 0xE4);
 
-        private static Brush Frozen(byte r, byte g, byte b)
+        private static SolidColorBrush Frozen(byte r, byte g, byte b)
         {
             var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
             brush.Freeze();
@@ -93,7 +93,7 @@ namespace CDTag.Common
                 Text = text,
                 TextWrapping = TextWrapping.Wrap,
                 MaxWidth = 520,
-                VerticalAlignment = image != null && !text.Contains("\n") ? VerticalAlignment.Center : VerticalAlignment.Top,
+                VerticalAlignment = image != null && !text.Contains('\n') ? VerticalAlignment.Center : VerticalAlignment.Top,
                 Foreground = Text,
             });
             root.Children.Add(body);
@@ -155,7 +155,7 @@ namespace CDTag.Common
         {
             IntPtr hwnd = new WindowInteropHelper(window).Handle;
             const int GWL_EXSTYLE = -20, WS_EX_DLGMODALFRAME = 0x0001;
-            SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_DLGMODALFRAME);
+            _ = SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_DLGMODALFRAME);
             const int WM_SETICON = 0x0080;
             SendMessage(hwnd, WM_SETICON, IntPtr.Zero, IntPtr.Zero);       // ICON_SMALL
             SendMessage(hwnd, WM_SETICON, new IntPtr(1), IntPtr.Zero);     // ICON_BIG
@@ -178,7 +178,7 @@ namespace CDTag.Common
             }
         }
 
-        private static IEnumerable<KeyValuePair<string, MessageBoxResult>> Choices(MessageBoxButton button)
+        private static KeyValuePair<string, MessageBoxResult>[] Choices(MessageBoxButton button)
         {
             switch (button)
             {

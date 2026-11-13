@@ -88,7 +88,7 @@ namespace CDTag.FileBrowser.View
                     string curdir = directory;
                     while (Directory.Exists(curdir))
                     {
-                        if (curdir.EndsWith(@"\") && curdir.Length > 3)
+                        if (curdir.EndsWith('\\') && curdir.Length > 3)
                             curdir = curdir.Substring(0, curdir.Length - 1);
 
                         MenuItem menuItem;

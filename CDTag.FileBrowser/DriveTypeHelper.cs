@@ -18,8 +18,7 @@ namespace CDTag.FileBrowser
         /// <returns>The drive description.</returns>
         public static string GetDescription(DriveInfo drive)
         {
-            if (drive == null)
-                throw new ArgumentNullException("drive");
+            ArgumentNullException.ThrowIfNull(drive);
 
             string text = null;
 

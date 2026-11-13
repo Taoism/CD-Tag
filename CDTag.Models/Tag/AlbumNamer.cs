@@ -27,12 +27,11 @@ namespace CDTag.Model.Tag
     /// case regions (&lt;SC&gt; custom/smart case, &lt;LC&gt; lower, &lt;UC&gt; upper), the profile's
     /// find/replace list, character restrictions and length limits (&lt;Suffix&gt; protects what follows).
     /// </summary>
-    public class AlbumNamer
+    public partial class AlbumNamer
     {
         private const char SuffixMark = '\u0001';
         /// <summary>Marks where &lt;ImageText&gt; starts and ends, so the length limit shortens the rest of the name instead.</summary>
         private const char ImageMark = '\u0002';
-        private static readonly Regex TokenPattern = new Regex(@"<(/?)([A-Za-z]+[0-9]?)>", RegexOptions.CultureInvariant);
         private static readonly string Punctuation = "'.,!?()&";
 
         private readonly UserProfile _profile;
@@ -42,17 +41,15 @@ namespace CDTag.Model.Tag
 
         public AlbumNamer(UserProfile profile, Album album, ReleaseInfo release)
         {
-            if (profile == null)
-                throw new ArgumentNullException("profile");
-            if (album == null)
-                throw new ArgumentNullException("album");
+            ArgumentNullException.ThrowIfNull(profile);
+            ArgumentNullException.ThrowIfNull(album);
 
             _profile = profile;
             _album = album;
             _release = release ?? new ReleaseInfo();
             _rules = profile.NamingRules ?? new NamingRules
             {
-                Replacements = new ReplacePair[0],
+                Replacements = Array.Empty<ReplacePair>(),
                 WordSeparators = new[] { " ", "_" },
                 FieldSeparators = new[] { "-" }
             };
@@ -82,7 +79,7 @@ namespace CDTag.Model.Tag
             get
             {
                 string source = _release.Source != null ? (_release.Source.Nfo ?? "") : "";
-                return Regex.IsMatch(source, @"VINYL|\bLP\b|VLS|INCH", RegexOptions.IgnoreCase);
+                return VinylSource().IsMatch(source);
             }
         }
 
@@ -105,7 +102,7 @@ namespace CDTag.Model.Tag
             string name = FolderNameWithoutFix();
             // Source WEB-FLAC in a FLAC profile pattern ("<Source>-FLAC-") would give -WEB-FLAC-FLAC-.
             if (name != null)
-                name = Regex.Replace(name, "-WEB-FLAC-FLAC-", "-WEB-FLAC-", RegexOptions.IgnoreCase);
+                name = DoubledWebFlac().Replace(name, "-WEB-FLAC-");
             return WithFix(name);
         }
 
@@ -120,10 +117,10 @@ namespace CDTag.Model.Tag
                 string name = Build(pattern, null, null, _profile.FileNaming.DirectoryCharacterLimit, null);
                 // Source WEB-FLAC in a FLAC profile pattern ("<Source>-FLAC-") would give -WEB-FLAC-FLAC-.
                 if (name != null)
-                    name = Regex.Replace(name, "-WEB-FLAC-FLAC-", "-WEB-FLAC-", RegexOptions.IgnoreCase);
+                    name = DoubledWebFlac().Replace(name, "-WEB-FLAC-");
                 // WEB FLAC rules 4.10.1: the release name needs the bit depth (-16BIT-WEB-FLAC-); 2.x profiles have no token for it.
                 if (name != null && pattern.IndexOf("<BitDepth>", StringComparison.OrdinalIgnoreCase) < 0
-                    && name.Contains("-WEB-FLAC-") && !Regex.IsMatch(name, @"\d{2}BIT(-\d{2,3}KHZ)?-WEB-FLAC-"))
+                    && name.Contains("-WEB-FLAC-") && !WebFlacBitDepthPart().IsMatch(name))
                 {
                     string bits = QualityTag;
                     if (bits != null)
@@ -135,9 +132,9 @@ namespace CDTag.Model.Tag
             // Blu-ray/HDDVD: a Bit/kHz picked on the release page goes before the source tag (-24BIT-96KHZ-BLURAY-FLAC-).
             string chosen = _release.Quality != null ? _release.Quality.Trim() : "";
             if (folder != null && chosen.Length > 0 && SceneTagging && SceneRules.HasBitKhzChoice(_album, Dir(_release.Source) ?? (_release.Source != null ? _release.Source.Nfo : null))
-                && pattern.IndexOf("<BitDepth>", StringComparison.OrdinalIgnoreCase) < 0 && !Regex.IsMatch(folder, @"\d{2}BIT(-\d{2,3}KHZ)?-"))
+                && pattern.IndexOf("<BitDepth>", StringComparison.OrdinalIgnoreCase) < 0 && !BitDepthPart().IsMatch(folder))
             {
-                folder = Regex.Replace(folder, @"-(\d*(BLURAY|HDDVD))-", "-" + chosen + "-$1-", RegexOptions.IgnoreCase);
+                folder = HdDiscSourceTag().Replace(folder, "-" + chosen + "-$1-");
             }
             return folder;
         }
@@ -155,13 +152,6 @@ namespace CDTag.Model.Tag
             }
         }
 
-        private static readonly Regex FlacSourcePart = new Regex(
-            @"-(\d{2}BIT(-\d{2,3}KHZ)?-)?\d*[xX]?(\d+INCH_)?(BLURAY|HDDVD|CDS|CDM|CDEP|MCD|CDREP|CDRS|CDR|CD|DVDA|DVD|VINYL|VLS|MLP|LP|EP|INCH_VINYL|FLEXI|WEB)-FLAC-",
-            RegexOptions.CultureInvariant);
-        private static readonly Regex Mp3TailPart = new Regex(
-            @"(-\d*(CDS|CDM|CDR|CD|WEB|VINYL|VLS|LP|DVD|BLURAY|SAT|CABLE|DAB|FM|LINE|SBD|MP3CD|FLASH|DVB|HDTV|SINGLE))*-(\d{4}|\d{3}x|\d{2}xx)-[^-]+$",
-            RegexOptions.CultureInvariant);
-
         /// <summary>
         /// Puts the fix tag (scene rules: ADDITIONAL tag) before the bit depth / source part of the release name:
         /// Artist-Title-REPACK-16BIT-WEB-FLAC-2023-GRP, Artist-Title-DIRFIX-2CD-2021-GRP, Artist-Title-RERIP-2021-GRP.
@@ -172,11 +162,11 @@ namespace CDTag.Model.Tag
             string fix = FixTag;
             NamingFormat format = Format;
             if (name == null || fix == null || Regex.IsMatch(name, "-" + fix + "-", RegexOptions.IgnoreCase)
-                || (format != null && (format.Directory ?? "").IndexOf("<Fix>", StringComparison.OrdinalIgnoreCase) >= 0))
+                || (format != null && (format.Directory ?? "").Contains("<Fix>", StringComparison.OrdinalIgnoreCase)))
                 return name;
-            Match match = FlacSourcePart.Match(name);
+            Match match = FlacSourcePart().Match(name);
             if (!match.Success)
-                match = Mp3TailPart.Match(name);
+                match = Mp3TailPart().Match(name);
             return match.Success ? name.Insert(match.Index, "-" + fix) : name;
         }
 
@@ -203,11 +193,11 @@ namespace CDTag.Model.Tag
             string pattern = format.AudioFile;
             // Multi-disc: file names need the disc in front of the track ("101", "0101") or discs would clash.
             if (Discs > 1 && pattern != null && pattern.IndexOf("<Disc>", StringComparison.OrdinalIgnoreCase) < 0)
-                pattern = Regex.Replace(pattern, "<Track>", "<Disc><Track>", RegexOptions.IgnoreCase);
+                pattern = TrackToken().Replace(pattern, "<Disc><Track>");
             string name = Build(pattern, track, null, _profile.FileNaming.FileCharacterLimit, extension);
             // FLAC rules 5.6: REPACKed releases have a -repack suffix at the end of each .flac file.
             if (name != null && SceneTagging && FixTag == "REPACK" && extension == ".flac" && !name.EndsWith("-repack.flac", StringComparison.OrdinalIgnoreCase))
-                name = name.Substring(0, name.Length - extension.Length) + "-repack" + extension;
+                name = string.Concat(name.AsSpan(0, name.Length - extension.Length), "-repack", extension);
             return name;
         }
 
@@ -222,7 +212,7 @@ namespace CDTag.Model.Tag
                 // Up to 9 discs the tracks are 101, 102...: the NFO, playlist, checksum file, images and logs get 000 so they sort first
                 // with the same width ("0000-..." in the profile is for 10 discs or more).
                 if (name != null && Discs > 1 && Discs <= 9 && (kind == NameKind.NFO || kind == NameKind.Playlist || kind == NameKind.Checksum || kind == NameKind.Images || kind == NameKind.EACLog)
-                    && Regex.IsMatch(name, @"^0000(?!\d)"))
+                    && ZeroTrackPrefix().IsMatch(name))
                     name = name.Substring(1);
                 return name;
             }
@@ -285,7 +275,7 @@ namespace CDTag.Model.Tag
                 case NameKind.NFO: pattern = format.NFO; defaultExtension = ".nfo"; break;
                 case NameKind.Images: pattern = format.Images; defaultExtension = ".jpg"; break;
                 case NameKind.EACLog: pattern = format.EACLog; defaultExtension = ".log"; break;
-                default: throw new ArgumentOutOfRangeException("kind");
+                default: throw new ArgumentOutOfRangeException(nameof(kind));
             }
             return Build(pattern, null, imageText, _profile.FileNaming.FileCharacterLimit, extension ?? defaultExtension);
         }
@@ -349,7 +339,7 @@ namespace CDTag.Model.Tag
             string mode = null;
             int position = 0;
 
-            foreach (Match match in TokenPattern.Matches(pattern))
+            foreach (Match match in TokenPattern().Matches(pattern))
             {
                 region.Append(pattern, position, match.Index - position);
                 position = match.Index + match.Length;
@@ -449,7 +439,7 @@ namespace CDTag.Model.Tag
 
         private string ExtInfoFieldValue(string field)
         {
-            string key = Regex.Replace((field ?? "").ToLowerInvariant(), "[^a-z0-9#]", "");
+            string key = NotFieldKeyChar().Replace((field ?? "").ToLowerInvariant(), "");
             switch (key)
             {
                 case "releasetype":
@@ -505,7 +495,7 @@ namespace CDTag.Model.Tag
         {
             if (string.IsNullOrWhiteSpace(text))
                 return 0;
-            Match match = Regex.Match(text, @"\d+");
+            Match match = Digits().Match(text);
             int number;
             return match.Success && int.TryParse(match.Value, out number) ? number : 0;
         }
@@ -544,7 +534,7 @@ namespace CDTag.Model.Tag
                     sb.Append(c);
                     continue;
                 }
-                if ("\\/:*?\"<>|".IndexOf(c) >= 0 || char.IsControl(c))
+                if ("\\/:*?\"<>|".Contains(c) || char.IsControl(c))
                     continue;
                 if (_profile.FileNaming.UseStandardCharactersOnly && !IsStandard(c))
                     continue;
@@ -553,10 +543,10 @@ namespace CDTag.Model.Tag
             name = sb.ToString();
 
             // Collapse runs of the same separator ("__", "--") and trim them from the ends.
-            name = Regex.Replace(name, @"([_\-. ])\1+", "$1");
+            name = RepeatedSeparator().Replace(name, "$1");
             // "Reason_-_The_High" (a " - " in a title, after spaces became underscores): just "-".
-            name = Regex.Replace(name, @"_+-_*|-_+", "-");
-            name = Regex.Replace(name, @"-{2,}", "-");
+            name = UnderscoresAroundDash().Replace(name, "-");
+            name = DashRun().Replace(name, "-");
             name = name.Trim('_', '-', ' ', '.');
             return name;
         }
@@ -652,10 +642,10 @@ namespace CDTag.Model.Tag
             if (string.IsNullOrEmpty(text))
                 return text;
 
-            var wordSeparators = new HashSet<char>((_rules.WordSeparators ?? new string[0]).Where(s => s.Length == 1).Select(s => s[0]));
-            var fieldSeparators = new HashSet<char>((_rules.FieldSeparators ?? new string[0]).Where(s => s.Length == 1).Select(s => s[0]));
+            var wordSeparators = new HashSet<char>((_rules.WordSeparators ?? Array.Empty<string>()).Where(s => s.Length == 1).Select(s => s[0]));
+            var fieldSeparators = new HashSet<char>((_rules.FieldSeparators ?? Array.Empty<string>()).Where(s => s.Length == 1).Select(s => s[0]));
             wordSeparators.Add(' ');
-            var lowercase = new HashSet<string>(_rules.LowercaseWords ?? new string[0], StringComparer.OrdinalIgnoreCase);
+            var lowercase = new HashSet<string>(_rules.LowercaseWords ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
 
             var result = new StringBuilder(text.Length);
             var word = new StringBuilder();
@@ -716,5 +706,50 @@ namespace CDTag.Model.Tag
             }
             return new string(chars);
         }
+
+        [GeneratedRegex(@"<(/?)([A-Za-z]+[0-9]?)>", RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex TokenPattern();
+
+        [GeneratedRegex(@"\d{2}BIT(-\d{2,3}KHZ)?-", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex BitDepthPart();
+
+        [GeneratedRegex(@"-{2,}", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex DashRun();
+
+        [GeneratedRegex(@"\d+", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex Digits();
+
+        [GeneratedRegex("-WEB-FLAC-FLAC-", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex DoubledWebFlac();
+
+        [GeneratedRegex(@"-(\d{2}BIT(-\d{2,3}KHZ)?-)?\d*[xX]?(\d+INCH_)?(BLURAY|HDDVD|CDS|CDM|CDEP|MCD|CDREP|CDRS|CDR|CD|DVDA|DVD|VINYL|VLS|MLP|LP|EP|INCH_VINYL|FLEXI|WEB)-FLAC-", RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex FlacSourcePart();
+
+        [GeneratedRegex(@"-(\d*(BLURAY|HDDVD))-", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex HdDiscSourceTag();
+
+        [GeneratedRegex(@"(-\d*(CDS|CDM|CDR|CD|WEB|VINYL|VLS|LP|DVD|BLURAY|SAT|CABLE|DAB|FM|LINE|SBD|MP3CD|FLASH|DVB|HDTV|SINGLE))*-(\d{4}|\d{3}x|\d{2}xx)-[^-]+$", RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex Mp3TailPart();
+
+        [GeneratedRegex("[^a-z0-9#]", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex NotFieldKeyChar();
+
+        [GeneratedRegex(@"([_\-. ])\1+", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex RepeatedSeparator();
+
+        [GeneratedRegex("<Track>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex TrackToken();
+
+        [GeneratedRegex(@"_+-_*|-_+", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex UnderscoresAroundDash();
+
+        [GeneratedRegex(@"VINYL|\bLP\b|VLS|INCH", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex VinylSource();
+
+        [GeneratedRegex(@"\d{2}BIT(-\d{2,3}KHZ)?-WEB-FLAC-", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex WebFlacBitDepthPart();
+
+        [GeneratedRegex(@"^0000(?!\d)", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex ZeroTrackPrefix();
     }
 }

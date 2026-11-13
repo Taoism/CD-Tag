@@ -14,7 +14,7 @@ namespace CDTag.Model.Lookup
     /// The table of contents of one CD (track start sectors and lead-out), as used by disc-ID lookups
     /// (CUETools DB, MusicBrainz). Read from the rip log (EAC, XLD, CUERipper) or rebuilt from exact FLAC lengths.
     /// </summary>
-    public class DiscToc
+    public partial class DiscToc
     {
         /// <summary>CD sectors (frames) per second.</summary>
         public const int SectorsPerSecond = 75;
@@ -150,11 +150,7 @@ namespace CDTag.Model.Lookup
 
         // ------------------------------------------------------------------ rip logs
 
-        private static readonly Regex TocRow = new Regex(
-            @"^\s*(\d{1,2})\s*\|\s*[\d:.]+\s*\|\s*[\d:.]+\s*\|\s*(\d+)\s*\|\s*(\d+)\s*$",
-            RegexOptions.Multiline | RegexOptions.CultureInvariant);
-
-        /// <summary>Reads the first TOC table of an EAC / XLD / CUERipper log; null when there is none.</summary>
+/// <summary>Reads the first TOC table of an EAC / XLD / CUERipper log; null when there is none.</summary>
         public static DiscToc FromLog(string text, string source = "rip log")
         {
             if (string.IsNullOrEmpty(text))
@@ -163,7 +159,7 @@ namespace CDTag.Model.Lookup
             var toc = new DiscToc { Source = source };
             int expected = 1;
             int lastEnd = -1;
-            foreach (Match row in TocRow.Matches(text))
+            foreach (Match row in TocRow().Matches(text))
             {
                 int track = int.Parse(row.Groups[1].Value, CultureInfo.InvariantCulture);
                 if (track != expected)
@@ -251,8 +247,6 @@ namespace CDTag.Model.Lookup
         }
 
         // ------------------------------------------------------------------ album
-
-        private static readonly Regex DiscInName = new Regex(@"(?:cd|disc|disk)\s*[-_#.]?\s*(\d{1,2})(?!\d)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         /// <summary>
         /// One TOC per disc of <paramref name="album"/>: from the rip logs in the album folder (and disc subfolders),
@@ -344,11 +338,11 @@ namespace CDTag.Model.Lookup
             string folder = Path.GetDirectoryName(logPath);
             if (!string.Equals(folder?.TrimEnd('\\'), albumFolder?.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
             {
-                Match number = Regex.Match(Path.GetFileName(folder) ?? "", @"(\d+)");
+                Match number = DigitRun().Match(Path.GetFileName(folder) ?? "");
                 if (number.Success)
                     return int.Parse(number.Value, CultureInfo.InvariantCulture);
             }
-            Match match = DiscInName.Match(Path.GetFileNameWithoutExtension(logPath));
+            Match match = DiscInName().Match(Path.GetFileNameWithoutExtension(logPath));
             return match.Success ? int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture) : 0;
         }
 
@@ -356,10 +350,22 @@ namespace CDTag.Model.Lookup
         {
             if (string.IsNullOrWhiteSpace(text))
                 return fallback;
-            Match match = Regex.Match(text, @"\d+");
+            Match match = Digits().Match(text);
             int number;
             return match.Success && int.TryParse(match.Value, out number) ? number : fallback;
         }
+
+        [GeneratedRegex(@"^\s*(\d{1,2})\s*\|\s*[\d:.]+\s*\|\s*[\d:.]+\s*\|\s*(\d+)\s*\|\s*(\d+)\s*$", RegexOptions.Multiline | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex TocRow();
+
+        [GeneratedRegex(@"(\d+)", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex DigitRun();
+
+        [GeneratedRegex(@"\d+", RegexOptions.None, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex Digits();
+
+        [GeneratedRegex(@"(?:cd|disc|disk)\s*[-_#.]?\s*(\d{1,2})(?!\d)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, CDTag.Common.RegexTimeouts.Milliseconds)]
+        private static partial Regex DiscInName();
     }
 
     /// <summary>The FLAC STREAMINFO values needed for a TOC.</summary>

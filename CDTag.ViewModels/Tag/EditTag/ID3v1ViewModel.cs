@@ -27,7 +27,7 @@ namespace CDTag.ViewModels.Tag.EditTag
             GetDirectoryControllerEvent args = new GetDirectoryControllerEvent();
             eventAggregator.Publish(args);
 
-            var file = args.DirectoryController.SelectedItems.Where(p => Path.GetExtension(p.FullName).ToLower() == ".mp3").FirstOrDefault();
+            var file = args.DirectoryController.SelectedItems.Where(p => string.Equals(Path.GetExtension(p.FullName), ".mp3", System.StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
 
             if (file != null)
             {
@@ -72,7 +72,7 @@ namespace CDTag.ViewModels.Tag.EditTag
             get { return _id3v1VersionCollection; }
         }
 
-        private void OnSaveFile()
+        private static void OnSaveFile()
         {
             //ID3v1.Save(_fullFileName);
             //ID3v1 = new ID3v1Tag(_fullFileName);

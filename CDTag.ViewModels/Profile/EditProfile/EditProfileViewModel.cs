@@ -135,14 +135,14 @@ namespace CDTag.ViewModels.Profile.EditProfile
 
         public string WindowTitle
         {
-            get { return Get<string>("WindowTitle"); }
-            set { Set("WindowTitle", value); }
+            get { return Get<string>(nameof(WindowTitle)); }
+            set { Set(nameof(WindowTitle), value); }
         }
 
         public string Header
         {
-            get { return Get<string>("Header"); }
-            set { Set("Header", value); }
+            get { return Get<string>(nameof(Header)); }
+            set { Set(nameof(Header), value); }
         }
 
         public ICommand NewProfileCommand
@@ -403,8 +403,8 @@ namespace CDTag.ViewModels.Profile.EditProfile
 
         public UserProfile Profile
         {
-            get { return Get<UserProfile>("Profile"); }
-            set { Set("Profile", value); }
+            get { return Get<UserProfile>(nameof(Profile)); }
+            set { Set(nameof(Profile), value); }
         }
     }
 }
